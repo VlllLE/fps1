@@ -131,6 +131,11 @@ public class MovementController : MonoBehaviour
     
     private RaycastHit groundHit;
     private float groundAngle;
+
+    // Pin standing XZ so CharacterController settle/collider tweaks can't invent slides.
+    private bool hasIdleAnchor;
+    private float idleAnchorX;
+    private float idleAnchorZ;
     
     #endregion
 
@@ -176,6 +181,10 @@ public class MovementController : MonoBehaviour
         
         defaultHeight = controller.height;
         defaultCenter = controller.center;
+
+        // Ignore sub-centimeter CC resolutions that read as standing drift.
+        if (controller.minMoveDistance < 0.02f)
+            controller.minMoveDistance = 0.02f;
     }
     
     private void Update()
@@ -189,6 +198,7 @@ public class MovementController : MonoBehaviour
         DampenHorizontalVelocityWhenIdle();
         ApplyMovement();
         UpdateColliderHeight();
+        EnforceIdleAnchor();
         
         currentSpeed = new Vector3(velocity.x, 0f, velocity.z).magnitude;
         NotifyStateChangeIfNeeded();
@@ -1033,39 +1043,22 @@ public class MovementController : MonoBehaviour
         float horizSqr = velocity.x * velocity.x + velocity.z * velocity.z;
         bool fullyStopped = horizSqr < 0.0001f;
 
-        if (idleLock && fullyStopped)
+        // Standing still: do NOT feed velocity.y=-2 into Move (that projects into XZ on seams).
+        // Use a tiny stick so CharacterController.isGrounded stays fresh, then pin XZ to anchor.
+        // Important: do not require controller.isGrounded — skipping Move makes that flag flicker false.
+        if (idleLock && fullyStopped && isGrounded)
         {
-            velocity.x = 0f;
-            velocity.z = 0f;
-        }
+            velocity = Vector3.zero;
+            CaptureIdleAnchorIfNeeded();
 
-        bool groundedNow = isGrounded || (controller != null && controller.isGrounded);
-
-        // Idle + stopped + grounded: skip CharacterController.Move.
-        // A constant downward Move into CC projects along tiny slopes/mesh seams and invents
-        // horizontal slides that our velocity field never records (standing "drift").
-        if (idleLock && fullyStopped && groundedNow && controller.isGrounded)
+            float stick = Mathf.Max(controller.skinWidth * 2f, 0.05f);
+            controller.Move(new Vector3(0f, -stick, 0f));
+            SnapToIdleAnchor();
             return;
-
-        Vector3 posBefore = transform.position;
-        controller.Move(velocity * Time.deltaTime);
-
-        // Safety net while fully stopped: keep Y settle but reject XZ slides from CC.
-        if (idleLock && fullyStopped)
-        {
-            Vector3 pos = transform.position;
-            float dx = pos.x - posBefore.x;
-            float dz = pos.z - posBefore.z;
-            if (dx * dx + dz * dz > 1e-8f)
-            {
-                bool wasEnabled = controller.enabled;
-                controller.enabled = false;
-                transform.position = new Vector3(posBefore.x, pos.y, posBefore.z);
-                controller.enabled = wasEnabled;
-                velocity.x = 0f;
-                velocity.z = 0f;
-            }
         }
+
+        hasIdleAnchor = false;
+        controller.Move(velocity * Time.deltaTime);
     }
 
     private bool ShouldLockIdleHorizontal()
@@ -1078,6 +1071,55 @@ public class MovementController : MonoBehaviour
             && currentState != MovementState.DiveRecovery
             && currentState != MovementState.Mantling
             && currentState != MovementState.WallRunning;
+    }
+
+    private void CaptureIdleAnchorIfNeeded()
+    {
+        if (hasIdleAnchor)
+            return;
+
+        Vector3 pos = transform.position;
+        idleAnchorX = pos.x;
+        idleAnchorZ = pos.z;
+        hasIdleAnchor = true;
+    }
+
+    private void SnapToIdleAnchor()
+    {
+        if (!hasIdleAnchor)
+            return;
+
+        Vector3 pos = transform.position;
+        if (Mathf.Abs(pos.x - idleAnchorX) < 1e-5f && Mathf.Abs(pos.z - idleAnchorZ) < 1e-5f)
+            return;
+
+        bool wasEnabled = controller.enabled;
+        controller.enabled = false;
+        transform.position = new Vector3(idleAnchorX, pos.y, idleAnchorZ);
+        controller.enabled = wasEnabled;
+        Physics.SyncTransforms();
+    }
+
+    private void EnforceIdleAnchor()
+    {
+        if (!ShouldLockIdleHorizontal() || !isGrounded)
+        {
+            // Keep anchor while still stopping; clear once we leave grounded idle.
+            float horizSqr = velocity.x * velocity.x + velocity.z * velocity.z;
+            if (!ShouldLockIdleHorizontal() || !isGrounded || horizSqr > 0.25f)
+                hasIdleAnchor = false;
+            return;
+        }
+
+        float speedSqr = velocity.x * velocity.x + velocity.z * velocity.z;
+        if (speedSqr > 0.0001f)
+            return;
+
+        velocity.x = 0f;
+        velocity.z = 0f;
+        CaptureIdleAnchorIfNeeded();
+        // Collider height lerps run after Move and can shove the capsule — re-pin every frame.
+        SnapToIdleAnchor();
     }
     
     private void DampenHorizontalVelocityWhenIdle()
@@ -1149,9 +1191,8 @@ public class MovementController : MonoBehaviour
         if (input == null || !input.HasMoveInput)
             return Vector3.zero;
         
-        // Player root is yaw-only. CameraHolder is pitched by FirstPersonCamera — using it as
-        // the move basis projects look-down into unstable/backward wish directions.
-        return input.GetMoveDirection(transform);
+        // Yaw-only basis from player euler Y — never pitched CameraHolder / MainCamera forward.
+        return input.GetMoveDirectionYaw(transform.eulerAngles.y);
     }
     
     #endregion
@@ -1178,16 +1219,24 @@ public class MovementController : MonoBehaviour
             targetCameraHeight = Mathf.Max(0.7f, defaultCameraHeight * (config.crouchHeight / Mathf.Max(defaultHeight, 0.01f)));
         }
         
-        // Smooth height transitions
+        // Smooth height transitions, then snap — eternal Lerp micro-deltas shove CharacterController.
         float t = Time.deltaTime * 15f;
-        controller.height = Mathf.Lerp(controller.height, targetHeight, t);
-        controller.center = Vector3.Lerp(controller.center, targetCenter, t);
+        const float snapEps = 0.001f;
+
+        float nextHeight = Mathf.Lerp(controller.height, targetHeight, t);
+        controller.height = Mathf.Abs(nextHeight - targetHeight) < snapEps ? targetHeight : nextHeight;
+
+        Vector3 nextCenter = Vector3.Lerp(controller.center, targetCenter, t);
+        controller.center = (nextCenter - targetCenter).sqrMagnitude < snapEps * snapEps
+            ? targetCenter
+            : nextCenter;
 
         // Eye height must move with stance — otherwise crouch/slide feel broken in first person.
         if (cameraHolder != null)
         {
             Vector3 camPos = cameraHolder.localPosition;
-            camPos.y = Mathf.Lerp(camPos.y, targetCameraHeight, t);
+            float nextCamY = Mathf.Lerp(camPos.y, targetCameraHeight, t);
+            camPos.y = Mathf.Abs(nextCamY - targetCameraHeight) < snapEps ? targetCameraHeight : nextCamY;
             cameraHolder.localPosition = camPos;
         }
     }
@@ -1302,6 +1351,7 @@ public class MovementController : MonoBehaviour
         isSlideQueued = false;
         isMantling = false;
         isWallRunning = false;
+        hasIdleAnchor = false;
         
         controller.height = defaultHeight;
         controller.center = defaultCenter;
