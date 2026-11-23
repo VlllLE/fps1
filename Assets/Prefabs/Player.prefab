@@ -2415,6 +2415,9 @@ GameObject:
   - component: {fileID: 5619566438596807341}
   - component: {fileID: 6582580294995376939}
   - component: {fileID: 5917042367466800932}
+  - component: {fileID: 3232745294057975543}
+  - component: {fileID: 2334677692800472251}
+  - component: {fileID: 3772554946876902742}
   - component: {fileID: 8806184129436877696}
   - component: {fileID: 4832936795912886153}
   - component: {fileID: 6013459559585722595}
@@ -2505,12 +2508,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Scripts::MovementController
   config: {fileID: 11400000, guid: eb34a1ce0a614b04aacd6acb25d8ede8, type: 2}
   input: {fileID: 2523170147745052370}
-  cameraTransform: {fileID: 3135298524326835930}
+  cameraTransform: {fileID: 9089969048547737572}
+  cameraHolder: {fileID: 3135298524326835930}
   currentState: 0
   velocity: {x: 0, y: 0, z: 0}
   currentSpeed: 0
   isGrounded: 0
-  groundCheckDistance: 0.2
+  groundCheckDistance: 0.35
   groundCheckRadius: 0.3
   groundLayers:
     serializedVersion: 2
@@ -2575,6 +2579,163 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!82 &3232745294057975543
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7889173744436891017}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &2334677692800472251
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7889173744436891017}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4e5f64789014b2ca4e5f6a7b8c0135e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::MovementFeedback
+  movement: {fileID: 3861268831279539904}
+  cameraEffectsTarget: {fileID: 9089969048547737572}
+  audioSource: {fileID: 3232745294057975543}
+  createRuntimeParticles: 1
+  slideDust: {fileID: 0}
+  jumpBurst: {fileID: 0}
+  wallBounceSparks: {fileID: 0}
+  landPuff: {fileID: 0}
+  jumpClip: {fileID: 8300000, guid: f647890123454d6e87f8a9b0c1d2e035, type: 3}
+  landClip: {fileID: 8300000, guid: 0647890123456e7f98a9b0c1d2e3f046, type: 3}
+  slideStartClip: {fileID: 8300000, guid: 1748901234567f8aa9b0c1d2e3f40579, type: 3}
+  slideLoopClip: {fileID: 8300000, guid: 2849012345678a9bb0c1d2e3f405168a, type: 3}
+  wallBounceClip: {fileID: 8300000, guid: 394a012345679b0cc1d2e3f40516279b, type: 3}
+  diveClip: {fileID: 8300000, guid: 4a5b01234567ac1dd2e3f40516278ac0, type: 3}
+  slideCancelClip: {fileID: 8300000, guid: 5b6c01234567bd2ee3f405162789bcd1, type: 3}
+  bunnyHopClip: {fileID: 8300000, guid: 6c7d01234567ce3ff405162789abcde2, type: 3}
+  oneShotVolume: 0.55
+  slideLoopVolume: 0.35
+  jumpShake: 0.12
+  landShake: 0.18
+  slideStartShake: 0.1
+  wallBounceShake: 0.35
+  diveShake: 0.22
+  shakeDecay: 1.8
+  maxShakeOffset: 0.02
+  maxShakeAngle: 2.5
+  slideRollDegrees: 4
+  wallRunRollDegrees: 8
+  sprintStrafeRollDegrees: 2
+  tiltLerpSpeed: 10
+  wallBounceKickDegrees: 6
+--- !u!114 &3772554946876902742
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7889173744436891017}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a80d9912aca464eb14c01500d02dc84, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::LoadoutPauseMenu
+  loadoutApplier: {fileID: 8806184129436877696}
+  classSelector: {fileID: 4832936795912886153}
+  weaponSwitcher: {fileID: 8834836375136179749}
+  firstPersonCamera: {fileID: 3382564685381943504}
+  pauseTimeScale: 0
 --- !u!114 &8806184129436877696
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,3 +1,4 @@
+using System.IO;
 using CodMovementShooter.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -13,6 +14,7 @@ public static class TestRangePlayerSetup
     private const string PlayerCharacterPath = "Assets/Characters/Player/PlayerCharacter.prefab";
     private const string PlayerPrefabPath = "Assets/Prefabs/Player.prefab";
     private const string SpawnName = "PlayerSpawn";
+    private const string SyncRequestPath = "Library/CursorSyncTestRange.request";
     private static readonly string[] ClassAssetNames =
     {
         "Class_Assault",
@@ -20,6 +22,40 @@ public static class TestRangePlayerSetup
         "Class_Sniper",
         "Class_Hybrid",
     };
+
+    [InitializeOnLoadMethod]
+    private static void RegisterSyncRequestWatcher()
+    {
+        EditorApplication.update -= PollSyncRequest;
+        EditorApplication.update += PollSyncRequest;
+    }
+
+    private static void PollSyncRequest()
+    {
+        if (!File.Exists(SyncRequestPath))
+            return;
+
+        if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            return;
+
+        if (EditorApplication.isPlaying)
+        {
+            EditorApplication.isPlaying = false;
+            return;
+        }
+
+        try
+        {
+            File.Delete(SyncRequestPath);
+        }
+        catch (IOException)
+        {
+            return;
+        }
+
+        SyncSceneAndPrefab(openScene: true);
+        EditorApplication.isPlaying = true;
+    }
 
     [MenuItem("Tools/Sync Test Range Player (Character + Classes)")]
     public static void SyncFromMenu()
@@ -58,7 +94,7 @@ public static class TestRangePlayerSetup
         SavePlayerPrefabFromCharacter();
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("TestRange player synced: PlayerCharacter + class loadouts + HUD.");
+        Debug.Log("TestRange player synced: PlayerCharacter + movement juice + loadout menu + HUD.");
     }
 
     public static GameObject ReplaceScenePlayer()

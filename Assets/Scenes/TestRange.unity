@@ -166,7 +166,7 @@ MonoBehaviour:
   m_Script: {fileID: 1887168322}
   m_Name: 
   m_EditorClassIdentifier: Scripts::HitZone
-  zoneType: 0
+  zoneType: 1
   multiplierOverride: 0
 --- !u!23 &6044918
 MeshRenderer:
@@ -353,11 +353,11 @@ PrefabInstance:
     - target: {fileID: 100007, guid: 6ff826c48e3b43d0b26df757df5e8f5f, type: 3}
       propertyPath: weaponSource
       value: 
-      objectReference: {fileID: 1024245529}
+      objectReference: {fileID: 1170364495}
     - target: {fileID: 100007, guid: 6ff826c48e3b43d0b26df757df5e8f5f, type: 3}
       propertyPath: movementSource
       value: 
-      objectReference: {fileID: 1024245529}
+      objectReference: {fileID: 1170364495}
     - target: {fileID: 100007, guid: 6ff826c48e3b43d0b26df757df5e8f5f, type: 3}
       propertyPath: hitDetectionSource
       value: 
@@ -1393,7 +1393,7 @@ MonoBehaviour:
   m_Script: {fileID: 1887168322}
   m_Name: 
   m_EditorClassIdentifier: Scripts::HitZone
-  zoneType: 0
+  zoneType: 1
   multiplierOverride: 0
 --- !u!23 &561218922
 MeshRenderer:
@@ -1681,7 +1681,7 @@ MonoBehaviour:
   m_Script: {fileID: 1887168322}
   m_Name: 
   m_EditorClassIdentifier: Scripts::HitZone
-  zoneType: 0
+  zoneType: 1
   multiplierOverride: 0
 --- !u!23 &802297337
 MeshRenderer:
@@ -2200,211 +2200,6 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!1001 &1024245523
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 100001, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-      propertyPath: m_Name
-      value: Player
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.55
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -5
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 100001, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1024245533}
-    - targetCorrespondingSourceObject: {fileID: 100001, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1024245532}
-    - targetCorrespondingSourceObject: {fileID: 100001, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1024245530}
-    - targetCorrespondingSourceObject: {fileID: 100016, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1024245531}
-  m_SourcePrefab: {fileID: 100100000, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
---- !u!1 &1024245524 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 100001, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-  m_PrefabInstance: {fileID: 1024245523}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &1024245525 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 100016, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-  m_PrefabInstance: {fileID: 1024245523}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1024245526 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 100017, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-  m_PrefabInstance: {fileID: 1024245523}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1024245527 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 100010, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-  m_PrefabInstance: {fileID: 1024245523}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1024245528 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 100006, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-  m_PrefabInstance: {fileID: 1024245523}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1024245524}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c0cea50961366af4a97129d8632cc2c0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Scripts::PlayerWeaponBridge
---- !u!114 &1024245529 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 100005, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
-  m_PrefabInstance: {fileID: 1024245523}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1024245524}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01e6e058605c30748ba16de8bc4f3e71, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Scripts::MovementController
---- !u!114 &1024245530
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1024245524}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a369bb072568fcf44bb4180c40f1291a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TestRangeSkinCycler
-  weaponSwitcher: {fileID: 1024245531}
-  skins:
-  - {fileID: 11400000, guid: 40004db994d741298e468f393526aee5, type: 2}
-  - {fileID: 11400000, guid: e37ec62055564acca64a2098f869dde0, type: 2}
-  - {fileID: 11400000, guid: 25ece70f919d4ad78599b88db4eba6a2, type: 2}
-  - {fileID: 11400000, guid: f8ff666595f84e1eb66cfd719752e8c1, type: 2}
-  - {fileID: 11400000, guid: 697a6589dea646509016ef6459d266b0, type: 2}
-  - {fileID: 11400000, guid: e3e398d383e84eff8519853f0ca03561, type: 2}
-  - {fileID: 11400000, guid: 45a68f581fdc4b89a7523f43386dbe31, type: 2}
-  - {fileID: 11400000, guid: 466f059384294303bbc050f72324a898, type: 2}
-  - {fileID: 11400000, guid: f6c9f54ae93e463f9d6bafe226fb7bda, type: 2}
-  - {fileID: 11400000, guid: d8bd663c5317466fa14f370e0f30f7ad, type: 2}
-  startingSkinIndex: 0
---- !u!114 &1024245531
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1024245525}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: afbc4c6e64d55534784e4babc7bb58f6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Scripts::WeaponSwitcher
-  weaponSlots: []
-  startingSlot: 0
-  switchSpeed: 0.5
-  quickSwitchSpeed: 0.3
-  allowScrollSwitching: 1
-  invertScrollDirection: 0
-  useDirectSlotIndexKeys: 1
-  primaryKey: 49
-  secondaryKey: 50
-  meleeKey: 51
-  lethalKey: 52
-  tacticalKey: 53
-  lastWeaponKey: 113
-  armsAnimator: {fileID: 0}
-  holsterTrigger: Holster
-  equipTrigger: Equip
-  audioSource: {fileID: 0}
-  switchSound: {fileID: 0}
---- !u!114 &1024245532
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1024245524}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f1772bc02c8f1cf42bd014cb1fbea74b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Scripts::TestRangeClassSelector
-  loadoutApplier: {fileID: 1024245533}
-  weaponBridge: {fileID: 1024245528}
-  assaultClass: {fileID: 11400000, guid: a11b22c33d44e55f6677889900aabb01, type: 2}
-  smgClass: {fileID: 11400000, guid: a11b22c33d44e55f6677889900aabb02, type: 2}
-  sniperClass: {fileID: 11400000, guid: a11b22c33d44e55f6677889900aabb03, type: 2}
-  hybridClass: {fileID: 11400000, guid: a11b22c33d44e55f6677889900aabb04, type: 2}
-  allowRuntimeSwap: 1
---- !u!114 &1024245533
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1024245524}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3f9a1c7e5b2d4a68b0e4d9c7a1f53e82, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Scripts::ClassLoadoutApplier
-  classDefinition: {fileID: 11400000, guid: a11b22c33d44e55f6677889900aabb01, type: 2}
-  weaponSwitcher: {fileID: 1024245531}
-  movementController: {fileID: 1024245529}
-  weaponBridge: {fileID: 1024245528}
-  weaponParent: {fileID: 1024245526}
-  applyOnAwake: 1
-  destroyReplacedWeapons: 1
-  startingSlot: 0
 --- !u!1 &1090993531
 GameObject:
   m_ObjectHideFlags: 0
@@ -2758,6 +2553,218 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1160221258}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &1170364490
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 100001, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      propertyPath: m_Name
+      value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.55
+      objectReference: {fileID: 0}
+    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -5
+      objectReference: {fileID: 0}
+    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 100002, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 100136, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      propertyPath: classSelector
+      value: 
+      objectReference: {fileID: 1170364498}
+    - target: {fileID: 100136, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      propertyPath: loadoutApplier
+      value: 
+      objectReference: {fileID: 1170364499}
+    - target: {fileID: 100136, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      propertyPath: weaponSwitcher
+      value: 
+      objectReference: {fileID: 1170364497}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 100001, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1170364499}
+    - targetCorrespondingSourceObject: {fileID: 100001, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1170364498}
+    - targetCorrespondingSourceObject: {fileID: 100001, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1170364496}
+    - targetCorrespondingSourceObject: {fileID: 100016, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1170364497}
+  m_SourcePrefab: {fileID: 100100000, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+--- !u!1 &1170364491 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100001, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+  m_PrefabInstance: {fileID: 1170364490}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1170364492 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100016, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+  m_PrefabInstance: {fileID: 1170364490}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1170364493 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 100017, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+  m_PrefabInstance: {fileID: 1170364490}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1170364494 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 100006, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+  m_PrefabInstance: {fileID: 1170364490}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1170364491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0cea50961366af4a97129d8632cc2c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::PlayerWeaponBridge
+--- !u!114 &1170364495 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 100005, guid: 5cb70bce1173422f910a5780a3bfb2cb, type: 3}
+  m_PrefabInstance: {fileID: 1170364490}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1170364491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01e6e058605c30748ba16de8bc4f3e71, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::MovementController
+--- !u!114 &1170364496
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1170364491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a369bb072568fcf44bb4180c40f1291a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TestRangeSkinCycler
+  weaponSwitcher: {fileID: 1170364497}
+  skins:
+  - {fileID: 11400000, guid: 40004db994d741298e468f393526aee5, type: 2}
+  - {fileID: 11400000, guid: e37ec62055564acca64a2098f869dde0, type: 2}
+  - {fileID: 11400000, guid: 25ece70f919d4ad78599b88db4eba6a2, type: 2}
+  - {fileID: 11400000, guid: f8ff666595f84e1eb66cfd719752e8c1, type: 2}
+  - {fileID: 11400000, guid: 697a6589dea646509016ef6459d266b0, type: 2}
+  - {fileID: 11400000, guid: e3e398d383e84eff8519853f0ca03561, type: 2}
+  - {fileID: 11400000, guid: 45a68f581fdc4b89a7523f43386dbe31, type: 2}
+  - {fileID: 11400000, guid: 466f059384294303bbc050f72324a898, type: 2}
+  - {fileID: 11400000, guid: f6c9f54ae93e463f9d6bafe226fb7bda, type: 2}
+  - {fileID: 11400000, guid: d8bd663c5317466fa14f370e0f30f7ad, type: 2}
+  startingSkinIndex: 0
+--- !u!114 &1170364497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1170364492}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afbc4c6e64d55534784e4babc7bb58f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::WeaponSwitcher
+  weaponSlots: []
+  startingSlot: 0
+  switchSpeed: 0.5
+  quickSwitchSpeed: 0.3
+  allowScrollSwitching: 1
+  invertScrollDirection: 0
+  useDirectSlotIndexKeys: 1
+  primaryKey: 49
+  secondaryKey: 50
+  meleeKey: 51
+  lethalKey: 52
+  tacticalKey: 53
+  lastWeaponKey: 113
+  armsAnimator: {fileID: 0}
+  holsterTrigger: Holster
+  equipTrigger: Equip
+  audioSource: {fileID: 0}
+  switchSound: {fileID: 0}
+--- !u!114 &1170364498
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1170364491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1772bc02c8f1cf42bd014cb1fbea74b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::TestRangeClassSelector
+  loadoutApplier: {fileID: 1170364499}
+  weaponBridge: {fileID: 1170364494}
+  assaultClass: {fileID: 11400000, guid: a11b22c33d44e55f6677889900aabb01, type: 2}
+  smgClass: {fileID: 11400000, guid: a11b22c33d44e55f6677889900aabb02, type: 2}
+  sniperClass: {fileID: 11400000, guid: a11b22c33d44e55f6677889900aabb03, type: 2}
+  hybridClass: {fileID: 11400000, guid: a11b22c33d44e55f6677889900aabb04, type: 2}
+  allowRuntimeSwap: 1
+--- !u!114 &1170364499
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1170364491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f9a1c7e5b2d4a68b0e4d9c7a1f53e82, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::ClassLoadoutApplier
+  classDefinition: {fileID: 11400000, guid: a11b22c33d44e55f6677889900aabb01, type: 2}
+  weaponSwitcher: {fileID: 1170364497}
+  movementController: {fileID: 1170364495}
+  weaponBridge: {fileID: 1170364494}
+  weaponParent: {fileID: 1170364493}
+  applyOnAwake: 1
+  destroyReplacedWeapons: 1
+  startingSlot: 0
 --- !u!1 &1279408903
 GameObject:
   m_ObjectHideFlags: 0
@@ -2805,7 +2812,7 @@ MonoBehaviour:
   m_Script: {fileID: 1887168322}
   m_Name: 
   m_EditorClassIdentifier: Scripts::HitZone
-  zoneType: 0
+  zoneType: 1
   multiplierOverride: 0
 --- !u!23 &1279408906
 MeshRenderer:
@@ -3552,7 +3559,7 @@ MonoBehaviour:
   m_Script: {fileID: 1887168322}
   m_Name: 
   m_EditorClassIdentifier: Scripts::HitZone
-  zoneType: 0
+  zoneType: 1
   multiplierOverride: 0
 --- !u!23 &1514330635
 MeshRenderer:
@@ -4562,4 +4569,4 @@ SceneRoots:
   - {fileID: 470610916}
   - {fileID: 1351553497}
   - {fileID: 193572983}
-  - {fileID: 1024245523}
+  - {fileID: 1170364490}
