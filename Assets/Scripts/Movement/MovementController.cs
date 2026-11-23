@@ -169,8 +169,12 @@ public class MovementController : MonoBehaviour
     
     private void CheckGrounded()
     {
-        Vector3 origin = transform.position + Vector3.up * (groundCheckRadius + 0.01f);
-        
+        float feetY = transform.position.y + controller.center.y - controller.height * 0.5f;
+        Vector3 origin = new Vector3(
+            transform.position.x,
+            feetY + groundCheckRadius + 0.01f,
+            transform.position.z);
+
         bool sphereHit = Physics.SphereCast(
             origin,
             groundCheckRadius,
@@ -180,16 +184,19 @@ public class MovementController : MonoBehaviour
             groundLayers,
             QueryTriggerInteraction.Ignore
         );
-        isGrounded = sphereHit || (controller != null && controller.isGrounded);
-        
-        if (isGrounded)
+        bool ccGrounded = controller != null && controller.isGrounded;
+        isGrounded = sphereHit || ccGrounded;
+
+        // Only trust sphere normal when the cast hit — otherwise an empty hit would read as a steep slope.
+        if (isGrounded && sphereHit && config != null)
         {
             groundAngle = Vector3.Angle(groundHit.normal, Vector3.up);
-            
             if (groundAngle > config.maxSlopeAngle)
-            {
                 isGrounded = false;
-            }
+        }
+        else if (isGrounded)
+        {
+            groundAngle = 0f;
         }
         
         // Track grounded time for coyote time

@@ -98,12 +98,12 @@ public static class TestRangePlayerSetup
         var cameraHolder = player.transform.Find("CameraHolder");
         var mainCam = player.transform.Find("CameraHolder/MainCamera");
         var movement = player.GetComponent<MovementController>();
-        if (movement != null && cameraHolder != null)
+        if (movement != null)
         {
             var mSo = new SerializedObject(movement);
             var camProp = mSo.FindProperty("cameraTransform");
             if (camProp != null)
-                camProp.objectReferenceValue = cameraHolder;
+                camProp.objectReferenceValue = mainCam != null ? mainCam : cameraHolder;
             mSo.ApplyModifiedPropertiesWithoutUndo();
         }
 

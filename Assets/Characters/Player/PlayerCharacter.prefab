@@ -2714,7 +2714,7 @@ MonoBehaviour:
   velocity: {x: 0, y: 0, z: 0}
   currentSpeed: 0
   isGrounded: 0
-  groundCheckDistance: 0.2
+  groundCheckDistance: 0.35
   groundCheckRadius: 0.3
   groundLayers:
     serializedVersion: 2

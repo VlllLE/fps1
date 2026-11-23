@@ -403,4 +403,145 @@ public class TestRangeSmokeTests
         Assert.AreEqual(MovementController.MovementState.Sliding, movement.CurrentState,
             "Sprint + forward + crouch should enter slide when fast enough");
     }
+
+    [UnityTest]
+    public IEnumerator Player_Grounded_WhenCharacterControllerGrounded()
+    {
+        yield return SettlePlayerOnGround();
+        if (!characterController.isGrounded)
+            Assert.Inconclusive("CharacterController did not reach ground in test scene");
+
+        Assert.IsTrue(movement.IsGrounded,
+            "MovementController should report grounded when CharacterController is grounded");
+    }
+
+    [UnityTest]
+    public IEnumerator Player_SlideCancel_JumpWhileSliding_BoostsAirborne()
+    {
+        yield return SettlePlayerOnGround();
+        Assert.IsTrue(movement.IsGrounded);
+
+        movement.SetVelocity(player.transform.forward * 7f);
+        yield return null;
+
+        inputHandler.SetTestInputLocked(true);
+        inputHandler.SetMoveInput(new Vector2(0f, 1f));
+        inputHandler.SimulateSprintHeld(true);
+        for (int i = 0; i < 15; i++)
+            yield return null;
+
+        inputHandler.SimulateCrouchPress();
+        inputHandler.SetCrouchHeld(true);
+        for (int i = 0; i < 8; i++)
+            yield return null;
+        Assert.AreEqual(MovementController.MovementState.Sliding, movement.CurrentState);
+
+        inputHandler.SimulateJumpPress();
+        for (int i = 0; i < 5; i++)
+            yield return null;
+        inputHandler.SetTestInputLocked(false);
+
+        Assert.AreEqual(MovementController.MovementState.Airborne, movement.CurrentState);
+        Assert.Greater(movement.Velocity.y, 0f, "Slide cancel should launch player upward");
+    }
+
+    [UnityTest]
+    public IEnumerator Player_Bhop_ChainJump_RetainsSpeed()
+    {
+        yield return SettlePlayerOnGround();
+        Assert.IsTrue(movement.IsGrounded);
+
+        inputHandler.SetTestInputLocked(true);
+        inputHandler.SetMoveInput(new Vector2(0f, 1f));
+        inputHandler.SimulateSprintHeld(true);
+        for (int i = 0; i < 25; i++)
+            yield return null;
+
+        float speedBeforeJump = movement.CurrentSpeed;
+        inputHandler.SimulateJumpPress();
+        for (int i = 0; i < 15; i++)
+            yield return null;
+
+        Assert.AreEqual(MovementController.MovementState.Airborne, movement.CurrentState);
+
+        inputHandler.SetJumpHeld(true);
+        for (int i = 0; i < 30; i++)
+        {
+            if (movement.IsGrounded)
+            {
+                inputHandler.SimulateJumpPress();
+                for (int j = 0; j < 5; j++)
+                    yield return null;
+                break;
+            }
+            yield return null;
+        }
+        inputHandler.SetTestInputLocked(false);
+
+        Assert.AreEqual(MovementController.MovementState.Airborne, movement.CurrentState,
+            "Buffered jump on landing should chain a bhop");
+        Assert.GreaterOrEqual(movement.CurrentSpeed, speedBeforeJump * 0.5f,
+            "Bhop should preserve meaningful horizontal speed");
+    }
+
+    [UnityTest]
+    public IEnumerator Player_Dive_SprintForward_EntersDiving()
+    {
+        yield return SettlePlayerOnGround();
+        Assert.IsTrue(movement.IsGrounded);
+
+        inputHandler.SetTestInputLocked(true);
+        inputHandler.SetMoveInput(new Vector2(0f, 1f));
+        inputHandler.SimulateSprintHeld(true);
+        for (int i = 0; i < 30; i++)
+            yield return null;
+
+        Assert.GreaterOrEqual(movement.CurrentSpeed, 5f, "Need sprint speed before dive");
+        inputHandler.SimulateDivePress();
+        for (int i = 0; i < 5; i++)
+            yield return null;
+        inputHandler.SetTestInputLocked(false);
+
+        Assert.AreEqual(MovementController.MovementState.Diving, movement.CurrentState,
+            "Sprint forward + V should dolphin dive");
+    }
+
+    [UnityTest]
+    public IEnumerator Player_WallBounce_HighSpeedNearWall_ChangesVelocity()
+    {
+        yield return SettlePlayerOnGround();
+        var wall = GameObject.Find("Wall_Right") ?? GameObject.Find("Wall_Left");
+        Assert.IsNotNull(wall, "Need a wall in TestRange for wall bounce test");
+
+        Vector3 toWall = (wall.transform.position - player.transform.position);
+        toWall.y = 0f;
+        toWall.Normalize();
+        Vector3 nearWall = wall.transform.position - toWall * 1.1f;
+        nearWall.y = player.transform.position.y;
+        player.transform.SetPositionAndRotation(nearWall, Quaternion.LookRotation(toWall));
+        movement.SetVelocity(toWall * 8f);
+        yield return null;
+        yield return new WaitForSeconds(0.05f);
+
+        Assert.AreEqual(MovementController.MovementState.Airborne, movement.CurrentState);
+
+        inputHandler.SetTestInputLocked(true);
+        inputHandler.SimulateJumpPress();
+        for (int i = 0; i < 8; i++)
+            yield return null;
+        inputHandler.SetTestInputLocked(false);
+
+        float awayDot = Vector3.Dot(new Vector3(movement.Velocity.x, 0f, movement.Velocity.z).normalized, toWall);
+        Assert.Less(awayDot, 0.2f, "Wall bounce jump should redirect away from the wall");
+    }
+
+    private IEnumerator SettlePlayerOnGround()
+    {
+        for (int i = 0; i < 45; i++)
+        {
+            if (!characterController.isGrounded)
+                characterController.Move(Vector3.down * 0.2f);
+            yield return null;
+        }
+    }
 }

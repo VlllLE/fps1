@@ -125,7 +125,8 @@ public class InputHandler : MonoBehaviour
             CrouchReleased = wasCrouchHeld && !CrouchHeld;
             pendingCrouchPress = false;
             
-            DivePressed = Input.GetKeyDown(diveKey);
+            DivePressed = Input.GetKeyDown(diveKey) || pendingDivePress;
+            pendingDivePress = false;
         }
         else
         {
@@ -140,13 +141,15 @@ public class InputHandler : MonoBehaviour
             pendingCrouchPress = false;
             
             SprintPressed = false;
-            DivePressed = false;
+            DivePressed = pendingDivePress;
+            pendingDivePress = false;
         }
     }
     
     // PlayMode tests / automation
     private bool pendingJumpPress;
     private bool pendingCrouchPress;
+    private bool pendingDivePress;
     
     public void SimulateJumpPress()
     {
@@ -158,6 +161,11 @@ public class InputHandler : MonoBehaviour
     {
         pendingCrouchPress = true;
         CrouchHeld = true;
+    }
+
+    public void SimulateDivePress()
+    {
+        pendingDivePress = true;
     }
     
     public void SimulateSprintHeld(bool held)

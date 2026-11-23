@@ -48,7 +48,7 @@ MonoBehaviour:
   wallCheckDistance: 0.6
   wallLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 4294967295
   minWallAngle: 70
   enableWallBounce: 1
   wallBounceForce: 10

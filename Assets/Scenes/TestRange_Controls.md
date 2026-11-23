@@ -23,7 +23,20 @@
 | Last weapon | Q |
 | Cycle camo/skin | `[` / `]` (active view model) |
 
-Slide: sprint forward, then tap crouch while at speed. Jump while sliding cancels slide with boost.
+### Movement tech (CoD / Apex-style)
+
+| Tech | Keys | How it works |
+|------|------|----------------|
+| **Slide** | **Shift + W**, then tap **C** / **Ctrl** while at sprint speed (≥ ~4 m/s) | Crouch on a fast sprint to enter slide. |
+| **Slide cancel** | While sliding, press **Space** | Jump to cancel slide with a horizontal boost. |
+| **Bunny hop** | Hold **Space** through landings or tap **Space** within ~0.15s of landing | Chains hops and keeps speed on flat ground. |
+| **Dolphin dive** | **Shift + W** until sprinting, then **V** | Forward dive while sprinting (or out of a sprint jump). Cooldown ~1.2s. |
+| **Air strafe** | **A** / **D** in the air while moving | Hold strafe; speed gains come from `MovementConfig` air control. |
+| **Wall bounce** | Jump toward **Ramp_A / B** or **Wall_*** while moving **≥ ~6 m/s** airborne | **Space** near a wall to bounce off; walls need a collider on Default layer. |
+
+Stance: hold **C** / **Ctrl** on the ground to crouch (slower walk, lower capsule). **Space** jumps when grounded; release slide by letting go of crouch or timing out.
+
+If jumps or slides never register but WASD works, run **Tools → Sync Test Range Player** after pulling updates (ground check + camera refs).
 
 ### Class loadouts (default on Play: **Assault**)
 
