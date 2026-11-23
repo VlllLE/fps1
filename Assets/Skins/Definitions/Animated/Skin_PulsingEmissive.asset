@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40c3bfe530754bafb16d4ffde8f0ed62, type: 3}
+  m_Name: Skin_PulsingEmissive
+  m_EditorClassIdentifier: 
+  skinName: Pulsing Emissive
+  description: Cell-driven emissive pulse across the weapon body.
+  rarity: 3
+  icon: {fileID: 0}
+  material: {fileID: 2100000, guid: cb61610c5c7644fa8030ddacd86b8639, type: 2}
+  applyParameterOverrides: 1
+  skinColor: {r: 0.08, g: 0.08, b: 0.1, a: 1}
+  accentColor: {r: 0.35, g: 0.75, b: 1.0, a: 1}
+  speed: 1.25
+  intensity: 2.5
+  scale: 1.0
