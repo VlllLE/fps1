@@ -4,6 +4,7 @@ using UnityEngine;
 /// Wrapper for Unity's legacy Input Manager. Provides clean access to all movement inputs.
 /// Attach to the same GameObject as MovementController, or use as a singleton.
 /// </summary>
+[DefaultExecutionOrder(-200)]
 public class InputHandler : MonoBehaviour
 {
     #region Singleton (Optional)
@@ -83,51 +84,99 @@ public class InputHandler : MonoBehaviour
         UpdateInputStates();
     }
     
-    private void LateUpdate()
-    {
-        ClearFrameInputs();
-    }
-    
     #endregion
 
     #region Input Update
     
+    private bool testInputLocked;
+    
     private void UpdateInputStates()
     {
-        MoveInput = new Vector2(
-            Input.GetAxisRaw(horizontalAxis),
-            Input.GetAxisRaw(verticalAxis)
-        );
-        
         LookInput = new Vector2(
             Input.GetAxis(mouseXAxis) * mouseSensitivity,
             Input.GetAxis(mouseYAxis) * mouseSensitivity
         );
         
-        bool wasJumpHeld = JumpHeld;
-        JumpHeld = Input.GetKey(jumpKey);
-        JumpPressed = Input.GetKeyDown(jumpKey);
-        JumpReleased = wasJumpHeld && !JumpHeld;
-        
-        SprintHeld = Input.GetKey(sprintKey);
-        SprintPressed = Input.GetKeyDown(sprintKey);
-        
-        bool wasCrouchHeld = CrouchHeld;
-        CrouchHeld = Input.GetKey(crouchKey) || Input.GetKey(crouchKeyAlt);
-        CrouchPressed = Input.GetKeyDown(crouchKey) || Input.GetKeyDown(crouchKeyAlt);
-        CrouchReleased = wasCrouchHeld && !CrouchHeld;
-        
-        DivePressed = Input.GetKeyDown(diveKey);
+        if (!testInputLocked)
+        {
+            MoveInput = new Vector2(
+                Input.GetAxisRaw(horizontalAxis),
+                Input.GetAxisRaw(verticalAxis)
+            );
+            
+            bool wasJumpHeld = JumpHeld;
+            JumpHeld = Input.GetKey(jumpKey);
+            JumpPressed = Input.GetKeyDown(jumpKey) || pendingJumpPress;
+            JumpReleased = wasJumpHeld && !JumpHeld;
+            pendingJumpPress = false;
+            
+            SprintHeld = Input.GetKey(sprintKey);
+            SprintPressed = Input.GetKeyDown(sprintKey);
+            
+            bool wasCrouchHeld = CrouchHeld;
+            CrouchHeld = Input.GetKey(crouchKey) || Input.GetKey(crouchKeyAlt);
+            CrouchPressed = Input.GetKeyDown(crouchKey) || Input.GetKeyDown(crouchKeyAlt) || pendingCrouchPress;
+            CrouchReleased = wasCrouchHeld && !CrouchHeld;
+            pendingCrouchPress = false;
+            
+            DivePressed = Input.GetKeyDown(diveKey);
+        }
+        else
+        {
+            bool wasJumpHeld = JumpHeld;
+            JumpPressed = pendingJumpPress;
+            JumpReleased = wasJumpHeld && !JumpHeld;
+            pendingJumpPress = false;
+            
+            bool wasCrouchHeld = CrouchHeld;
+            CrouchPressed = pendingCrouchPress;
+            CrouchReleased = wasCrouchHeld && !CrouchHeld;
+            pendingCrouchPress = false;
+            
+            SprintPressed = false;
+            DivePressed = false;
+        }
     }
     
-    private void ClearFrameInputs()
+    // PlayMode tests / automation
+    private bool pendingJumpPress;
+    private bool pendingCrouchPress;
+    
+    public void SimulateJumpPress()
     {
-        JumpPressed = false;
-        JumpReleased = false;
-        SprintPressed = false;
-        CrouchPressed = false;
-        CrouchReleased = false;
-        DivePressed = false;
+        pendingJumpPress = true;
+        JumpHeld = true;
+    }
+    
+    public void SimulateCrouchPress()
+    {
+        pendingCrouchPress = true;
+        CrouchHeld = true;
+    }
+    
+    public void SimulateSprintHeld(bool held)
+    {
+        SprintHeld = held;
+    }
+    
+    public void SetMoveInput(Vector2 move)
+    {
+        MoveInput = move;
+    }
+    
+    public void SetCrouchHeld(bool held)
+    {
+        CrouchHeld = held;
+    }
+    
+    public void SetJumpHeld(bool held)
+    {
+        JumpHeld = held;
+    }
+    
+    public void SetTestInputLocked(bool locked)
+    {
+        testInputLocked = locked;
     }
     
     #endregion

@@ -10,6 +10,7 @@ public class TestRangeBuilder : MonoBehaviour
     {
         CreateDirectories();
         CreateConfigs();
+        TestRangeVisuals.EnsureAssets();
         CreateScene();
         CreatePlayerPrefab();
         AddSceneToBuildSettings();
@@ -134,11 +135,14 @@ public class TestRangeBuilder : MonoBehaviour
         if (defaultCam != null)
             Object.DestroyImmediate(defaultCam);
         
+        TestRangeVisuals.ApplyScenePresentation();
+        
         CreateGround();
         CreateWalls();
         CreateRamps();
         CreateTargets();
         CreateSpawnPoint();
+        TestRangeVisuals.CreateProps();
     }
     
     private static void CreateGround()
@@ -149,9 +153,7 @@ public class TestRangeBuilder : MonoBehaviour
         ground.transform.localScale = new Vector3(50, 1, 50);
         ground.isStatic = true;
         
-        var renderer = ground.GetComponent<Renderer>();
-        renderer.sharedMaterial = new Material(Shader.Find("Standard"));
-        renderer.sharedMaterial.color = new Color(0.3f, 0.3f, 0.3f);
+        TestRangeVisuals.ApplyMaterial(ground.GetComponent<Renderer>(), TestRangeVisuals.Ground);
     }
     
     private static void CreateWalls()
@@ -171,9 +173,7 @@ public class TestRangeBuilder : MonoBehaviour
         wall.transform.localScale = scale;
         wall.isStatic = true;
         
-        var renderer = wall.GetComponent<Renderer>();
-        renderer.sharedMaterial = new Material(Shader.Find("Standard"));
-        renderer.sharedMaterial.color = new Color(0.5f, 0.5f, 0.6f);
+        TestRangeVisuals.ApplyMaterial(wall.GetComponent<Renderer>(), TestRangeVisuals.Wall);
     }
     
     private static void CreateRamps()
@@ -192,9 +192,7 @@ public class TestRangeBuilder : MonoBehaviour
         ramp.transform.rotation = Quaternion.Euler(angle, 0, 0);
         ramp.isStatic = true;
         
-        var renderer = ramp.GetComponent<Renderer>();
-        renderer.sharedMaterial = new Material(Shader.Find("Standard"));
-        renderer.sharedMaterial.color = new Color(0.4f, 0.35f, 0.3f);
+        TestRangeVisuals.ApplyMaterial(ramp.GetComponent<Renderer>(), TestRangeVisuals.Ramp);
     }
     
     private static void CreateTargets()
@@ -222,8 +220,9 @@ public class TestRangeBuilder : MonoBehaviour
         bodyZone.Configure(HitZoneType.Body);
         
         var bodyRenderer = body.GetComponent<Renderer>();
-        bodyRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
-        bodyRenderer.sharedMaterial.color = color;
+        var bodyMat = new Material(TestRangeVisuals.TargetBodyMaterial);
+        bodyMat.color = color;
+        bodyRenderer.sharedMaterial = bodyMat;
         
         var head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         head.name = "Head";
@@ -234,9 +233,7 @@ public class TestRangeBuilder : MonoBehaviour
         var headZone = head.AddComponent<HitZone>();
         headZone.Configure(HitZoneType.Head);
         
-        var headRenderer = head.GetComponent<Renderer>();
-        headRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
-        headRenderer.sharedMaterial.color = Color.white;
+        TestRangeVisuals.ApplyMaterial(head.GetComponent<Renderer>(), TestRangeVisuals.TargetHeadMaterial);
         
         target.AddComponent<Target>();
     }

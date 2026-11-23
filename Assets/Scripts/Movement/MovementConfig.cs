@@ -79,6 +79,13 @@ public class MovementConfig : ScriptableObject
     [Tooltip("Height of collider while sliding")]
     public float slideHeight = 0.6f;
     
+    [Tooltip("Height of collider while standing crouch (not sliding)")]
+    public float crouchHeight = 1.2f;
+    
+    [Tooltip("Speed multiplier when holding crouch on ground")]
+    [Range(0.2f, 1f)]
+    public float crouchSpeedMultiplier = 0.55f;
+    
     [Tooltip("Cooldown before next slide")]
     public float slideCooldown = 0.3f;
     

@@ -6,6 +6,7 @@ using UnityEngine;
 /// Requires: CharacterController, InputHandler, MovementConfig
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
+[DefaultExecutionOrder(-100)]
 public class MovementController : MonoBehaviour
 {
     #region Components & References
@@ -158,7 +159,7 @@ public class MovementController : MonoBehaviour
     {
         Vector3 origin = transform.position + Vector3.up * (groundCheckRadius + 0.01f);
         
-        isGrounded = Physics.SphereCast(
+        bool sphereHit = Physics.SphereCast(
             origin,
             groundCheckRadius,
             Vector3.down,
@@ -167,6 +168,7 @@ public class MovementController : MonoBehaviour
             groundLayers,
             QueryTriggerInteraction.Ignore
         );
+        isGrounded = sphereHit || (controller != null && controller.isGrounded);
         
         if (isGrounded)
         {
@@ -285,19 +287,28 @@ public class MovementController : MonoBehaviour
     
     private void HandleCrouchInput()
     {
-        if (currentState == MovementState.Sprinting || 
-            (currentState == MovementState.Walking && currentSpeed >= config.minSlideSpeed))
+        bool wantsSlide = currentState == MovementState.Sprinting
+            || (currentState == MovementState.Walking && currentSpeed >= config.minSlideSpeed);
+        
+        if (wantsSlide && CanSlide())
         {
-            if (CanSlide())
-            {
-                StartSlide();
-            }
-            else if (currentState == MovementState.Airborne)
-            {
-                // Queue slide for landing
-                isSlideQueued = true;
-            }
+            StartSlide();
+            return;
         }
+        
+        if (!isGrounded && currentState == MovementState.Airborne && input.SprintHeld)
+        {
+            isSlideQueued = true;
+        }
+    }
+    
+    private bool IsStandingCrouch()
+    {
+        return input.CrouchHeld
+            && isGrounded
+            && currentState != MovementState.Sliding
+            && currentState != MovementState.Diving
+            && currentState != MovementState.DiveRecovery;
     }
     
     private void HandleDiveInput()
@@ -371,6 +382,9 @@ public class MovementController : MonoBehaviour
             ? config.walkSpeed * config.sprintMultiplier 
             : config.walkSpeed;
         
+        if (IsStandingCrouch())
+            targetSpeed *= config.crouchSpeedMultiplier;
+        
         Vector3 targetVelocity = wishDir * targetSpeed;
         
         // Apply ground acceleration with friction
@@ -436,7 +450,8 @@ public class MovementController : MonoBehaviour
     
     private void UpdateAirborneState()
     {
-        if (isGrounded)
+        // Stay airborne while leaving the ground (ground check can lag one frame after jump impulse).
+        if (isGrounded && velocity.y <= 0.05f)
         {
             currentState = MovementState.Walking;
             return;
@@ -985,6 +1000,11 @@ public class MovementController : MonoBehaviour
         {
             targetHeight = config.slideHeight;
             targetCenter = new Vector3(0f, config.slideHeight * 0.5f, 0f);
+        }
+        else if (IsStandingCrouch())
+        {
+            targetHeight = config.crouchHeight;
+            targetCenter = new Vector3(0f, config.crouchHeight * 0.5f, 0f);
         }
         
         // Smooth height transitions

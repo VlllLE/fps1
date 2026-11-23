@@ -1,103 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
-<test-run id="2" testcasecount="13" result="Passed" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-23 15:34:37Z" end-time="2026-11-23 15:34:43Z" duration="6.6876617">
-  <test-suite type="TestSuite" id="1017" name="CoD-Movement-Shooter" fullname="CoD-Movement-Shooter" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-11-23 15:34:37Z" end-time="2026-11-23 15:34:43Z" duration="6.687662" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+<test-run id="2" testcasecount="16" result="Passed" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-23 16:21:30Z" end-time="2026-11-23 16:21:39Z" duration="8.4694237">
+  <test-suite type="TestSuite" id="1020" name="CoD-Movement-Shooter" fullname="CoD-Movement-Shooter" runstate="Runnable" testcasecount="16" result="Passed" start-time="2026-11-23 16:21:30Z" end-time="2026-11-23 16:21:39Z" duration="8.469424" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
     <properties>
       <property name="platform" value="PlayMode" />
     </properties>
-    <test-suite type="Assembly" id="1015" name="PlayModeTests.dll" fullname="C:/Users/Oldst/OneDrive/Desktop/CoD-Movement-Shooter/Library/ScriptAssemblies/PlayModeTests.dll" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-11-23 15:34:37Z" end-time="2026-11-23 15:34:43Z" duration="6.679561" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <test-suite type="Assembly" id="1018" name="PlayModeTests.dll" fullname="C:/Users/Oldst/OneDrive/Desktop/CoD-Movement-Shooter/Library/ScriptAssemblies/PlayModeTests.dll" runstate="Runnable" testcasecount="16" result="Passed" start-time="2026-11-23 16:21:30Z" end-time="2026-11-23 16:21:39Z" duration="8.458506" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
       <properties>
-        <property name="_PID" value="49720" />
+        <property name="_PID" value="28924" />
         <property name="_APPDOMAIN" value="Unity Child Domain" />
         <property name="platform" value="PlayMode" />
         <property name="EditorOnly" value="False" />
       </properties>
-      <test-suite type="TestFixture" id="1001" name="TestRangeSmokeTests" fullname="TestRangeSmokeTests" classname="TestRangeSmokeTests" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-11-23 15:34:37Z" end-time="2026-11-23 15:34:43Z" duration="6.677877" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <test-suite type="TestFixture" id="1001" name="TestRangeSmokeTests" fullname="TestRangeSmokeTests" classname="TestRangeSmokeTests" runstate="Runnable" testcasecount="16" result="Passed" start-time="2026-11-23 16:21:30Z" end-time="2026-11-23 16:21:39Z" duration="8.456672" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
         <properties />
-        <test-case id="1010" name="Ground_Exists_AndIsCollidable" fullname="TestRangeSmokeTests.Ground_Exists_AndIsCollidable" methodname="Ground_Exists_AndIsCollidable" classname="TestRangeSmokeTests" runstate="Runnable" seed="781063612" result="Passed" start-time="2026-11-23 15:34:37Z" end-time="2026-11-23 15:34:37Z" duration="0.587149" asserts="0">
+        <test-case id="1010" name="Ground_Exists_AndIsCollidable" fullname="TestRangeSmokeTests.Ground_Exists_AndIsCollidable" methodname="Ground_Exists_AndIsCollidable" classname="TestRangeSmokeTests" runstate="Runnable" seed="729774965" result="Passed" start-time="2026-11-23 16:21:30Z" end-time="2026-11-23 16:21:31Z" duration="0.778165" asserts="0">
           <properties>
             <property name="_JOINTYPE" value="UnityCombinatorial" />
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1009" name="Hitscan_FromPlayerToTarget_RegistersHit" fullname="TestRangeSmokeTests.Hitscan_FromPlayerToTarget_RegistersHit" methodname="Hitscan_FromPlayerToTarget_RegistersHit" classname="TestRangeSmokeTests" runstate="Runnable" seed="1799593650" result="Passed" start-time="2026-11-23 15:34:37Z" end-time="2026-11-23 15:34:38Z" duration="0.502546" asserts="0">
+        <test-case id="1009" name="Hitscan_FromPlayerToTarget_RegistersHit" fullname="TestRangeSmokeTests.Hitscan_FromPlayerToTarget_RegistersHit" methodname="Hitscan_FromPlayerToTarget_RegistersHit" classname="TestRangeSmokeTests" runstate="Runnable" seed="1845043138" result="Passed" start-time="2026-11-23 16:21:31Z" end-time="2026-11-23 16:21:32Z" duration="0.512749" asserts="0">
           <properties>
             <property name="_JOINTYPE" value="UnityCombinatorial" />
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1014" name="MovementConfig_IsAssigned" fullname="TestRangeSmokeTests.MovementConfig_IsAssigned" methodname="MovementConfig_IsAssigned" classname="TestRangeSmokeTests" runstate="Runnable" seed="807678201" result="Passed" start-time="2026-11-23 15:34:38Z" end-time="2026-11-23 15:34:38Z" duration="0.496383" asserts="0">
+        <test-case id="1014" name="MovementConfig_IsAssigned" fullname="TestRangeSmokeTests.MovementConfig_IsAssigned" methodname="MovementConfig_IsAssigned" classname="TestRangeSmokeTests" runstate="Runnable" seed="1916558813" result="Passed" start-time="2026-11-23 16:21:32Z" end-time="2026-11-23 16:21:32Z" duration="0.499440" asserts="0">
           <properties>
             <property name="_JOINTYPE" value="UnityCombinatorial" />
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1005" name="Player_HasCamera_WithCorrectSetup" fullname="TestRangeSmokeTests.Player_HasCamera_WithCorrectSetup" methodname="Player_HasCamera_WithCorrectSetup" classname="TestRangeSmokeTests" runstate="Runnable" seed="1293928545" result="Passed" start-time="2026-11-23 15:34:38Z" end-time="2026-11-23 15:34:39Z" duration="0.499194" asserts="0">
+        <test-case id="1016" name="Player_Crouch_SimulatedInput_ReducesColliderHeight" fullname="TestRangeSmokeTests.Player_Crouch_SimulatedInput_ReducesColliderHeight" methodname="Player_Crouch_SimulatedInput_ReducesColliderHeight" classname="TestRangeSmokeTests" runstate="Runnable" seed="1691148343" result="Passed" start-time="2026-11-23 16:21:32Z" end-time="2026-11-23 16:21:33Z" duration="0.506064" asserts="0">
           <properties>
             <property name="_JOINTYPE" value="UnityCombinatorial" />
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1004" name="Player_MovesWhenCharacterControllerDriven" fullname="TestRangeSmokeTests.Player_MovesWhenCharacterControllerDriven" methodname="Player_MovesWhenCharacterControllerDriven" classname="TestRangeSmokeTests" runstate="Runnable" seed="851340368" result="Passed" start-time="2026-11-23 15:34:39Z" end-time="2026-11-23 15:34:39Z" duration="0.596304" asserts="0">
+        <test-case id="1005" name="Player_HasCamera_WithCorrectSetup" fullname="TestRangeSmokeTests.Player_HasCamera_WithCorrectSetup" methodname="Player_HasCamera_WithCorrectSetup" classname="TestRangeSmokeTests" runstate="Runnable" seed="2124530300" result="Passed" start-time="2026-11-23 16:21:33Z" end-time="2026-11-23 16:21:33Z" duration="0.502356" asserts="0">
           <properties>
             <property name="_JOINTYPE" value="UnityCombinatorial" />
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1002" name="Player_SpawnsAndExists" fullname="TestRangeSmokeTests.Player_SpawnsAndExists" methodname="Player_SpawnsAndExists" classname="TestRangeSmokeTests" runstate="Runnable" seed="1113506149" result="Passed" start-time="2026-11-23 15:34:39Z" end-time="2026-11-23 15:34:40Z" duration="0.497029" asserts="0">
+        <test-case id="1015" name="Player_Jump_SimulatedInput_LeavesGround" fullname="TestRangeSmokeTests.Player_Jump_SimulatedInput_LeavesGround" methodname="Player_Jump_SimulatedInput_LeavesGround" classname="TestRangeSmokeTests" runstate="Runnable" seed="746924620" result="Passed" start-time="2026-11-23 16:21:33Z" end-time="2026-11-23 16:21:34Z" duration="0.513993" asserts="0">
           <properties>
             <property name="_JOINTYPE" value="UnityCombinatorial" />
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1003" name="Player_StandsOnGround_AfterSpawn" fullname="TestRangeSmokeTests.Player_StandsOnGround_AfterSpawn" methodname="Player_StandsOnGround_AfterSpawn" classname="TestRangeSmokeTests" runstate="Runnable" seed="1057126185" result="Passed" start-time="2026-11-23 15:34:40Z" end-time="2026-11-23 15:34:40Z" duration="0.500133" asserts="0">
+        <test-case id="1004" name="Player_MovesWhenCharacterControllerDriven" fullname="TestRangeSmokeTests.Player_MovesWhenCharacterControllerDriven" methodname="Player_MovesWhenCharacterControllerDriven" classname="TestRangeSmokeTests" runstate="Runnable" seed="1596715802" result="Passed" start-time="2026-11-23 16:21:34Z" end-time="2026-11-23 16:21:34Z" duration="0.603733" asserts="0">
           <properties>
             <property name="_JOINTYPE" value="UnityCombinatorial" />
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1012" name="Ramps_ExistForSlides" fullname="TestRangeSmokeTests.Ramps_ExistForSlides" methodname="Ramps_ExistForSlides" classname="TestRangeSmokeTests" runstate="Runnable" seed="217094921" result="Passed" start-time="2026-11-23 15:34:40Z" end-time="2026-11-23 15:34:41Z" duration="0.496801" asserts="0">
+        <test-case id="1017" name="Player_Slide_SimulatedSprintAndCrouch_EntersSlideState" fullname="TestRangeSmokeTests.Player_Slide_SimulatedSprintAndCrouch_EntersSlideState" methodname="Player_Slide_SimulatedSprintAndCrouch_EntersSlideState" classname="TestRangeSmokeTests" runstate="Runnable" seed="1558542812" result="Passed" start-time="2026-11-23 16:21:34Z" end-time="2026-11-23 16:21:35Z" duration="0.507272" asserts="0">
           <properties>
             <property name="_JOINTYPE" value="UnityCombinatorial" />
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1008" name="Target_Dies_WhenHealthDepleted" fullname="TestRangeSmokeTests.Target_Dies_WhenHealthDepleted" methodname="Target_Dies_WhenHealthDepleted" classname="TestRangeSmokeTests" runstate="Runnable" seed="1269525802" result="Passed" start-time="2026-11-23 15:34:41Z" end-time="2026-11-23 15:34:41Z" duration="0.497036" asserts="0">
+        <test-case id="1002" name="Player_SpawnsAndExists" fullname="TestRangeSmokeTests.Player_SpawnsAndExists" methodname="Player_SpawnsAndExists" classname="TestRangeSmokeTests" runstate="Runnable" seed="1585866980" result="Passed" start-time="2026-11-23 16:21:35Z" end-time="2026-11-23 16:21:35Z" duration="0.499232" asserts="0">
           <properties>
             <property name="_JOINTYPE" value="UnityCombinatorial" />
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1006" name="Target_ExistsAndHasComponents" fullname="TestRangeSmokeTests.Target_ExistsAndHasComponents" methodname="Target_ExistsAndHasComponents" classname="TestRangeSmokeTests" runstate="Runnable" seed="838719115" result="Passed" start-time="2026-11-23 15:34:41Z" end-time="2026-11-23 15:34:42Z" duration="0.497888" asserts="0">
+        <test-case id="1003" name="Player_StandsOnGround_AfterSpawn" fullname="TestRangeSmokeTests.Player_StandsOnGround_AfterSpawn" methodname="Player_StandsOnGround_AfterSpawn" classname="TestRangeSmokeTests" runstate="Runnable" seed="2027920404" result="Passed" start-time="2026-11-23 16:21:35Z" end-time="2026-11-23 16:21:36Z" duration="0.506399" asserts="0">
           <properties>
             <property name="_JOINTYPE" value="UnityCombinatorial" />
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1007" name="Target_TakesDamage_WhenHit" fullname="TestRangeSmokeTests.Target_TakesDamage_WhenHit" methodname="Target_TakesDamage_WhenHit" classname="TestRangeSmokeTests" runstate="Runnable" seed="1462255610" result="Passed" start-time="2026-11-23 15:34:42Z" end-time="2026-11-23 15:34:42Z" duration="0.497444" asserts="0">
+        <test-case id="1012" name="Ramps_ExistForSlides" fullname="TestRangeSmokeTests.Ramps_ExistForSlides" methodname="Ramps_ExistForSlides" classname="TestRangeSmokeTests" runstate="Runnable" seed="2017536783" result="Passed" start-time="2026-11-23 16:21:36Z" end-time="2026-11-23 16:21:36Z" duration="0.503139" asserts="0">
           <properties>
             <property name="_JOINTYPE" value="UnityCombinatorial" />
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1011" name="Walls_ExistForWallBounces" fullname="TestRangeSmokeTests.Walls_ExistForWallBounces" methodname="Walls_ExistForWallBounces" classname="TestRangeSmokeTests" runstate="Runnable" seed="435290881" result="Passed" start-time="2026-11-23 15:34:42Z" end-time="2026-11-23 15:34:43Z" duration="0.497812" asserts="0">
+        <test-case id="1008" name="Target_Dies_WhenHealthDepleted" fullname="TestRangeSmokeTests.Target_Dies_WhenHealthDepleted" methodname="Target_Dies_WhenHealthDepleted" classname="TestRangeSmokeTests" runstate="Runnable" seed="1408469111" result="Passed" start-time="2026-11-23 16:21:36Z" end-time="2026-11-23 16:21:37Z" duration="0.503393" asserts="0">
           <properties>
             <property name="_JOINTYPE" value="UnityCombinatorial" />
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1013" name="WeaponController_ExistsOnPlayer" fullname="TestRangeSmokeTests.WeaponController_ExistsOnPlayer" methodname="WeaponController_ExistsOnPlayer" classname="TestRangeSmokeTests" runstate="Runnable" seed="2032074791" result="Passed" start-time="2026-11-23 15:34:43Z" end-time="2026-11-23 15:34:43Z" duration="0.497706" asserts="0">
+        <test-case id="1006" name="Target_ExistsAndHasComponents" fullname="TestRangeSmokeTests.Target_ExistsAndHasComponents" methodname="Target_ExistsAndHasComponents" classname="TestRangeSmokeTests" runstate="Runnable" seed="373805158" result="Passed" start-time="2026-11-23 16:21:37Z" end-time="2026-11-23 16:21:37Z" duration="0.501359" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1007" name="Target_TakesDamage_WhenHit" fullname="TestRangeSmokeTests.Target_TakesDamage_WhenHit" methodname="Target_TakesDamage_WhenHit" classname="TestRangeSmokeTests" runstate="Runnable" seed="699459826" result="Passed" start-time="2026-11-23 16:21:37Z" end-time="2026-11-23 16:21:38Z" duration="0.503734" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1011" name="Walls_ExistForWallBounces" fullname="TestRangeSmokeTests.Walls_ExistForWallBounces" methodname="Walls_ExistForWallBounces" classname="TestRangeSmokeTests" runstate="Runnable" seed="2045640210" result="Passed" start-time="2026-11-23 16:21:38Z" end-time="2026-11-23 16:21:38Z" duration="0.499223" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1013" name="WeaponController_ExistsOnPlayer" fullname="TestRangeSmokeTests.WeaponController_ExistsOnPlayer" methodname="WeaponController_ExistsOnPlayer" classname="TestRangeSmokeTests" runstate="Runnable" seed="984881661" result="Passed" start-time="2026-11-23 16:21:38Z" end-time="2026-11-23 16:21:39Z" duration="0.499769" asserts="0">
           <properties>
             <property name="_JOINTYPE" value="UnityCombinatorial" />
             <property name="retryIteration" value="0" />

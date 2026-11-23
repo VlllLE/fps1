@@ -1,6 +1,9 @@
 ﻿<Solution>
+  <Project Path="UI.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Tests.csproj" />
   <Project Path="Scripts.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
-  <Project Path="Tests.csproj" />
+  <Project Path="UI.Editor.csproj" />
   <Project Path="PlayModeTests.csproj" />
 </Solution>

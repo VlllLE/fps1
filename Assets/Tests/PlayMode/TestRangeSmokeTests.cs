@@ -278,4 +278,86 @@ public class TestRangeSmokeTests
         Assert.IsNotNull(movement, "Movement controller should exist");
         yield return null;
     }
+    
+    [UnityTest]
+    public IEnumerator Player_Jump_SimulatedInput_LeavesGround()
+    {
+        Assert.IsNotNull(movement);
+        Assert.IsNotNull(inputHandler);
+        
+        float yBefore = player.transform.position.y;
+        
+        for (int i = 0; i < 60; i++)
+        {
+            if (!characterController.isGrounded)
+                characterController.Move(Vector3.down * 0.15f);
+            yield return null;
+        }
+        
+        Assert.IsTrue(movement.IsGrounded, "Player should be grounded before jump");
+        
+        inputHandler.SetTestInputLocked(true);
+        for (int i = 0; i < 8; i++)
+        {
+            if (movement.CurrentState == MovementController.MovementState.Airborne)
+                break;
+            inputHandler.SimulateJumpPress();
+            yield return null;
+        }
+        inputHandler.SetTestInputLocked(false);
+        
+        Assert.AreEqual(MovementController.MovementState.Airborne, movement.CurrentState,
+            $"Jump should enter airborne (grounded={movement.IsGrounded}, vy={movement.Velocity.y})");
+        Assert.Greater(movement.Velocity.y, 0f, "Jump should impart upward velocity");
+    }
+    
+    [UnityTest]
+    public IEnumerator Player_Crouch_SimulatedInput_ReducesColliderHeight()
+    {
+        Assert.IsNotNull(movement);
+        Assert.IsNotNull(inputHandler);
+        Assert.IsNotNull(characterController);
+        
+        Assert.IsTrue(movement.IsGrounded, "Player should be grounded before crouch");
+        float tallHeight = characterController.height;
+        
+        inputHandler.SetTestInputLocked(true);
+        inputHandler.SimulateCrouchPress();
+        inputHandler.SetCrouchHeld(true);
+        for (int i = 0; i < 45; i++)
+            yield return null;
+        inputHandler.SetTestInputLocked(false);
+        
+        Assert.Less(characterController.height, tallHeight - 0.05f,
+            "Standing crouch should lower CharacterController height");
+    }
+    
+    [UnityTest]
+    public IEnumerator Player_Slide_SimulatedSprintAndCrouch_EntersSlideState()
+    {
+        Assert.IsNotNull(movement);
+        Assert.IsNotNull(inputHandler);
+        
+        Assert.IsTrue(movement.IsGrounded, "Player should be grounded before slide");
+        movement.SetVelocity(player.transform.forward * 7f);
+        yield return null;
+        
+        inputHandler.SetTestInputLocked(true);
+        inputHandler.SetMoveInput(new Vector2(0f, 1f));
+        inputHandler.SimulateSprintHeld(true);
+        
+        for (int i = 0; i < 20; i++)
+            yield return null;
+        
+        inputHandler.SimulateCrouchPress();
+        inputHandler.SetCrouchHeld(true);
+        
+        for (int i = 0; i < 10; i++)
+            yield return null;
+        
+        inputHandler.SetTestInputLocked(false);
+        
+        Assert.AreEqual(MovementController.MovementState.Sliding, movement.CurrentState,
+            "Sprint + forward + crouch should enter slide when fast enough");
+    }
 }
