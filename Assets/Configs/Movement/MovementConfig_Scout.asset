@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51accd0cea2746540af6233dc119cb95, type: 3}
+  m_Name: MovementConfig_Scout
+  m_EditorClassIdentifier: Scripts::MovementConfig
+  walkSpeed: 7.2
+  sprintMultiplier: 1.75
+  groundAcceleration: 16
+  groundFriction: 7
+  idleFrictionMultiplier: 2.5
+  maxSlopeAngle: 45
+  jumpForce: 8.5
+  gravityMultiplier: 2.5
+  coyoteTime: 0.12
+  jumpBufferTime: 0.1
+  airAcceleration: 8
+  maxAirSpeed: 0.95
+  airControl: 0.4
+  airFriction: 2.2
+  slideBoostSpeed: 11
+  minSlideSpeed: 3.5
+  slideDuration: 0.95
+  slideFriction: 0.45
+  slideDownhillBoost: 8
+  slideHeight: 0.6
+  crouchHeight: 1.2
+  crouchSpeedMultiplier: 0.55
+  slideCooldown: 0.3
+  slideCancelBoost: 1.35
+  slideCancelWindow: 0.3
+  bhopWindow: 0.15
+  bhopSpeedRetention: 0.94
+  bhopMaxSpeed: 13
+  bhopBonus: 0.2
+  diveForwardSpeed: 15.5
+  diveUpwardForce: 3
+  diveDuration: 0.6
+  diveRecoveryTime: 0.4
+  minDiveSpeed: 5
+  diveCooldown: 1.2
+  wallCheckDistance: 0.6
+  wallLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  minWallAngle: 70
+  enableWallBounce: 1
+  wallBounceForce: 11
+  wallBounceUpForce: 6.5
+  minWallBounceSpeed: 6
+  wallBounceCooldown: 0.4
+  wallBounceAngleThreshold: 45
+  enableWallRun: 1
+  wallRunSpeed: 11
+  maxWallRunTime: 1.5
+  wallRunGravityReduction: 0.7
+  enableMantle: 1
+  maxMantleHeight: 2
+  mantleCheckDistance: 0.8
+  mantleDuration: 0.3
+  showDebugGizmos: 0
+  groundCheckColor: {r: 0, g: 1, b: 0, a: 1}
+  wallCheckColor: {r: 0, g: 0, b: 1, a: 1}
+  mantleCheckColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -19,6 +20,7 @@ public class MovementController : MonoBehaviour
     private CharacterController controller;
     private float defaultHeight;
     private Vector3 defaultCenter;
+    private MovementState previousState = MovementState.Walking;
     
     #endregion
 
@@ -46,6 +48,26 @@ public class MovementController : MonoBehaviour
     public Vector3 Velocity => velocity;
     public float CurrentSpeed => currentSpeed;
     public bool IsGrounded => isGrounded;
+    public MovementConfig Config => config;
+    public Vector3 LastWallNormal => lastWallNormal;
+    public int WallRunSide => wallRunSide;
+
+    /// <summary>Fired when <see cref="CurrentState"/> changes (after movement tick).</summary>
+    public event Action<MovementState, MovementState> StateChanged;
+    /// <summary>Fired on a grounded jump (not bhop / slide-cancel).</summary>
+    public event Action Jumped;
+    /// <summary>Fired when a slide begins.</summary>
+    public event Action SlideStarted;
+    /// <summary>Fired on wall bounce / launch.</summary>
+    public event Action WallBounced;
+    /// <summary>Fired when landing from airborne/dive (before queued slide/bhop).</summary>
+    public event Action Landed;
+    /// <summary>Fired when a dolphin dive starts.</summary>
+    public event Action Dived;
+    /// <summary>Fired on bunny hop chain jump.</summary>
+    public event Action BunnyHopped;
+    /// <summary>Fired when slide is cancelled into a jump.</summary>
+    public event Action SlideCancelled;
 
     /// <summary>
     /// External multiplier (e.g. from <c>ClassLoadoutApplier</c>). Defaults to 1 — does not change feel until set.
@@ -151,6 +173,7 @@ public class MovementController : MonoBehaviour
         UpdateColliderHeight();
         
         currentSpeed = new Vector3(velocity.x, 0f, velocity.z).magnitude;
+        NotifyStateChangeIfNeeded();
     }
     
     private void OnDrawGizmos()
@@ -216,6 +239,7 @@ public class MovementController : MonoBehaviour
     {
         lastLandTime = Time.time;
         hasJumpedThisAirtime = false;
+        Landed?.Invoke();
         
         // Check for bhop chain
         if (input.JumpHeld || input.JumpPressed)
@@ -603,6 +627,8 @@ public class MovementController : MonoBehaviour
         {
             bhopChainCount = 0;
         }
+
+        Jumped?.Invoke();
     }
     
     private void ExecuteBhop()
@@ -624,6 +650,7 @@ public class MovementController : MonoBehaviour
         bhopChainCount++;
         
         input.ConsumeJump();
+        BunnyHopped?.Invoke();
     }
     
     private bool CanSlide()
@@ -654,6 +681,8 @@ public class MovementController : MonoBehaviour
             velocity.y,
             slideDirection.z * boostedSpeed
         );
+
+        SlideStarted?.Invoke();
     }
     
     private void EndSlide()
@@ -687,6 +716,7 @@ public class MovementController : MonoBehaviour
         lastSlideTime = Time.time;
         
         input.ConsumeJump();
+        SlideCancelled?.Invoke();
     }
     
     private bool CanDive()
@@ -718,6 +748,7 @@ public class MovementController : MonoBehaviour
         velocity.y = config.diveUpwardForce;
         
         input.ConsumeDive();
+        Dived?.Invoke();
     }
     
     #endregion
@@ -767,6 +798,7 @@ public class MovementController : MonoBehaviour
         
         // Chain momentum preservation
         bhopChainCount = Mathf.Max(bhopChainCount, 1);
+        WallBounced?.Invoke();
     }
     
     private bool CheckForWallRun()
@@ -1143,6 +1175,20 @@ public class MovementController : MonoBehaviour
     #endregion
 
     #region Public API
+
+    /// <summary>
+    /// Swap movement profile at runtime (e.g. character archetype). Does not mutate the asset.
+    /// </summary>
+    public void SetConfig(MovementConfig newConfig)
+    {
+        if (newConfig == null)
+        {
+            Debug.LogWarning("[MovementController] SetConfig ignored — config was null.", this);
+            return;
+        }
+
+        config = newConfig;
+    }
     
     /// <summary>
     /// Add external velocity (explosions, jump pads, etc.)
@@ -1179,6 +1225,7 @@ public class MovementController : MonoBehaviour
         
         controller.height = defaultHeight;
         controller.center = defaultCenter;
+        NotifyStateChangeIfNeeded();
     }
     
     /// <summary>
@@ -1191,6 +1238,16 @@ public class MovementController : MonoBehaviour
         
         Vector3 origin = transform.position + Vector3.up * controller.height;
         return !Physics.Raycast(origin, Vector3.up, checkHeight + 0.1f, groundLayers);
+    }
+
+    private void NotifyStateChangeIfNeeded()
+    {
+        if (currentState == previousState)
+            return;
+
+        var from = previousState;
+        previousState = currentState;
+        StateChanged?.Invoke(from, currentState);
     }
     
     #endregion
