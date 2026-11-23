@@ -216,15 +216,24 @@ public class InputHandler : MonoBehaviour
     
     public Vector3 GetMoveDirection(Transform relativeTo)
     {
-        Vector3 forward = relativeTo.forward;
-        Vector3 right = relativeTo.right;
-        
-        forward.y = 0f;
-        right.y = 0f;
-        forward.Normalize();
-        right.Normalize();
-        
-        return (forward * MoveInput.y + right * MoveInput.x).normalized;
+        if (relativeTo == null)
+            return GetMoveDirectionYaw(0f);
+
+        return GetMoveDirectionYaw(relativeTo.eulerAngles.y);
+    }
+
+    /// <summary>
+    /// Flat WASD basis from yaw degrees only. Avoids projecting pitched camera forward
+    /// (look-down used to flip into backward / unstable wish dirs after zeroing Y).
+    /// </summary>
+    public Vector3 GetMoveDirectionYaw(float yawDegrees)
+    {
+        if (MoveInput.sqrMagnitude <= 0.01f)
+            return Vector3.zero;
+
+        Quaternion yaw = Quaternion.Euler(0f, yawDegrees, 0f);
+        Vector3 dir = yaw * new Vector3(MoveInput.x, 0f, MoveInput.y);
+        return dir.sqrMagnitude > 1e-6f ? dir.normalized : Vector3.zero;
     }
     
     public Vector3 GetRawMoveDirection()

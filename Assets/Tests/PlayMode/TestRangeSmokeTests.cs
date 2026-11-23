@@ -348,7 +348,7 @@ public class TestRangeSmokeTests
         movement.SetVelocity(Vector3.zero);
         Vector3 start = player.transform.position;
 
-        for (int i = 0; i < 90; i++)
+        for (int i = 0; i < 120; i++)
             yield return null;
 
         Vector3 end = player.transform.position;
@@ -357,7 +357,7 @@ public class TestRangeSmokeTests
             new Vector2(end.x, end.z));
         inputHandler.SetTestInputLocked(false);
 
-        Assert.Less(horizontalDrift, 0.05f,
+        Assert.Less(horizontalDrift, 0.02f,
             $"Idle grounded player should not slide (drift={horizontalDrift:F4} start={start} end={end})");
     }
     
