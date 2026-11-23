@@ -699,6 +699,8 @@ public struct HitDamageInfo
     public readonly Vector3 Direction;
     public readonly HitZoneType Zone;
     public readonly Collider Collider;
+    
+    public float FinalDamage => Amount;
 
     public HitDamageInfo(
         long shotId,
@@ -756,4 +758,36 @@ public sealed class HitZone : MonoBehaviour
         zoneType = zone;
         multiplierOverride = Mathf.Max(0f, overrideMultiplier);
     }
+}
+
+public struct DamageInfo
+{
+    public float damage;
+    public Vector3 hitPoint;
+    public Vector3 hitNormal;
+    public Vector3 hitDirection;
+    public int attackerID;
+    public bool isHeadshot;
+    public WeaponConfig weaponConfig;
+    
+    public HitDamageInfo ToHitDamageInfo()
+    {
+        return new HitDamageInfo(
+            0,
+            attackerID,
+            damage,
+            hitPoint,
+            hitNormal,
+            hitDirection,
+            isHeadshot ? HitZoneType.Head : HitZoneType.Body,
+            null
+        );
+    }
+}
+
+public interface IDamageable
+{
+    void TakeDamage(DamageInfo damageInfo);
+    float GetHealth();
+    bool IsDead();
 }
