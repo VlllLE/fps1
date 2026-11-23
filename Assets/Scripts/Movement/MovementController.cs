@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -15,10 +16,14 @@ public class MovementController : MonoBehaviour
     [SerializeField] private MovementConfig config;
     [SerializeField] private InputHandler input;
     [SerializeField] private Transform cameraTransform;
+    [Tooltip("Yaw pivot / eye height root (CameraHolder). Lowered when crouching or sliding.")]
+    [SerializeField] private Transform cameraHolder;
     
     private CharacterController controller;
     private float defaultHeight;
     private Vector3 defaultCenter;
+    private float defaultCameraHeight = 1.6f;
+    private MovementState previousState = MovementState.Walking;
     
     #endregion
 
@@ -46,6 +51,26 @@ public class MovementController : MonoBehaviour
     public Vector3 Velocity => velocity;
     public float CurrentSpeed => currentSpeed;
     public bool IsGrounded => isGrounded;
+    public MovementConfig Config => config;
+    public Vector3 LastWallNormal => lastWallNormal;
+    public int WallRunSide => wallRunSide;
+
+    /// <summary>Fired when <see cref="CurrentState"/> changes (after movement tick).</summary>
+    public event Action<MovementState, MovementState> StateChanged;
+    /// <summary>Fired on a grounded jump (not bhop / slide-cancel).</summary>
+    public event Action Jumped;
+    /// <summary>Fired when a slide begins.</summary>
+    public event Action SlideStarted;
+    /// <summary>Fired on wall bounce / launch.</summary>
+    public event Action WallBounced;
+    /// <summary>Fired when landing from airborne/dive (before queued slide/bhop).</summary>
+    public event Action Landed;
+    /// <summary>Fired when a dolphin dive starts.</summary>
+    public event Action Dived;
+    /// <summary>Fired on bunny hop chain jump.</summary>
+    public event Action BunnyHopped;
+    /// <summary>Fired when slide is cancelled into a jump.</summary>
+    public event Action SlideCancelled;
 
     /// <summary>
     /// External multiplier (e.g. from <c>ClassLoadoutApplier</c>). Defaults to 1 — does not change feel until set.
@@ -100,7 +125,7 @@ public class MovementController : MonoBehaviour
     #region Ground Check
     
     [Header("Ground Detection")]
-    [SerializeField] private float groundCheckDistance = 0.2f;
+    [SerializeField] private float groundCheckDistance = 0.35f;
     [SerializeField] private float groundCheckRadius = 0.3f;
     [SerializeField] private LayerMask groundLayers = ~0;
     
@@ -133,6 +158,21 @@ public class MovementController : MonoBehaviour
         {
             cameraTransform = Camera.main?.transform;
         }
+
+        if (cameraHolder == null)
+        {
+            if (cameraTransform != null && cameraTransform.parent != null)
+                cameraHolder = cameraTransform.parent;
+            else
+            {
+                var holder = transform.Find("CameraHolder");
+                if (holder != null)
+                    cameraHolder = holder;
+            }
+        }
+
+        if (cameraHolder != null)
+            defaultCameraHeight = cameraHolder.localPosition.y;
         
         defaultHeight = controller.height;
         defaultCenter = controller.center;
@@ -151,6 +191,7 @@ public class MovementController : MonoBehaviour
         UpdateColliderHeight();
         
         currentSpeed = new Vector3(velocity.x, 0f, velocity.z).magnitude;
+        NotifyStateChangeIfNeeded();
     }
     
     private void OnDrawGizmos()
@@ -216,6 +257,7 @@ public class MovementController : MonoBehaviour
     {
         lastLandTime = Time.time;
         hasJumpedThisAirtime = false;
+        Landed?.Invoke();
         
         // Check for bhop chain
         if (input.JumpHeld || input.JumpPressed)
@@ -603,6 +645,8 @@ public class MovementController : MonoBehaviour
         {
             bhopChainCount = 0;
         }
+
+        Jumped?.Invoke();
     }
     
     private void ExecuteBhop()
@@ -624,12 +668,17 @@ public class MovementController : MonoBehaviour
         bhopChainCount++;
         
         input.ConsumeJump();
+        BunnyHopped?.Invoke();
     }
     
     private bool CanSlide()
     {
         bool offCooldown = Time.time - lastSlideTime >= config.slideCooldown;
-        bool fastEnough = currentSpeed >= config.minSlideSpeed;
+        // Allow a small grace under minSlideSpeed when already sprinting so slides feel responsive.
+        float speedGate = currentState == MovementState.Sprinting
+            ? config.minSlideSpeed * 0.85f
+            : config.minSlideSpeed;
+        bool fastEnough = currentSpeed >= speedGate;
         bool notAlreadySliding = currentState != MovementState.Sliding;
         
         return offCooldown && fastEnough && notAlreadySliding && isGrounded;
@@ -654,6 +703,8 @@ public class MovementController : MonoBehaviour
             velocity.y,
             slideDirection.z * boostedSpeed
         );
+
+        SlideStarted?.Invoke();
     }
     
     private void EndSlide()
@@ -687,6 +738,7 @@ public class MovementController : MonoBehaviour
         lastSlideTime = Time.time;
         
         input.ConsumeJump();
+        SlideCancelled?.Invoke();
     }
     
     private bool CanDive()
@@ -718,6 +770,7 @@ public class MovementController : MonoBehaviour
         velocity.y = config.diveUpwardForce;
         
         input.ConsumeDive();
+        Dived?.Invoke();
     }
     
     #endregion
@@ -767,6 +820,7 @@ public class MovementController : MonoBehaviour
         
         // Chain momentum preservation
         bhopChainCount = Mathf.Max(bhopChainCount, 1);
+        WallBounced?.Invoke();
     }
     
     private bool CheckForWallRun()
@@ -999,7 +1053,9 @@ public class MovementController : MonoBehaviour
         
         Vector3 horizontal = new Vector3(velocity.x, 0f, velocity.z);
         float speed = horizontal.magnitude;
-        if (speed < 0.05f)
+        // Snap sooner when grounded so CharacterController micro-slides don't feel like drift.
+        float stopThreshold = groundedForBrake ? 0.35f : 0.05f;
+        if (speed < stopThreshold)
         {
             velocity.x = 0f;
             velocity.z = 0f;
@@ -1008,7 +1064,8 @@ public class MovementController : MonoBehaviour
         
         // Linear decay so idle stops are predictable (avoids state-machine frames skipping friction).
         float dt = Mathf.Max(Time.deltaTime, Time.fixedDeltaTime);
-        float scale = Mathf.Max(0f, 1f - idleDecayPerSecond * dt);
+        float decay = groundedForBrake ? idleDecayPerSecond * 1.35f : idleDecayPerSecond;
+        float scale = Mathf.Max(0f, 1f - decay * dt);
         velocity.x *= scale;
         velocity.z *= scale;
     }
@@ -1044,14 +1101,9 @@ public class MovementController : MonoBehaviour
         if (input == null || !input.HasMoveInput)
             return Vector3.zero;
         
-        // WASD uses yaw only — never the pitched camera forward (that causes backward/sideways drift).
-        Transform moveBasis = transform;
-        if (cameraTransform != null)
-        {
-            moveBasis = cameraTransform.parent != null ? cameraTransform.parent : cameraTransform;
-        }
-        
-        return input.GetMoveDirection(moveBasis);
+        // Player root is yaw-only. CameraHolder is pitched by FirstPersonCamera — using it as
+        // the move basis projects look-down into unstable/backward wish directions.
+        return input.GetMoveDirection(transform);
     }
     
     #endregion
@@ -1062,22 +1114,34 @@ public class MovementController : MonoBehaviour
     {
         float targetHeight = defaultHeight;
         Vector3 targetCenter = defaultCenter;
+        float targetCameraHeight = defaultCameraHeight;
         
         if (currentState == MovementState.Sliding || currentState == MovementState.Diving || 
             currentState == MovementState.DiveRecovery)
         {
             targetHeight = config.slideHeight;
             targetCenter = new Vector3(0f, config.slideHeight * 0.5f, 0f);
+            targetCameraHeight = Mathf.Max(0.35f, defaultCameraHeight * (config.slideHeight / Mathf.Max(defaultHeight, 0.01f)));
         }
         else if (IsStandingCrouch())
         {
             targetHeight = config.crouchHeight;
             targetCenter = new Vector3(0f, config.crouchHeight * 0.5f, 0f);
+            targetCameraHeight = Mathf.Max(0.7f, defaultCameraHeight * (config.crouchHeight / Mathf.Max(defaultHeight, 0.01f)));
         }
         
         // Smooth height transitions
-        controller.height = Mathf.Lerp(controller.height, targetHeight, Time.deltaTime * 15f);
-        controller.center = Vector3.Lerp(controller.center, targetCenter, Time.deltaTime * 15f);
+        float t = Time.deltaTime * 15f;
+        controller.height = Mathf.Lerp(controller.height, targetHeight, t);
+        controller.center = Vector3.Lerp(controller.center, targetCenter, t);
+
+        // Eye height must move with stance — otherwise crouch/slide feel broken in first person.
+        if (cameraHolder != null)
+        {
+            Vector3 camPos = cameraHolder.localPosition;
+            camPos.y = Mathf.Lerp(camPos.y, targetCameraHeight, t);
+            cameraHolder.localPosition = camPos;
+        }
     }
     
     #endregion
@@ -1143,6 +1207,20 @@ public class MovementController : MonoBehaviour
     #endregion
 
     #region Public API
+
+    /// <summary>
+    /// Swap movement profile at runtime (e.g. character archetype). Does not mutate the asset.
+    /// </summary>
+    public void SetConfig(MovementConfig newConfig)
+    {
+        if (newConfig == null)
+        {
+            Debug.LogWarning("[MovementController] SetConfig ignored — config was null.", this);
+            return;
+        }
+
+        config = newConfig;
+    }
     
     /// <summary>
     /// Add external velocity (explosions, jump pads, etc.)
@@ -1179,6 +1257,7 @@ public class MovementController : MonoBehaviour
         
         controller.height = defaultHeight;
         controller.center = defaultCenter;
+        NotifyStateChangeIfNeeded();
     }
     
     /// <summary>
@@ -1191,6 +1270,16 @@ public class MovementController : MonoBehaviour
         
         Vector3 origin = transform.position + Vector3.up * controller.height;
         return !Physics.Raycast(origin, Vector3.up, checkHeight + 0.1f, groundLayers);
+    }
+
+    private void NotifyStateChangeIfNeeded()
+    {
+        if (currentState == previousState)
+            return;
+
+        var from = previousState;
+        previousState = currentState;
+        StateChanged?.Invoke(from, currentState);
     }
     
     #endregion

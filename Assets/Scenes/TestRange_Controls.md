@@ -18,6 +18,7 @@
 | Aim (ADS) | Right mouse |
 | Reload | R |
 | Class loadout | `F1` Assault · `F2` SMG · `F3` Sniper · `F4` Hybrid |
+| Loadout menu | `Esc` — class buttons + weapon slots |
 | Weapon slot | `1` Primary · `2` Secondary (per class) |
 | Cycle weapons | Mouse scroll (when slots filled) |
 | Last weapon | Q |

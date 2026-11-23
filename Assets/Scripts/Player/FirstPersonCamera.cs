@@ -29,7 +29,8 @@ public class FirstPersonCamera : MonoBehaviour
     
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
+        // LoadoutPauseMenu owns Escape when present (opens class/weapon menu).
+        if (Input.GetKeyDown(KeyCode.Escape) && FindAnyObjectByType<LoadoutPauseMenu>() == null)
         {
             SetCursorLock(!cursorLocked);
         }
