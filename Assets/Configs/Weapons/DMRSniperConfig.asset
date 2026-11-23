@@ -1,0 +1,147 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13cb89ba77f8e8d429ae9510dd3eb8f3, type: 3}
+  m_Name: DMRSniperConfig
+  m_EditorClassIdentifier: Scripts::WeaponConfig
+  weaponName: DMR
+  weaponType: 4
+  weaponPrefab: {fileID: 450000017, guid: e4b8dde66e484f53a3b6ba5e2588d97d, type: 3}
+  weaponIcon: {fileID: 0}
+  damage: 55
+  headshotMultiplier: 1.5
+  limbMultiplier: 0.8
+  damageFalloff:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: -0.005
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 100
+      value: 0.5
+      inSlope: -0.005
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  fireRate: 200
+  availableFireModes: 01000000i
+  burstCount: 3
+  burstDelay: 0.1
+  range: 190
+  baseSpread: 0.25
+  adsSpread: 0.08
+  spreadPerShot: 0.3
+  maxSpread: 6
+  spreadRecoverySpeed: 5
+  magazineSize: 10
+  maxReserveAmmo: 50
+  startingReserveAmmo: 50
+  ammoPerShot: 1
+  reloadTime: 2.6
+  tacticalReloadTime: 1.8
+  reloadAmmoTime: 1.5
+  canCancelReload: 1
+  adsSpeed: 0.2
+  adsFOV: 50
+  adsMovementMultiplier: 0.7
+  adsSwayReduction: 0.7
+  verticalRecoilCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0.5
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1.5
+      inSlope: 0.5
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  verticalRecoil: 1.5
+  verticalRandomness: 0.1
+  horizontalRecoilPattern:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  horizontalRecoil: 0.5
+  horizontalRandomness: 0.3
+  recoilRecoverySpeed: 8
+  recoilRecoveryDelay: 0.1
+  adsRecoilMultiplier: 0.65
+  gunKickback: 0.05
+  gunRotationKick: {x: -3, y: 1, z: 2}
+  gunRecoilRecoverySpeed: 15
+  swayAmount: 0.02
+  maxSwayAmount: 0.06
+  swaySmooth: 6
+  bobSpeed: 10
+  bobAmount: 0.03
+  sprintBobMultiplier: 1.5
+  pelletCount: 1
+  useProjectile: 0
+  projectilePrefab: {fileID: 0}
+  projectileSpeed: 100
+  projectileGravity: 0
+  canPenetrate: 0
+  penetrationDepth: 0.5
+  penetrationDamageRetention: 0.5
+  fireSound: {fileID: 0}
+  reloadSound: {fileID: 0}
+  emptySound: {fileID: 0}
+  equipSound: {fileID: 0}
+  fireSoundVolume: 1
+  muzzleFlashPrefab: {fileID: 0}
+  shellEjectPrefab: {fileID: 0}
+  shellEjectForce: 2

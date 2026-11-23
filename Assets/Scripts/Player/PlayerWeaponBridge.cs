@@ -3,12 +3,16 @@ using UnityEngine;
 public class PlayerWeaponBridge : MonoBehaviour
 {
     [SerializeField] private WeaponController weapon;
+    [SerializeField] private WeaponSwitcher weaponSwitcher;
     [SerializeField] private Transform cameraTransform;
     [SerializeField] private InputHandler inputHandler;
     [SerializeField] private LayerMask hitLayers = ~0;
     
     private bool wasFiring;
     private bool wasAiming;
+
+    private WeaponController ActiveWeapon =>
+        weaponSwitcher != null ? weaponSwitcher.CurrentWeapon : weapon;
     
     private void Awake()
     {
@@ -20,64 +24,67 @@ public class PlayerWeaponBridge : MonoBehaviour
     
     private void Start()
     {
+        if (weaponSwitcher == null)
+            weaponSwitcher = GetComponentInChildren<WeaponSwitcher>();
         if (weapon == null)
             weapon = GetComponentInChildren<WeaponController>();
         
-        if (weapon != null)
+        if (weaponSwitcher == null && weapon != null)
             weapon.Equip();
     }
     
     private void Update()
     {
-        if (weapon == null || cameraTransform == null) return;
+        var active = ActiveWeapon;
+        if (active == null || cameraTransform == null) return;
         
         bool isFiring = Input.GetMouseButton(0);
         bool isAiming = Input.GetMouseButton(1);
         
         if (isFiring && !wasFiring)
         {
-            weapon.StartFiring();
+            active.StartFiring();
         }
         else if (!isFiring && wasFiring)
         {
-            weapon.StopFiring();
+            active.StopFiring();
         }
         
         if (isFiring)
         {
-            weapon.UpdateFiring();
-            TryHitscan();
+            active.UpdateFiring();
+            TryHitscan(active);
         }
         
         if (isAiming && !wasAiming)
         {
-            weapon.StartAiming();
+            active.StartAiming();
         }
         else if (!isAiming && wasAiming)
         {
-            weapon.StopAiming();
+            active.StopAiming();
         }
         
         if (Input.GetKeyDown(KeyCode.R))
         {
-            weapon.TryReload();
+            active.TryReload();
         }
         
         wasFiring = isFiring;
         wasAiming = isAiming;
     }
     
-    private void TryHitscan()
+    private void TryHitscan(WeaponController active)
     {
-        if (!weapon.HasAmmo()) return;
+        if (!active.HasAmmo()) return;
         
         Vector3 origin = cameraTransform.position;
         Vector3 direction = cameraTransform.forward;
         
-        var config = weapon.Config;
+        var config = active.Config;
         if (config == null) return;
         
-        float spread = weapon.GetCurrentSpread();
+        float spread = active.GetCurrentSpread();
         if (spread > 0)
         {
             direction = ApplySpread(direction, spread);

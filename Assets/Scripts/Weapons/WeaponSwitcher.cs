@@ -18,6 +18,8 @@ public class WeaponSwitcher : MonoBehaviour
     [SerializeField] private float quickSwitchSpeed = 0.3f;
     [SerializeField] private bool allowScrollSwitching = true;
     [SerializeField] private bool invertScrollDirection = false;
+    [Tooltip("When true, number keys select weapon slot index (1 = first slot).")]
+    [SerializeField] private bool useDirectSlotIndexKeys = true;
     
     [Header("Input Keys")]
     [SerializeField] private KeyCode primaryKey = KeyCode.Alpha1;
@@ -101,17 +103,32 @@ public class WeaponSwitcher : MonoBehaviour
     {
         if (isSwitching) return;
         
-        if (Input.GetKeyDown(primaryKey))
-            SwitchToSlotType(SlotType.Primary);
-        else if (Input.GetKeyDown(secondaryKey))
-            SwitchToSlotType(SlotType.Secondary);
-        else if (Input.GetKeyDown(meleeKey))
-            SwitchToSlotType(SlotType.Melee);
-        else if (Input.GetKeyDown(lethalKey))
-            SwitchToSlotType(SlotType.Lethal);
-        else if (Input.GetKeyDown(tacticalKey))
-            SwitchToSlotType(SlotType.Tactical);
-        else if (Input.GetKeyDown(lastWeaponKey))
+        if (useDirectSlotIndexKeys)
+        {
+            for (int i = 0; i < weaponSlots.Length && i < 9; i++)
+            {
+                if (Input.GetKeyDown(KeyCode.Alpha1 + i))
+                {
+                    SwitchToSlot(i);
+                    return;
+                }
+            }
+        }
+        else
+        {
+            if (Input.GetKeyDown(primaryKey))
+                SwitchToSlotType(SlotType.Primary);
+            else if (Input.GetKeyDown(secondaryKey))
+                SwitchToSlotType(SlotType.Secondary);
+            else if (Input.GetKeyDown(meleeKey))
+                SwitchToSlotType(SlotType.Melee);
+            else if (Input.GetKeyDown(lethalKey))
+                SwitchToSlotType(SlotType.Lethal);
+            else if (Input.GetKeyDown(tacticalKey))
+                SwitchToSlotType(SlotType.Tactical);
+        }
+
+        if (Input.GetKeyDown(lastWeaponKey))
             SwitchToLastWeapon();
         
         if (allowScrollSwitching)

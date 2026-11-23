@@ -20,7 +20,8 @@ public class WeaponSkinApplier : MonoBehaviour
 
     private readonly List<Renderer> cachedRenderers = new List<Renderer>(8);
     private readonly Dictionary<Renderer, Material[]> originalMaterials = new Dictionary<Renderer, Material[]>();
-    private readonly MaterialPropertyBlock propertyBlock = new MaterialPropertyBlock();
+    private MaterialPropertyBlock propertyBlock;
+    private MaterialPropertyBlock PropertyBlock => propertyBlock ??= new MaterialPropertyBlock();
 
     private WeaponSkinDefinition currentSkin;
 
@@ -52,9 +53,10 @@ public class WeaponSkinApplier : MonoBehaviour
         }
 
         currentSkin = skin;
-        propertyBlock.Clear();
+        var block = PropertyBlock;
+        block.Clear();
         if (skin.applyParameterOverrides)
-            skin.WritePropertyBlock(propertyBlock);
+            skin.WritePropertyBlock(block);
 
         for (int i = 0; i < cachedRenderers.Count; i++)
         {
@@ -73,7 +75,7 @@ public class WeaponSkinApplier : MonoBehaviour
             renderer.sharedMaterials = materials;
 
             if (skin.applyParameterOverrides)
-                renderer.SetPropertyBlock(propertyBlock);
+                renderer.SetPropertyBlock(block);
             else
                 renderer.SetPropertyBlock(null);
         }

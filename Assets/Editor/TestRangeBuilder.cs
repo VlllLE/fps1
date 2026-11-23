@@ -308,8 +308,7 @@ public class TestRangeBuilder : MonoBehaviour
         var weaponHolder = new GameObject("WeaponHolder");
         weaponHolder.transform.SetParent(cam.transform);
         weaponHolder.transform.localPosition = new Vector3(0.3f, -0.2f, 0.5f);
-        
-        var weapon = CreatePrimitiveGun(weaponHolder.transform);
+        weaponHolder.transform.localRotation = Quaternion.identity;
         
         var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
         body.name = "PlayerBody";
@@ -321,15 +320,16 @@ public class TestRangeBuilder : MonoBehaviour
         bodyRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
         bodyRenderer.sharedMaterial.color = new Color(0.2f, 0.4f, 0.6f);
         
-        var weaponBridge = player.AddComponent<PlayerWeaponBridge>();
+        player.AddComponent<PlayerWeaponBridge>();
+        var weaponBridge = player.GetComponent<PlayerWeaponBridge>();
         var bridgeSO = new SerializedObject(weaponBridge);
-        var weaponProp = bridgeSO.FindProperty("weapon");
-        if (weaponProp != null) weaponProp.objectReferenceValue = weapon;
         var camTransProp = bridgeSO.FindProperty("cameraTransform");
         if (camTransProp != null) camTransProp.objectReferenceValue = cam.transform;
         var bridgeInputProp = bridgeSO.FindProperty("inputHandler");
         if (bridgeInputProp != null) bridgeInputProp.objectReferenceValue = inputHandler;
         bridgeSO.ApplyModifiedPropertiesWithoutUndo();
+
+        TestRangeWeaponLoadout.WirePlayerGameObject(player);
         
         player.transform.position = new Vector3(0, 0.55f, -5);
         player.name = "Player";
