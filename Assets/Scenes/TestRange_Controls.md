@@ -1,5 +1,11 @@
 # TestRange — default controls (legacy Input Manager)
 
+## On-screen HUD (Play Mode)
+
+- **Crosshair** (center) — spreads when you move or fire
+- **Bottom-right** — current **weapon name** + ammo `mag | reserve` (turns yellow/red when low/empty)
+- **Hit marker** — brief X when shots deal damage (red tint on headshots)
+
 | Action | Keys |
 |--------|------|
 | Move | W A S D / Arrow keys |

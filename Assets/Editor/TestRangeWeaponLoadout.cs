@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using CodMovementShooter.UI;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -12,6 +13,7 @@ public static class TestRangeWeaponLoadout
     private const string ConfigFolder = "Assets/Configs/Weapons";
     private const string ScenePath = "Assets/Scenes/TestRange.unity";
     private const string PlayerPrefabPath = "Assets/Prefabs/Player.prefab";
+    private const string HudPrefabPath = "Assets/UI/Prefabs/FpsHudCanvas.prefab";
 
     private struct WeaponEntry
     {
@@ -212,9 +214,33 @@ public static class TestRangeWeaponLoadout
             }
         }
 
+        var gameplayCamera = cam != null ? cam.GetComponent<Camera>() : null;
+        var sceneHitDetection = Object.FindAnyObjectByType<HitDetection>();
+        foreach (var weapon in spawnedWeapons)
+        {
+            if (gameplayCamera != null)
+            {
+                var wSo = new SerializedObject(weapon);
+                var camProp = wSo.FindProperty("playerCamera");
+                if (camProp != null)
+                    camProp.objectReferenceValue = gameplayCamera;
+                wSo.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            if (sceneHitDetection != null)
+            {
+                var wSo = new SerializedObject(weapon);
+                var hitProp = wSo.FindProperty("hitDetection");
+                if (hitProp != null)
+                    hitProp.objectReferenceValue = sceneHitDetection;
+                wSo.ApplyModifiedPropertiesWithoutUndo();
+            }
+        }
+
         ConfigureSwitcher(switcher, spawnedWeapons);
         ConfigureBridge(player, switcher);
         ConfigureSkinCycler(player, switcher);
+        EnsureTestRangeHudAndHitDetection(player);
     }
 
     private static void EnsureConfigFolder()
@@ -253,6 +279,8 @@ public static class TestRangeWeaponLoadout
             SetField(so, "adsSpread", entry.adsSpread);
             SetField(so, "range", entry.range);
             SetField(so, "reloadTime", entry.reloadTime);
+            SetField(so, "tacticalReloadTime", entry.reloadTime * 0.85f);
+            SetField(so, "reloadAmmoTime", Mathf.Max(0.5f, entry.reloadTime * 0.65f));
             SetField(so, "adsSpeed", 0.2f);
 
             var fireModes = so.FindProperty("availableFireModes");
@@ -422,5 +450,51 @@ public static class TestRangeWeaponLoadout
         var prop = so.FindProperty(name);
         if (prop != null)
             prop.enumValueIndex = System.Convert.ToInt32(value);
+    }
+
+    private static void EnsureTestRangeHudAndHitDetection(GameObject player)
+    {
+        var scene = player.scene;
+        HitDetection hitDetection = Object.FindAnyObjectByType<HitDetection>();
+        if (hitDetection == null)
+        {
+            var go = new GameObject("HitDetection");
+            hitDetection = go.AddComponent<HitDetection>();
+            if (scene.IsValid())
+                EditorSceneManager.MoveGameObjectToScene(go, scene);
+        }
+
+        FpsHudController hudController = Object.FindAnyObjectByType<FpsHudController>();
+        if (hudController == null)
+        {
+            var hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
+            if (hudPrefab != null)
+            {
+                var hudInstance = (GameObject)PrefabUtility.InstantiatePrefab(hudPrefab);
+                hudController = hudInstance.GetComponent<FpsHudController>();
+                if (scene.IsValid())
+                    EditorSceneManager.MoveGameObjectToScene(hudInstance, scene);
+            }
+        }
+
+        if (hudController == null)
+            return;
+
+        WeaponHudBridge bridge = hudController.GetComponent<WeaponHudBridge>();
+        if (bridge == null)
+            return;
+
+        var movement = player.GetComponent<MovementController>();
+        var bridgeSo = new SerializedObject(bridge);
+        var weaponSource = bridgeSo.FindProperty("weaponSource");
+        if (weaponSource != null && movement != null)
+            weaponSource.objectReferenceValue = movement;
+        var movementSource = bridgeSo.FindProperty("movementSource");
+        if (movementSource != null && movement != null)
+            movementSource.objectReferenceValue = movement;
+        var hitSrc = bridgeSo.FindProperty("hitDetectionSource");
+        if (hitSrc != null && hitDetection != null)
+            hitSrc.objectReferenceValue = hitDetection;
+        bridgeSo.ApplyModifiedPropertiesWithoutUndo();
     }
 }

@@ -58,8 +58,8 @@ MonoBehaviour:
   startingReserveAmmo: 80
   ammoPerShot: 1
   reloadTime: 2.3
-  tacticalReloadTime: 1.8
-  reloadAmmoTime: 1.5
+  tacticalReloadTime: 1.955
+  reloadAmmoTime: 1.4949999
   canCancelReload: 1
   adsSpeed: 0.2
   adsFOV: 50

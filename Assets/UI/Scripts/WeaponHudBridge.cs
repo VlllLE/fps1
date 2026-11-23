@@ -194,8 +194,8 @@ namespace CodMovementShooter.UI
             });
             _weaponHitEventsBound = hitResolved || shotgunResolved;
 
-            // Seed ammo if properties exist.
             TrySeedAmmo(weapon);
+            TrySeedWeaponName(weapon);
 
             if (listenToHitDetectionFallback && !_weaponHitEventsBound)
             {
@@ -360,6 +360,30 @@ namespace CodMovementShooter.UI
             try
             {
                 HandleAmmoChanged(Convert.ToInt32(mag.GetValue(weapon)), Convert.ToInt32(reserve.GetValue(weapon)));
+            }
+            catch
+            {
+                // Ignore seed failures.
+            }
+        }
+
+        private void TrySeedWeaponName(object weapon)
+        {
+            if (hud == null || weapon == null)
+                return;
+
+            try
+            {
+                Type type = weapon.GetType();
+                PropertyInfo configProp = type.GetProperty("Config", BindingFlags.Instance | BindingFlags.Public);
+                object config = configProp?.GetValue(weapon);
+                if (config == null)
+                    return;
+
+                FieldInfo nameField = config.GetType().GetField("weaponName", BindingFlags.Instance | BindingFlags.Public);
+                string weaponName = nameField?.GetValue(config) as string;
+                if (!string.IsNullOrEmpty(weaponName))
+                    hud.SetWeaponName(weaponName);
             }
             catch
             {

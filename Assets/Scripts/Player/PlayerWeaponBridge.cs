@@ -28,6 +28,8 @@ public class PlayerWeaponBridge : MonoBehaviour
             weaponSwitcher = GetComponentInChildren<WeaponSwitcher>();
         if (weapon == null)
             weapon = GetComponentInChildren<WeaponController>();
+
+        WireWeaponCameras();
         
         if (weaponSwitcher == null && weapon != null)
             weapon.Equip();
@@ -42,113 +44,39 @@ public class PlayerWeaponBridge : MonoBehaviour
         bool isAiming = Input.GetMouseButton(1);
         
         if (isFiring && !wasFiring)
-        {
             active.StartFiring();
-        }
         else if (!isFiring && wasFiring)
-        {
             active.StopFiring();
-        }
         
         if (isFiring)
-        {
             active.UpdateFiring();
-            TryHitscan(active);
-        }
         
         if (isAiming && !wasAiming)
-        {
             active.StartAiming();
-        }
         else if (!isAiming && wasAiming)
-        {
             active.StopAiming();
-        }
         
         if (Input.GetKeyDown(KeyCode.R))
-        {
             active.TryReload();
-        }
         
         wasFiring = isFiring;
         wasAiming = isAiming;
     }
-    
-    private void TryHitscan(WeaponController active)
+
+    private void WireWeaponCameras()
     {
-        if (!active.HasAmmo()) return;
-        
-        Vector3 origin = cameraTransform.position;
-        Vector3 direction = cameraTransform.forward;
-        
-        var config = active.Config;
-        if (config == null) return;
-        
-        float spread = active.GetCurrentSpread();
-        if (spread > 0)
+        if (cameraTransform == null)
         {
-            direction = ApplySpread(direction, spread);
+            var cam = GetComponentInChildren<Camera>();
+            if (cam != null)
+                cameraTransform = cam.transform;
         }
-        
-        PerformHitscan(origin, direction, config);
-    }
-    
-    private Vector3 ApplySpread(Vector3 direction, float spread)
-    {
-        float spreadAngle = spread * Mathf.Deg2Rad;
-        Vector2 randomCircle = Random.insideUnitCircle * spreadAngle;
-        
-        Quaternion spreadRotation = Quaternion.Euler(randomCircle.y, randomCircle.x, 0);
-        return spreadRotation * direction;
-    }
-    
-    private void PerformHitscan(Vector3 origin, Vector3 direction, WeaponConfig config)
-    {
-        RaycastHit hit;
-        if (Physics.Raycast(origin, direction, out hit, config.range, hitLayers))
-        {
-            Debug.DrawLine(origin, hit.point, Color.red, 0.5f);
-            
-            var target = hit.collider.GetComponentInParent<Target>();
-            if (target != null)
-            {
-                var hitZone = hit.collider.GetComponent<HitZone>();
-                HitZoneType zone = hitZone != null ? hitZone.ZoneType : HitZoneType.Body;
-                
-                float damage = config.damage;
-                bool isHeadshot = false;
-                
-                switch (zone)
-                {
-                    case HitZoneType.Head:
-                        damage *= config.headshotMultiplier;
-                        isHeadshot = true;
-                        break;
-                    case HitZoneType.Body:
-                        break;
-                    case HitZoneType.Limb:
-                        damage *= config.limbMultiplier;
-                        break;
-                }
-                
-                var damageInfo = new DamageInfo
-                {
-                    damage = damage,
-                    hitPoint = hit.point,
-                    hitNormal = hit.normal,
-                    hitDirection = direction,
-                    isHeadshot = isHeadshot,
-                    weaponConfig = config
-                };
-                
-                target.TakeDamage(damageInfo);
-                
-                Debug.Log($"Hit {target.name} for {damage:F1} damage" + (isHeadshot ? " (HEADSHOT!)" : ""));
-            }
-        }
-        else
-        {
-            Debug.DrawRay(origin, direction * config.range, Color.yellow, 0.5f);
-        }
+
+        var camera = cameraTransform != null ? cameraTransform.GetComponent<Camera>() : null;
+        if (camera == null)
+            return;
+
+        foreach (var w in GetComponentsInChildren<WeaponController>(true))
+            w.SetPlayerCamera(camera);
     }
 }

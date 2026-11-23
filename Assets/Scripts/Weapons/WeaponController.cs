@@ -82,6 +82,13 @@ public class WeaponController : MonoBehaviour
     public FireMode CurrentFireMode => config.availableFireModes[currentFireModeIndex];
     public float ADSProgress => adsProgress;
     public bool IsAuthoritative { get => isAuthoritative; set => isAuthoritative = value; }
+
+    public void SetPlayerCamera(Camera camera)
+    {
+        playerCamera = camera;
+        if (playerCamera != null)
+            defaultFOV = playerCamera.fieldOfView;
+    }
     
     private void Awake()
     {

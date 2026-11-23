@@ -76,6 +76,12 @@ namespace CodMovementShooter.UI
                 ammoCounter.SetAmmo(magazine, reserve);
         }
 
+        public void SetWeaponName(string weaponName)
+        {
+            if (ammoCounter != null)
+                ammoCounter.SetWeaponName(weaponName);
+        }
+
         public void NotifyFired()
         {
             if (crosshair != null)

@@ -109,10 +109,35 @@ namespace CodMovementShooter.UI
             rootRect.anchorMax = new Vector2(1f, 0f);
             rootRect.pivot = new Vector2(1f, 0f);
             rootRect.anchoredPosition = new Vector2(-36f, 36f);
-            rootRect.sizeDelta = new Vector2(220f, 48f);
+            rootRect.sizeDelta = new Vector2(220f, 64f);
 
-            Text text = root.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            GameObject nameGo = CreateUiObject("WeaponName", root.transform);
+            RectTransform nameRect = nameGo.GetComponent<RectTransform>();
+            nameRect.anchorMin = new Vector2(0f, 1f);
+            nameRect.anchorMax = new Vector2(1f, 1f);
+            nameRect.pivot = new Vector2(1f, 1f);
+            nameRect.anchoredPosition = Vector2.zero;
+            nameRect.sizeDelta = new Vector2(0f, 22f);
+
+            Text nameText = nameGo.AddComponent<Text>();
+            nameText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            nameText.fontSize = 16;
+            nameText.fontStyle = FontStyle.Bold;
+            nameText.alignment = TextAnchor.MiddleRight;
+            nameText.color = new Color(0.9f, 0.95f, 1f, 0.95f);
+            nameText.raycastTarget = false;
+            nameText.text = "M4A1";
+
+            GameObject ammoGo = CreateUiObject("AmmoText", root.transform);
+            RectTransform ammoRect = ammoGo.GetComponent<RectTransform>();
+            ammoRect.anchorMin = new Vector2(0f, 0f);
+            ammoRect.anchorMax = new Vector2(1f, 1f);
+            ammoRect.pivot = new Vector2(1f, 0f);
+            ammoRect.offsetMin = new Vector2(0f, 0f);
+            ammoRect.offsetMax = new Vector2(0f, -18f);
+
+            Text text = ammoGo.AddComponent<Text>();
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.fontSize = 28;
             text.fontStyle = FontStyle.Bold;
             text.alignment = TextAnchor.MiddleRight;
@@ -120,12 +145,12 @@ namespace CodMovementShooter.UI
             text.raycastTarget = false;
             text.text = "30 | 90";
 
-            Outline outline = root.AddComponent<Outline>();
+            Outline outline = ammoGo.AddComponent<Outline>();
             outline.effectColor = new Color(0f, 0f, 0f, 0.75f);
             outline.effectDistance = new Vector2(1f, -1f);
 
             AmmoCounterView view = root.AddComponent<AmmoCounterView>();
-            view.Bind(text);
+            view.Bind(text, nameText);
             return view;
         }
 
@@ -136,7 +161,7 @@ namespace CodMovementShooter.UI
             StretchCenter(rootRect, 200f, 200f);
 
             DamageNumberView view = root.AddComponent<DamageNumberView>();
-            view.Bind(rootRect, Resources.GetBuiltinResource<Font>("Arial.ttf"));
+            view.Bind(rootRect, Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"));
             root.SetActive(true);
             return view;
         }

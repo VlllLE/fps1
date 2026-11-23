@@ -101,7 +101,7 @@ namespace CodMovementShooter.UI
                 return;
 
             _built = true;
-            Font resolved = font != null ? font : Resources.GetBuiltinResource<Font>("Arial.ttf");
+            Font resolved = font != null ? font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
             for (int i = 0; i < poolSize; i++)
             {

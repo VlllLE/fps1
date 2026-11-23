@@ -8,6 +8,7 @@ namespace CodMovementShooter.UI
     /// </summary>
     public sealed class AmmoCounterView : MonoBehaviour
     {
+        [SerializeField] private Text weaponNameText;
         [SerializeField] private Text ammoText;
         [SerializeField] private string format = "{0} | {1}";
         [SerializeField] private Color normalColor = Color.white;
@@ -22,6 +23,21 @@ namespace CodMovementShooter.UI
         {
             ammoText = text;
             Refresh();
+        }
+
+        public void Bind(Text ammo, Text weaponName)
+        {
+            ammoText = ammo;
+            weaponNameText = weaponName;
+            Refresh();
+        }
+
+        public void SetWeaponName(string weaponName)
+        {
+            if (weaponNameText == null)
+                return;
+
+            weaponNameText.text = string.IsNullOrEmpty(weaponName) ? string.Empty : weaponName;
         }
 
         public void SetAmmo(int magazine, int reserve)
