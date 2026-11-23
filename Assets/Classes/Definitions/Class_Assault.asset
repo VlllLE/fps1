@@ -20,4 +20,4 @@ MonoBehaviour:
   secondaryWeaponConfig: {fileID: 11400000, guid: df8486a523b29e94fa96ac9196b3c005, type: 2}
   meleeWeaponPrefab: {fileID: 0}
   meleeWeaponConfig: {fileID: 0}
-  moveSpeedMultiplier: 1.0
+  moveSpeedMultiplier: 1

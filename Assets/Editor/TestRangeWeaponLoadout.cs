@@ -127,36 +127,15 @@ public static class TestRangeWeaponLoadout
 
     public static void SyncAndSave(bool openScene)
     {
+        TestRangePlayerSetup.SyncSceneAndPrefab(openScene);
+    }
+
+    /// <summary>Weapon configs + prefab wiring only (no scene player swap).</summary>
+    public static void EnsureWeaponConfigsOnly()
+    {
         EnsureConfigFolder();
         EnsureWeaponConfigs();
         WireWeaponPrefabs();
-
-        if (openScene && !Application.isPlaying)
-        {
-            if (SceneManager.GetActiveScene().path != ScenePath)
-                EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-        }
-
-        var player = FindPlayer();
-        if (player != null)
-        {
-            WirePlayerGameObject(player);
-            EditorSceneManager.MarkSceneDirty(player.scene);
-            EditorSceneManager.SaveScene(player.scene);
-        }
-
-        var prefabRoot = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
-        if (prefabRoot != null)
-        {
-            var prefabContents = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
-            WirePlayerGameObject(prefabContents);
-            PrefabUtility.SaveAsPrefabAsset(prefabContents, PlayerPrefabPath);
-            PrefabUtility.UnloadPrefabContents(prefabContents);
-        }
-
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
-        Debug.Log("Test Range weapon loadout synced (scene + player prefab).");
     }
 
     /// <summary>Called from TestRangeBuilder after the player hierarchy is created.</summary>
@@ -377,6 +356,13 @@ public static class TestRangeWeaponLoadout
         so.ApplyModifiedPropertiesWithoutUndo();
     }
 
+    public static void EnsureSkinCyclerOnPlayer(GameObject player)
+    {
+        var switcher = player.GetComponentInChildren<WeaponSwitcher>(true);
+        if (switcher != null)
+            ConfigureSkinCycler(player, switcher);
+    }
+
     private static void ConfigureSkinCycler(GameObject player, WeaponSwitcher switcher)
     {
         var cycler = player.GetComponent<TestRangeSkinCycler>();
@@ -452,7 +438,7 @@ public static class TestRangeWeaponLoadout
             prop.enumValueIndex = System.Convert.ToInt32(value);
     }
 
-    private static void EnsureTestRangeHudAndHitDetection(GameObject player)
+    public static void EnsureTestRangeHudAndHitDetection(GameObject player)
     {
         var scene = player.scene;
         HitDetection hitDetection = Object.FindAnyObjectByType<HitDetection>();

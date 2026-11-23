@@ -43,8 +43,14 @@ public class PlayerWeaponBridge : MonoBehaviour
     public void BindSwitcher(WeaponSwitcher switcher)
     {
         weaponSwitcher = switcher;
+        RefreshWeaponBindings();
+    }
+
+    public void RefreshWeaponBindings()
+    {
         if (weaponSwitcher != null)
             weapon = weaponSwitcher.CurrentWeapon;
+        WireWeaponCameras();
     }
     
     private void Update()

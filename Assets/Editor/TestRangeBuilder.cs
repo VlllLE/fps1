@@ -258,86 +258,16 @@ public class TestRangeBuilder : MonoBehaviour
     
     private static void CreatePlayerPrefab()
     {
-        var player = new GameObject("Player");
-        
-        var cc = player.AddComponent<CharacterController>();
-        cc.height = 2f;
-        cc.radius = 0.4f;
-        cc.center = new Vector3(0, 1f, 0);
-        
-        player.AddComponent<InputHandler>();
-        
-        var inputHandler = player.GetComponent<InputHandler>();
-        
-        var cameraHolder = new GameObject("CameraHolder");
-        cameraHolder.transform.SetParent(player.transform);
-        cameraHolder.transform.localPosition = new Vector3(0, 1.6f, 0);
-        
-        var cam = new GameObject("MainCamera");
-        cam.tag = "MainCamera";
-        cam.transform.SetParent(cameraHolder.transform);
-        cam.transform.localPosition = Vector3.zero;
-        cam.transform.localRotation = Quaternion.identity;
-        var camera = cam.AddComponent<Camera>();
-        camera.nearClipPlane = 0.1f;
-        camera.fieldOfView = 90f;
-        cam.AddComponent<AudioListener>();
-        
-        var fpsCam = cameraHolder.AddComponent<FirstPersonCamera>();
-        var fpsCamSO = new SerializedObject(fpsCam);
-        var playerBodyProp = fpsCamSO.FindProperty("playerBody");
-        if (playerBodyProp != null) playerBodyProp.objectReferenceValue = player.transform;
-        var inputHandlerProp = fpsCamSO.FindProperty("inputHandler");
-        if (inputHandlerProp != null) inputHandlerProp.objectReferenceValue = inputHandler;
-        fpsCamSO.ApplyModifiedPropertiesWithoutUndo();
-        
-        var movement = player.AddComponent<MovementController>();
-        var movementSO = new SerializedObject(movement);
-        var configProp = movementSO.FindProperty("config");
-        if (configProp != null)
-        {
-            var movementConfig = AssetDatabase.LoadAssetAtPath<MovementConfig>("Assets/Configs/DefaultMovementConfig.asset");
-            configProp.objectReferenceValue = movementConfig;
-        }
-        var inputProp = movementSO.FindProperty("input");
-        if (inputProp != null) inputProp.objectReferenceValue = inputHandler;
-        var camProp = movementSO.FindProperty("cameraTransform");
-        if (camProp != null) camProp.objectReferenceValue = cameraHolder.transform;
-        movementSO.ApplyModifiedPropertiesWithoutUndo();
-        
-        var weaponHolder = new GameObject("WeaponHolder");
-        weaponHolder.transform.SetParent(cam.transform);
-        weaponHolder.transform.localPosition = new Vector3(0.3f, -0.2f, 0.5f);
-        weaponHolder.transform.localRotation = Quaternion.identity;
-        
-        var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-        body.name = "PlayerBody";
-        body.transform.SetParent(player.transform);
-        body.transform.localPosition = new Vector3(0, 1f, 0);
-        Object.DestroyImmediate(body.GetComponent<Collider>());
-        
-        var bodyRenderer = body.GetComponent<Renderer>();
-        bodyRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
-        bodyRenderer.sharedMaterial.color = new Color(0.2f, 0.4f, 0.6f);
-        
-        player.AddComponent<PlayerWeaponBridge>();
-        var weaponBridge = player.GetComponent<PlayerWeaponBridge>();
-        var bridgeSO = new SerializedObject(weaponBridge);
-        var camTransProp = bridgeSO.FindProperty("cameraTransform");
-        if (camTransProp != null) camTransProp.objectReferenceValue = cam.transform;
-        var bridgeInputProp = bridgeSO.FindProperty("inputHandler");
-        if (bridgeInputProp != null) bridgeInputProp.objectReferenceValue = inputHandler;
-        bridgeSO.ApplyModifiedPropertiesWithoutUndo();
+        ClassLoadoutMenu.CreateDefaultClassDefinitions();
+        TestRangeWeaponLoadout.EnsureWeaponConfigsOnly();
 
-        TestRangeWeaponLoadout.WirePlayerGameObject(player);
-        
-        player.transform.position = new Vector3(0, 0.55f, -5);
-        player.name = "Player";
-        
-        string prefabPath = "Assets/Prefabs/Player.prefab";
-        PrefabUtility.SaveAsPrefabAssetAndConnect(player, prefabPath, InteractionMode.AutomatedAction);
-        
-        Debug.Log($"Player created in scene at {player.transform.position}");
+        var player = TestRangePlayerSetup.ReplaceScenePlayer();
+        if (player == null)
+            throw new System.InvalidOperationException("BuildTestRange: failed to spawn PlayerCharacter.");
+
+        TestRangePlayerSetup.WirePlayer(player);
+        PrefabUtility.SaveAsPrefabAssetAndConnect(player, "Assets/Prefabs/Player.prefab", InteractionMode.AutomatedAction);
+        Debug.Log($"PlayerCharacter wired in scene at {player.transform.position}");
     }
     
     private static WeaponController CreatePrimitiveGun(Transform parent)

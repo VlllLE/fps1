@@ -17,9 +17,21 @@
 | Fire | Left mouse |
 | Aim (ADS) | Right mouse |
 | Reload | R |
-| Weapon slot | `1` M4A1 · `2` SCAR · `3` UMP · `4` Bolt sniper · `5` DMR |
+| Class loadout | `F1` Assault · `F2` SMG · `F3` Sniper · `F4` Hybrid |
+| Weapon slot | `1` Primary · `2` Secondary (per class) |
 | Cycle weapons | Mouse scroll (when slots filled) |
 | Last weapon | Q |
 | Cycle camo/skin | `[` / `]` (active view model) |
 
 Slide: sprint forward, then tap crouch while at speed. Jump while sliding cancels slide with boost.
+
+### Class loadouts (default on Play: **Assault**)
+
+| Key | Class | Primary | Secondary |
+|-----|--------|---------|-----------|
+| F1 | Assault | M4A1 | UMP |
+| F2 | SMG | UMP | SCAR |
+| F3 | Sniper | Bolt-action | UMP |
+| F4 | Hybrid | DMR | M4A1 |
+
+Re-sync scene player: **Tools → Sync Test Range Player (Character + Classes)**.

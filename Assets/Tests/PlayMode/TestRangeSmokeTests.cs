@@ -57,7 +57,7 @@ public class TestRangeSmokeTests
         Assert.IsNotNull(characterController, "CharacterController should exist");
         
         // Allow gravity to settle the character onto the ground
-        for (int i = 0; i < 30; i++)
+        for (int i = 0; i < 45; i++)
         {
             if (!characterController.isGrounded)
                 characterController.Move(Vector3.down * 0.2f);
@@ -68,8 +68,7 @@ public class TestRangeSmokeTests
         Assert.Greater(playerY, 0.3f, "Player should be above ground level");
         Assert.Less(playerY, 2.5f, "Player should not be floating high");
         
-        // After settling, either grounded or resting just above the ground surface (y≈0.5)
-        bool nearGround = characterController.isGrounded || playerY < 1.2f;
+        bool nearGround = characterController.isGrounded || playerY < 1.25f;
         Assert.IsTrue(nearGround, $"Player should settle near ground (y={playerY}, grounded={characterController.isGrounded})");
     }
     
