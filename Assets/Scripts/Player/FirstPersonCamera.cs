@@ -18,8 +18,9 @@ public class FirstPersonCamera : MonoBehaviour
     {
         if (inputHandler == null)
             inputHandler = GetComponentInParent<InputHandler>();
+        // CameraHolder lives directly under the player root — parent, not parent.parent.
         if (playerBody == null && transform.parent != null)
-            playerBody = transform.parent.parent;
+            playerBody = transform.parent;
     }
     
     private void Start()
