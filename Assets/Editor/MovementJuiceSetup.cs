@@ -38,21 +38,37 @@ public static class MovementJuiceSetup
             return;
         }
 
-        var feedback = movement.GetComponent<MovementFeedback>();
+        EnsureFeedbackOnPlayer(movement.gameObject);
+        EditorUtility.SetDirty(movement.gameObject);
+        Debug.Log("MovementFeedback wired on " + movement.gameObject.name);
+    }
+
+    /// <summary>
+    /// Ensures <see cref="MovementFeedback"/> + AudioSource + clip refs on a player root.
+    /// Called from TestRange sync so juice is present without a manual menu click.
+    /// </summary>
+    public static MovementFeedback EnsureFeedbackOnPlayer(GameObject player)
+    {
+        if (player == null)
+            return null;
+
+        var movement = player.GetComponent<MovementController>();
+        var feedback = player.GetComponent<MovementFeedback>();
         if (feedback == null)
-            feedback = movement.gameObject.AddComponent<MovementFeedback>();
+            feedback = player.AddComponent<MovementFeedback>();
 
         var so = new SerializedObject(feedback);
         Assign(so, "movement", movement);
 
-        var cam = movement.GetComponentInChildren<Camera>();
+        var cam = player.GetComponentInChildren<Camera>();
         if (cam != null)
             Assign(so, "cameraEffectsTarget", cam.transform);
 
-        var audio = movement.GetComponent<AudioSource>();
+        var audio = player.GetComponent<AudioSource>();
         if (audio == null)
-            audio = movement.gameObject.AddComponent<AudioSource>();
+            audio = player.AddComponent<AudioSource>();
         audio.playOnAwake = false;
+        audio.spatialBlend = 0f;
         Assign(so, "audioSource", audio);
 
         AssignClip(so, "jumpClip", "sfx_jump");
@@ -64,9 +80,9 @@ public static class MovementJuiceSetup
         AssignClip(so, "slideCancelClip", "sfx_slide_cancel");
         AssignClip(so, "bunnyHopClip", "sfx_bhop");
 
+        so.FindProperty("createRuntimeParticles").boolValue = true;
         so.ApplyModifiedPropertiesWithoutUndo();
-        EditorUtility.SetDirty(movement.gameObject);
-        Debug.Log("MovementFeedback wired on " + movement.gameObject.name);
+        return feedback;
     }
 
     [MenuItem("Tools/Movement/Apply Scout Config To Scene Player")]

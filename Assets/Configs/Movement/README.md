@@ -28,9 +28,13 @@ These tune `MovementConfig` only. Class loadout `moveSpeedMultiplier` still stac
 - Applies camera shake + roll tilt on the **MainCamera** transform (does not touch `FirstPersonCamera` pitch)
 - Plays procedural placeholder clips under `Assets/Audio/Movement/`
 
-Wire onto the scene player:
+`MovementFeedback` is on `PlayerCharacter.prefab` (and re-applied by
+**Tools → Sync Test Range Player** / **Tools → Movement → Add Feedback To Scene Player**).
 
-**Tools → Movement → Add Feedback To Scene Player**
+Clips also load from `Resources/Audio/Movement/` if inspector refs are missing.
+
+**Drift note:** WASD wish direction uses the player root yaw only (not pitched
+`CameraHolder` / camera forward). Idle damping snaps grounded micro-slides to zero.
 
 Physics defaults on `DefaultMovementConfig` are unchanged aside from serializing existing crouch fields.
 

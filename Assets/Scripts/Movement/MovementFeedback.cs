@@ -84,6 +84,8 @@ public class MovementFeedback : MonoBehaviour
         audioSource.spatialBlend = 0f;
         audioSource.loop = false;
 
+        LoadClipFallbacks();
+
         if (createRuntimeParticles)
             EnsureParticles();
 
@@ -93,6 +95,18 @@ public class MovementFeedback : MonoBehaviour
             baseLocalPos = cameraEffectsTarget.localPosition;
             baseLocalRot = Quaternion.identity;
         }
+    }
+
+    private void LoadClipFallbacks()
+    {
+        jumpClip = jumpClip != null ? jumpClip : Resources.Load<AudioClip>("Audio/Movement/sfx_jump");
+        landClip = landClip != null ? landClip : Resources.Load<AudioClip>("Audio/Movement/sfx_land");
+        slideStartClip = slideStartClip != null ? slideStartClip : Resources.Load<AudioClip>("Audio/Movement/sfx_slide_start");
+        slideLoopClip = slideLoopClip != null ? slideLoopClip : Resources.Load<AudioClip>("Audio/Movement/sfx_slide_loop");
+        wallBounceClip = wallBounceClip != null ? wallBounceClip : Resources.Load<AudioClip>("Audio/Movement/sfx_wall_bounce");
+        diveClip = diveClip != null ? diveClip : Resources.Load<AudioClip>("Audio/Movement/sfx_dive");
+        slideCancelClip = slideCancelClip != null ? slideCancelClip : Resources.Load<AudioClip>("Audio/Movement/sfx_slide_cancel");
+        bunnyHopClip = bunnyHopClip != null ? bunnyHopClip : Resources.Load<AudioClip>("Audio/Movement/sfx_bhop");
     }
 
     private void OnEnable()

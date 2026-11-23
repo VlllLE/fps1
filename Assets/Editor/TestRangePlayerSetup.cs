@@ -121,6 +121,7 @@ public static class TestRangePlayerSetup
         EnsureClassSelector(player, applier);
         TestRangeWeaponLoadout.EnsureSkinCyclerOnPlayer(player);
         TestRangeWeaponLoadout.EnsureTestRangeHudAndHitDetection(player);
+        MovementJuiceSetup.EnsureFeedbackOnPlayer(player);
     }
 
     private static ClassLoadoutApplier EnsureClassApplier(GameObject player)

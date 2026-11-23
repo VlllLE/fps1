@@ -231,6 +231,8 @@ public static class PlayerCharacterBuilder
         // Spawn pose matches TestRange player
         player.transform.position = new Vector3(0f, 0.55f, -5f);
 
+        MovementJuiceSetup.EnsureFeedbackOnPlayer(player);
+
         _ = fpArms;
         _ = torso;
 

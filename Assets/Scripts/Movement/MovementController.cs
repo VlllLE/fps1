@@ -122,7 +122,7 @@ public class MovementController : MonoBehaviour
     #region Ground Check
     
     [Header("Ground Detection")]
-    [SerializeField] private float groundCheckDistance = 0.2f;
+    [SerializeField] private float groundCheckDistance = 0.35f;
     [SerializeField] private float groundCheckRadius = 0.3f;
     [SerializeField] private LayerMask groundLayers = ~0;
     
@@ -1031,7 +1031,9 @@ public class MovementController : MonoBehaviour
         
         Vector3 horizontal = new Vector3(velocity.x, 0f, velocity.z);
         float speed = horizontal.magnitude;
-        if (speed < 0.05f)
+        // Snap sooner when grounded so CharacterController micro-slides don't feel like drift.
+        float stopThreshold = groundedForBrake ? 0.35f : 0.05f;
+        if (speed < stopThreshold)
         {
             velocity.x = 0f;
             velocity.z = 0f;
@@ -1040,7 +1042,8 @@ public class MovementController : MonoBehaviour
         
         // Linear decay so idle stops are predictable (avoids state-machine frames skipping friction).
         float dt = Mathf.Max(Time.deltaTime, Time.fixedDeltaTime);
-        float scale = Mathf.Max(0f, 1f - idleDecayPerSecond * dt);
+        float decay = groundedForBrake ? idleDecayPerSecond * 1.35f : idleDecayPerSecond;
+        float scale = Mathf.Max(0f, 1f - decay * dt);
         velocity.x *= scale;
         velocity.z *= scale;
     }
@@ -1076,14 +1079,9 @@ public class MovementController : MonoBehaviour
         if (input == null || !input.HasMoveInput)
             return Vector3.zero;
         
-        // WASD uses yaw only — never the pitched camera forward (that causes backward/sideways drift).
-        Transform moveBasis = transform;
-        if (cameraTransform != null)
-        {
-            moveBasis = cameraTransform.parent != null ? cameraTransform.parent : cameraTransform;
-        }
-        
-        return input.GetMoveDirection(moveBasis);
+        // Player root is yaw-only. CameraHolder is pitched by FirstPersonCamera — using it as
+        // the move basis projects look-down into unstable/backward wish directions.
+        return input.GetMoveDirection(transform);
     }
     
     #endregion
