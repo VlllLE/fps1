@@ -119,9 +119,39 @@ public static class TestRangePlayerSetup
 
         ClassLoadoutApplier applier = EnsureClassApplier(player);
         EnsureClassSelector(player, applier);
+        EnsureLoadoutMenu(player);
         TestRangeWeaponLoadout.EnsureSkinCyclerOnPlayer(player);
         TestRangeWeaponLoadout.EnsureTestRangeHudAndHitDetection(player);
         MovementJuiceSetup.EnsureFeedbackOnPlayer(player);
+        WireCameraHolder(player);
+    }
+
+    private static void EnsureLoadoutMenu(GameObject player)
+    {
+        var menu = player.GetComponent<LoadoutPauseMenu>();
+        if (menu == null)
+            menu = player.AddComponent<LoadoutPauseMenu>();
+
+        var so = new SerializedObject(menu);
+        so.FindProperty("loadoutApplier").objectReferenceValue = player.GetComponent<ClassLoadoutApplier>();
+        so.FindProperty("classSelector").objectReferenceValue = player.GetComponent<TestRangeClassSelector>();
+        so.FindProperty("weaponSwitcher").objectReferenceValue = player.GetComponentInChildren<WeaponSwitcher>(true);
+        so.FindProperty("firstPersonCamera").objectReferenceValue = player.GetComponentInChildren<FirstPersonCamera>(true);
+        so.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void WireCameraHolder(GameObject player)
+    {
+        var movement = player.GetComponent<MovementController>();
+        var holder = player.transform.Find("CameraHolder");
+        if (movement == null || holder == null)
+            return;
+
+        var so = new SerializedObject(movement);
+        var prop = so.FindProperty("cameraHolder");
+        if (prop != null)
+            prop.objectReferenceValue = holder;
+        so.ApplyModifiedPropertiesWithoutUndo();
     }
 
     private static ClassLoadoutApplier EnsureClassApplier(GameObject player)

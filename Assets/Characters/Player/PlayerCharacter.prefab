@@ -2623,6 +2623,7 @@ GameObject:
   - component: {fileID: 100008}
   - component: {fileID: 100134}
   - component: {fileID: 100135}
+  - component: {fileID: 100136}
   m_Layer: 0
   m_Name: PlayerCharacter
   m_TagString: Untagged
@@ -2712,6 +2713,7 @@ MonoBehaviour:
   config: {fileID: 11400000, guid: eb34a1ce0a614b04aacd6acb25d8ede8, type: 2}
   input: {fileID: 100004}
   cameraTransform: {fileID: 100013}
+  cameraHolder: {fileID: 100010}
   currentState: 0
   velocity: {x: 0, y: 0, z: 0}
   currentSpeed: 0
@@ -2780,9 +2782,7 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0  - component: {fileID: 100134}
-  - component: {fileID: 100135}
-
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!82 &100134
 AudioSource:
   m_ObjectHideFlags: 0
@@ -2893,7 +2893,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Scripts::MovementFeedback
   movement: {fileID: 100005}
-  cameraEffectsTarget: {fileID: 100010}
+  cameraEffectsTarget: {fileID: 100013}
   audioSource: {fileID: 100134}
   createRuntimeParticles: 1
   slideDust: {fileID: 0}
@@ -2916,10 +2916,27 @@ MonoBehaviour:
   wallBounceShake: 0.35
   diveShake: 0.22
   shakeDecay: 1.8
-  maxShakeOffset: 0.08
+  maxShakeOffset: 0.02
   maxShakeAngle: 2.5
   slideRollDegrees: 4
   wallRunRollDegrees: 8
   sprintStrafeRollDegrees: 2
   tiltLerpSpeed: 10
   wallBounceKickDegrees: 6
+--- !u!114 &100136
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a80d9912aca464eb14c01500d02dc84, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::LoadoutPauseMenu
+  loadoutApplier: {fileID: 0}
+  classSelector: {fileID: 0}
+  weaponSwitcher: {fileID: 0}
+  firstPersonCamera: {fileID: 100011}
+  pauseTimeScale: 0

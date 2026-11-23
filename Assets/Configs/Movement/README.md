@@ -36,6 +36,9 @@ Clips also load from `Resources/Audio/Movement/` if inspector refs are missing.
 **Drift note:** WASD wish direction uses the player root yaw only (not pitched
 `CameraHolder` / camera forward). Idle damping snaps grounded micro-slides to zero.
 
+**Crouch/slide:** eye height (`CameraHolder`) lowers with stance — hold `C`/`Ctrl`
+to crouch; `Shift+W` then tap crouch to slide. `Esc` opens the loadout menu.
+
 Physics defaults on `DefaultMovementConfig` are unchanged aside from serializing existing crouch fields.
 
 ## Events added on `MovementController`

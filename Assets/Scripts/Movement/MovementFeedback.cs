@@ -42,7 +42,7 @@ public class MovementFeedback : MonoBehaviour
     [SerializeField] private float wallBounceShake = 0.35f;
     [SerializeField] private float diveShake = 0.22f;
     [SerializeField] private float shakeDecay = 1.8f;
-    [SerializeField] private float maxShakeOffset = 0.08f;
+    [SerializeField] private float maxShakeOffset = 0.02f;
     [SerializeField] private float maxShakeAngle = 2.5f;
 
     [Header("Camera Tilt")]

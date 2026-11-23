@@ -17,6 +17,11 @@ public class TestRangeClassSelector : MonoBehaviour
     [Header("Options")]
     [SerializeField] private bool allowRuntimeSwap = true;
 
+    public ClassDefinition AssaultClass => assaultClass;
+    public ClassDefinition SmgClass => smgClass;
+    public ClassDefinition SniperClass => sniperClass;
+    public ClassDefinition HybridClass => hybridClass;
+
     private void Awake()
     {
         if (loadoutApplier == null)
@@ -43,7 +48,16 @@ public class TestRangeClassSelector : MonoBehaviour
         if (picked == null)
             return;
 
-        if (loadoutApplier.ApplyLoadout(picked))
-            weaponBridge?.RefreshWeaponBindings();
+        ApplyClass(picked);
+    }
+
+    public bool ApplyClass(ClassDefinition definition)
+    {
+        if (definition == null || loadoutApplier == null)
+            return false;
+        if (!loadoutApplier.ApplyLoadout(definition))
+            return false;
+        weaponBridge?.RefreshWeaponBindings();
+        return true;
     }
 }

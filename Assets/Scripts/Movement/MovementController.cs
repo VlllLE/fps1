@@ -16,10 +16,13 @@ public class MovementController : MonoBehaviour
     [SerializeField] private MovementConfig config;
     [SerializeField] private InputHandler input;
     [SerializeField] private Transform cameraTransform;
+    [Tooltip("Yaw pivot / eye height root (CameraHolder). Lowered when crouching or sliding.")]
+    [SerializeField] private Transform cameraHolder;
     
     private CharacterController controller;
     private float defaultHeight;
     private Vector3 defaultCenter;
+    private float defaultCameraHeight = 1.6f;
     private MovementState previousState = MovementState.Walking;
     
     #endregion
@@ -155,6 +158,21 @@ public class MovementController : MonoBehaviour
         {
             cameraTransform = Camera.main?.transform;
         }
+
+        if (cameraHolder == null)
+        {
+            if (cameraTransform != null && cameraTransform.parent != null)
+                cameraHolder = cameraTransform.parent;
+            else
+            {
+                var holder = transform.Find("CameraHolder");
+                if (holder != null)
+                    cameraHolder = holder;
+            }
+        }
+
+        if (cameraHolder != null)
+            defaultCameraHeight = cameraHolder.localPosition.y;
         
         defaultHeight = controller.height;
         defaultCenter = controller.center;
@@ -656,7 +674,11 @@ public class MovementController : MonoBehaviour
     private bool CanSlide()
     {
         bool offCooldown = Time.time - lastSlideTime >= config.slideCooldown;
-        bool fastEnough = currentSpeed >= config.minSlideSpeed;
+        // Allow a small grace under minSlideSpeed when already sprinting so slides feel responsive.
+        float speedGate = currentState == MovementState.Sprinting
+            ? config.minSlideSpeed * 0.85f
+            : config.minSlideSpeed;
+        bool fastEnough = currentSpeed >= speedGate;
         bool notAlreadySliding = currentState != MovementState.Sliding;
         
         return offCooldown && fastEnough && notAlreadySliding && isGrounded;
@@ -1092,22 +1114,34 @@ public class MovementController : MonoBehaviour
     {
         float targetHeight = defaultHeight;
         Vector3 targetCenter = defaultCenter;
+        float targetCameraHeight = defaultCameraHeight;
         
         if (currentState == MovementState.Sliding || currentState == MovementState.Diving || 
             currentState == MovementState.DiveRecovery)
         {
             targetHeight = config.slideHeight;
             targetCenter = new Vector3(0f, config.slideHeight * 0.5f, 0f);
+            targetCameraHeight = Mathf.Max(0.35f, defaultCameraHeight * (config.slideHeight / Mathf.Max(defaultHeight, 0.01f)));
         }
         else if (IsStandingCrouch())
         {
             targetHeight = config.crouchHeight;
             targetCenter = new Vector3(0f, config.crouchHeight * 0.5f, 0f);
+            targetCameraHeight = Mathf.Max(0.7f, defaultCameraHeight * (config.crouchHeight / Mathf.Max(defaultHeight, 0.01f)));
         }
         
         // Smooth height transitions
-        controller.height = Mathf.Lerp(controller.height, targetHeight, Time.deltaTime * 15f);
-        controller.center = Vector3.Lerp(controller.center, targetCenter, Time.deltaTime * 15f);
+        float t = Time.deltaTime * 15f;
+        controller.height = Mathf.Lerp(controller.height, targetHeight, t);
+        controller.center = Vector3.Lerp(controller.center, targetCenter, t);
+
+        // Eye height must move with stance — otherwise crouch/slide feel broken in first person.
+        if (cameraHolder != null)
+        {
+            Vector3 camPos = cameraHolder.localPosition;
+            camPos.y = Mathf.Lerp(camPos.y, targetCameraHeight, t);
+            cameraHolder.localPosition = camPos;
+        }
     }
     
     #endregion
