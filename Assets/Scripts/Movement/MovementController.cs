@@ -136,6 +136,9 @@ public class MovementController : MonoBehaviour
     private bool hasIdleAnchor;
     private float idleAnchorX;
     private float idleAnchorZ;
+    private float idleAnchorY;
+    private bool overlapRecoveryDefault = true;
+    private float lastFirmGroundedTime;
     
     #endregion
 
@@ -185,6 +188,8 @@ public class MovementController : MonoBehaviour
         // Ignore sub-centimeter CC resolutions that read as standing drift.
         if (controller.minMoveDistance < 0.02f)
             controller.minMoveDistance = 0.02f;
+
+        overlapRecoveryDefault = controller.enableOverlapRecovery;
     }
     
     private void Update()
@@ -202,6 +207,14 @@ public class MovementController : MonoBehaviour
         
         currentSpeed = new Vector3(velocity.x, 0f, velocity.z).magnitude;
         NotifyStateChangeIfNeeded();
+    }
+
+    private void LateUpdate()
+    {
+        // FirstPersonCamera yaws the body after our Update — re-pin so look-around
+        // overlap recovery cannot shove XZ between frames.
+        if (config == null || input == null) return;
+        EnforceIdleAnchor();
     }
     
     private void OnDrawGizmos()
@@ -249,6 +262,9 @@ public class MovementController : MonoBehaviour
         {
             groundAngle = 0f;
         }
+
+        if (isGrounded)
+            lastFirmGroundedTime = Time.time;
         
         // Track grounded time for coyote time
         if (isGrounded)
@@ -1043,22 +1059,28 @@ public class MovementController : MonoBehaviour
         float horizSqr = velocity.x * velocity.x + velocity.z * velocity.z;
         bool fullyStopped = horizSqr < 0.0001f;
 
-        // Standing still: do NOT feed velocity.y=-2 into Move (that projects into XZ on seams).
-        // Use a tiny stick so CharacterController.isGrounded stays fresh, then pin XZ to anchor.
-        // Important: do not require controller.isGrounded — skipping Move makes that flag flicker false.
-        if (idleLock && fullyStopped && isGrounded)
+        // Standing still: zero velocity and do NOT call Move at all.
+        // Any downward Move projects into XZ on seams; overlap recovery then shoves on look-turn.
+        if (idleLock && fullyStopped && IsIdleGrounded())
         {
             velocity = Vector3.zero;
+            controller.enableOverlapRecovery = false;
             CaptureIdleAnchorIfNeeded();
-
-            float stick = Mathf.Max(controller.skinWidth * 2f, 0.05f);
-            controller.Move(new Vector3(0f, -stick, 0f));
             SnapToIdleAnchor();
             return;
         }
 
         hasIdleAnchor = false;
+        controller.enableOverlapRecovery = overlapRecoveryDefault;
         controller.Move(velocity * Time.deltaTime);
+    }
+
+    private bool IsIdleGrounded()
+    {
+        if (isGrounded)
+            return true;
+        // Sticky grounded: brief CC/sphere flicker must not re-enable sliding Moves.
+        return velocity.y <= 0.1f && (Time.time - lastFirmGroundedTime) < 0.25f;
     }
 
     private bool ShouldLockIdleHorizontal()
@@ -1080,6 +1102,7 @@ public class MovementController : MonoBehaviour
 
         Vector3 pos = transform.position;
         idleAnchorX = pos.x;
+        idleAnchorY = pos.y;
         idleAnchorZ = pos.z;
         hasIdleAnchor = true;
     }
@@ -1090,24 +1113,32 @@ public class MovementController : MonoBehaviour
             return;
 
         Vector3 pos = transform.position;
-        if (Mathf.Abs(pos.x - idleAnchorX) < 1e-5f && Mathf.Abs(pos.z - idleAnchorZ) < 1e-5f)
+        if (Mathf.Abs(pos.x - idleAnchorX) < 1e-5f &&
+            Mathf.Abs(pos.z - idleAnchorZ) < 1e-5f &&
+            Mathf.Abs(pos.y - idleAnchorY) < 1e-5f)
             return;
 
+        // Hard lock full pose while idle — no Y settle that can reintroduce XZ via recovery.
         bool wasEnabled = controller.enabled;
         controller.enabled = false;
-        transform.position = new Vector3(idleAnchorX, pos.y, idleAnchorZ);
+        transform.SetPositionAndRotation(
+            new Vector3(idleAnchorX, idleAnchorY, idleAnchorZ),
+            transform.rotation);
         controller.enabled = wasEnabled;
         Physics.SyncTransforms();
     }
 
     private void EnforceIdleAnchor()
     {
-        if (!ShouldLockIdleHorizontal() || !isGrounded)
+        if (!ShouldLockIdleHorizontal() || !IsIdleGrounded())
         {
-            // Keep anchor while still stopping; clear once we leave grounded idle.
             float horizSqr = velocity.x * velocity.x + velocity.z * velocity.z;
-            if (!ShouldLockIdleHorizontal() || !isGrounded || horizSqr > 0.25f)
+            if (!ShouldLockIdleHorizontal() || !IsIdleGrounded() || horizSqr > 0.25f)
+            {
                 hasIdleAnchor = false;
+                if (controller != null)
+                    controller.enableOverlapRecovery = overlapRecoveryDefault;
+            }
             return;
         }
 
@@ -1115,10 +1146,9 @@ public class MovementController : MonoBehaviour
         if (speedSqr > 0.0001f)
             return;
 
-        velocity.x = 0f;
-        velocity.z = 0f;
+        velocity = Vector3.zero;
+        controller.enableOverlapRecovery = false;
         CaptureIdleAnchorIfNeeded();
-        // Collider height lerps run after Move and can shove the capsule — re-pin every frame.
         SnapToIdleAnchor();
     }
     
@@ -1352,6 +1382,8 @@ public class MovementController : MonoBehaviour
         isMantling = false;
         isWallRunning = false;
         hasIdleAnchor = false;
+        if (controller != null)
+            controller.enableOverlapRecovery = overlapRecoveryDefault;
         
         controller.height = defaultHeight;
         controller.center = defaultCenter;

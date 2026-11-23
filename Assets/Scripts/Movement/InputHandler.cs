@@ -102,13 +102,9 @@ public class InputHandler : MonoBehaviour
         
         if (!testInputLocked)
         {
-            MoveInput = new Vector2(
-                Input.GetAxisRaw(horizontalAxis),
-                Input.GetAxisRaw(verticalAxis)
-            );
-            
-            if (MoveInput.magnitude < moveDeadzone)
-                MoveInput = Vector2.zero;
+            // Prefer digital keys so joystick noise on shared "Horizontal"/"Vertical" axes
+            // cannot invent standing drift. Gamepad uses separate *_Joy axes with a hard deadzone.
+            MoveInput = ReadDigitalOrGamepadMove();
             
             bool wasJumpHeld = JumpHeld;
             JumpHeld = Input.GetKey(jumpKey);
@@ -214,6 +210,37 @@ public class InputHandler : MonoBehaviour
         CrouchHeld = false;
     }
     
+    private Vector2 ReadDigitalOrGamepadMove()
+    {
+        float x = 0f;
+        float y = 0f;
+
+        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) x -= 1f;
+        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) x += 1f;
+        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) y -= 1f;
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) y += 1f;
+
+        if (Mathf.Abs(x) < 0.01f && Mathf.Abs(y) < 0.01f)
+        {
+            // Legacy axes (keyboard only after InputManager joy rename) + explicit joy axes.
+            float ax = Input.GetAxisRaw(horizontalAxis);
+            float ay = Input.GetAxisRaw(verticalAxis);
+            float jx = Input.GetAxisRaw("Horizontal_Joy");
+            float jy = Input.GetAxisRaw("Vertical_Joy");
+            if (Mathf.Abs(jx) > Mathf.Abs(ax)) ax = jx;
+            if (Mathf.Abs(jy) > Mathf.Abs(ay)) ay = jy;
+
+            Vector2 stick = new Vector2(ax, ay);
+            // Hard deadzone: stick noise must not count as move input while idle.
+            if (stick.magnitude < Mathf.Max(moveDeadzone, 0.5f))
+                stick = Vector2.zero;
+            return stick.sqrMagnitude > 1f ? stick.normalized : stick;
+        }
+
+        Vector2 keys = new Vector2(x, y);
+        return keys.sqrMagnitude > 1f ? keys.normalized : keys;
+    }
+
     public Vector3 GetMoveDirection(Transform relativeTo)
     {
         if (relativeTo == null)
