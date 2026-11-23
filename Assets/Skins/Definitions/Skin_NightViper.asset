@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40c3bfe530754bafb16d4ffde8f0ed62, type: 3}
+  m_Name: Skin_NightViper
+  m_EditorClassIdentifier: 
+  skinName: Night Viper
+  description: Near-black digital camo with neon green ticks.
+  rarity: 3
+  icon: {fileID: 0}
+  material: {fileID: 2100000, guid: 11fe21f0b52b4f01898d66886113ea31, type: 2}
+  applyParameterOverrides: 0
+  skinColor: {r: 1, g: 1, b: 1, a: 1}
+  accentColor: {r: 1, g: 1, b: 1, a: 1}
+  speed: 1.0
+  intensity: 1.0
+  scale: 1.15

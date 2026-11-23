@@ -50,6 +50,10 @@ target root and skips particle/trail/line renderers.
    - `PulsingEmissive` — cell glow pulse; uses `SkinNoise`
    - `Holographic` — fresnel + iridescent shift; uses `SkinNoise`
    - `FlowingLava` — dual-layer flowing heat; uses `SkinNoise`
+   - `NeonRain` — falling neon streaks; uses `SkinNoise`
+   - `ChromaticShift` — metallic colour bands; uses `SkinNoise`
+   - `StormArc` — electric arcs on traces; uses `SkinCircuitMask` + `SkinNoise`
+   - `EmberAsh` — rising embers over ash; uses `SkinNoise`
 2. Create a material with that shader, assign the data textures, set
    `_Speed`, `_Intensity`, colours.
 3. Create a `WeaponSkinDefinition` under `Definitions/Animated/`.
@@ -59,6 +63,17 @@ target root and skips particle/trail/line renderers.
 Shared property names (`_SkinColor`, `_EnergyColor` / `_EmissionColor` /
 `_AccentColor`, `_Speed`, `_Intensity`, `_Scale`) are written by
 `WeaponSkinDefinition.WritePropertyBlock`.
+
+
+
+## Batch 2 skins
+
+**Static:** Desert Tiger, Urban Hex, Carbon Fiber, Copper Patina, Kryptek Fracture, Night Viper.
+
+**Animated:** Neon Rain, Chromatic Shift, Storm Arc, Ember Ash
+(`Skins/NeonRain`, `Skins/ChromaticShift`, `Skins/StormArc`, `Skins/EmberAsh`).
+
+Previews for batch-2 static textures live in the project store under `media/skins-batch2/`.
 
 ## Notes
 
