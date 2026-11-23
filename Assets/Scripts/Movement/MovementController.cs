@@ -135,6 +135,7 @@ public class MovementController : MonoBehaviour
         UpdateTimers();
         HandleInput();
         UpdateMovementState();
+        DampenHorizontalVelocityWhenIdle();
         ApplyMovement();
         UpdateColliderHeight();
         
@@ -385,10 +386,11 @@ public class MovementController : MonoBehaviour
         if (IsStandingCrouch())
             targetSpeed *= config.crouchSpeedMultiplier;
         
+        float friction = config.groundFriction;
+        
         Vector3 targetVelocity = wishDir * targetSpeed;
         
-        // Apply ground acceleration with friction
-        velocity = ApplyGroundAcceleration(velocity, targetVelocity, config.groundAcceleration, config.groundFriction);
+        velocity = ApplyGroundAcceleration(velocity, targetVelocity, config.groundAcceleration, friction);
         
         // Apply gravity to keep grounded
         velocity.y = -2f;
@@ -454,6 +456,8 @@ public class MovementController : MonoBehaviour
         if (isGrounded && velocity.y <= 0.05f)
         {
             currentState = MovementState.Walking;
+            // Apply ground friction this frame — early return here used to skip damping when grounded check flickered.
+            UpdateGroundedState();
             return;
         }
         
@@ -954,6 +958,41 @@ public class MovementController : MonoBehaviour
         controller.Move(velocity * Time.deltaTime);
     }
     
+    private void DampenHorizontalVelocityWhenIdle()
+    {
+        if (input == null || config == null || input.HasMoveInput)
+            return;
+        
+        if (currentState == MovementState.Sliding || currentState == MovementState.Diving ||
+            currentState == MovementState.DiveRecovery || currentState == MovementState.Mantling ||
+            currentState == MovementState.WallRunning)
+        {
+            return;
+        }
+        
+        bool groundedForBrake = isGrounded
+            || (controller != null && controller.isGrounded && velocity.y <= 0.15f);
+        
+        float idleDecayPerSecond = groundedForBrake
+            ? config.groundFriction * config.idleFrictionMultiplier
+            : Mathf.Max(config.airFriction, 1f);
+        
+        Vector3 horizontal = new Vector3(velocity.x, 0f, velocity.z);
+        float speed = horizontal.magnitude;
+        if (speed < 0.05f)
+        {
+            velocity.x = 0f;
+            velocity.z = 0f;
+            return;
+        }
+        
+        // Linear decay so idle stops are predictable (avoids state-machine frames skipping friction).
+        float dt = Mathf.Max(Time.deltaTime, Time.fixedDeltaTime);
+        float scale = Mathf.Max(0f, 1f - idleDecayPerSecond * dt);
+        velocity.x *= scale;
+        velocity.z *= scale;
+    }
+    
     private Vector3 ApplyGroundAcceleration(Vector3 currentVel, Vector3 targetVel, float accel, float friction)
     {
         Vector3 horizontalCurrent = new Vector3(currentVel.x, 0f, currentVel.z);
@@ -982,8 +1021,17 @@ public class MovementController : MonoBehaviour
     
     private Vector3 GetWishDirection()
     {
-        if (cameraTransform == null) return Vector3.zero;
-        return input.GetMoveDirection(cameraTransform);
+        if (input == null || !input.HasMoveInput)
+            return Vector3.zero;
+        
+        // WASD uses yaw only — never the pitched camera forward (that causes backward/sideways drift).
+        Transform moveBasis = transform;
+        if (cameraTransform != null)
+        {
+            moveBasis = cameraTransform.parent != null ? cameraTransform.parent : cameraTransform;
+        }
+        
+        return input.GetMoveDirection(moveBasis);
     }
     
     #endregion

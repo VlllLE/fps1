@@ -20,7 +20,10 @@ public class MovementConfig : ScriptableObject
     public float groundAcceleration = 14f;
     
     [Tooltip("Friction applied when grounded")]
-    public float groundFriction = 6f;
+    public float groundFriction = 8f;
+    
+    [Tooltip("Extra friction multiplier when not pressing movement keys")]
+    public float idleFrictionMultiplier = 2.5f;
     
     [Tooltip("Maximum slope angle player can walk up")]
     public float maxSlopeAngle = 45f;
@@ -44,17 +47,17 @@ public class MovementConfig : ScriptableObject
     
     [Header("Air Control")]
     [Tooltip("Air acceleration for strafing")]
-    public float airAcceleration = 12f;
+    public float airAcceleration = 6f;
     
     [Tooltip("Maximum air speed from strafing (source-style)")]
-    public float maxAirSpeed = 1.2f;
+    public float maxAirSpeed = 0.75f;
     
     [Tooltip("Air control amount (0 = no control, 1 = full)")]
     [Range(0f, 1f)]
     public float airControl = 0.3f;
     
-    [Tooltip("Air friction (usually 0 for momentum preservation)")]
-    public float airFriction = 0f;
+    [Tooltip("Horizontal slowdown per second when airborne with no move input")]
+    public float airFriction = 3f;
     
     #endregion
 
@@ -62,7 +65,7 @@ public class MovementConfig : ScriptableObject
     
     [Header("Sliding")]
     [Tooltip("Initial burst speed when entering slide")]
-    public float slideBoostSpeed = 12f;
+    public float slideBoostSpeed = 9f;
     
     [Tooltip("Minimum speed required to initiate slide")]
     public float minSlideSpeed = 4f;
@@ -71,7 +74,7 @@ public class MovementConfig : ScriptableObject
     public float slideDuration = 0.8f;
     
     [Tooltip("Friction during slide (lower = more slippery)")]
-    public float slideFriction = 0.3f;
+    public float slideFriction = 0.55f;
     
     [Tooltip("Downhill slide acceleration bonus")]
     public float slideDownhillBoost = 8f;
@@ -106,13 +109,13 @@ public class MovementConfig : ScriptableObject
     
     [Tooltip("Speed preservation on bhop (1 = full, 0.9 = 10% loss)")]
     [Range(0.5f, 1.1f)]
-    public float bhopSpeedRetention = 0.98f;
+    public float bhopSpeedRetention = 0.9f;
     
     [Tooltip("Maximum speed achievable through bhop")]
-    public float bhopMaxSpeed = 18f;
+    public float bhopMaxSpeed = 11f;
     
     [Tooltip("Small boost per successful bhop")]
-    public float bhopBonus = 0.5f;
+    public float bhopBonus = 0.15f;
     
     #endregion
 

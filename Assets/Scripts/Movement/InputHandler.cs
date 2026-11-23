@@ -60,6 +60,9 @@ public class InputHandler : MonoBehaviour
 
     [Header("Mouse Settings")]
     [SerializeField] private float mouseSensitivity = 1f;
+    
+    [Header("Deadzone")]
+    [SerializeField] private float moveDeadzone = 0.15f;
 
     #endregion
 
@@ -103,6 +106,9 @@ public class InputHandler : MonoBehaviour
                 Input.GetAxisRaw(horizontalAxis),
                 Input.GetAxisRaw(verticalAxis)
             );
+            
+            if (MoveInput.magnitude < moveDeadzone)
+                MoveInput = Vector2.zero;
             
             bool wasJumpHeld = JumpHeld;
             JumpHeld = Input.GetKey(jumpKey);
@@ -177,6 +183,8 @@ public class InputHandler : MonoBehaviour
     public void SetTestInputLocked(bool locked)
     {
         testInputLocked = locked;
+        if (locked)
+            MoveInput = Vector2.zero;
     }
     
     #endregion

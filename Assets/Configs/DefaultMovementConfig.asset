@@ -15,29 +15,30 @@ MonoBehaviour:
   walkSpeed: 6
   sprintMultiplier: 1.6
   groundAcceleration: 14
-  groundFriction: 6
+  groundFriction: 8
+  idleFrictionMultiplier: 2.5
   maxSlopeAngle: 45
   jumpForce: 8
   gravityMultiplier: 2.5
   coyoteTime: 0.12
   jumpBufferTime: 0.1
-  airAcceleration: 12
-  maxAirSpeed: 1.2
+  airAcceleration: 6
+  maxAirSpeed: 0.75
   airControl: 0.3
-  airFriction: 0
-  slideBoostSpeed: 12
+  airFriction: 3
+  slideBoostSpeed: 9
   minSlideSpeed: 4
   slideDuration: 0.8
-  slideFriction: 0.3
+  slideFriction: 0.55
   slideDownhillBoost: 8
   slideHeight: 0.6
   slideCooldown: 0.3
   slideCancelBoost: 1.3
   slideCancelWindow: 0.3
   bhopWindow: 0.15
-  bhopSpeedRetention: 0.98
-  bhopMaxSpeed: 18
-  bhopBonus: 0.5
+  bhopSpeedRetention: 0.9
+  bhopMaxSpeed: 11
+  bhopBonus: 0.15
   diveForwardSpeed: 14
   diveUpwardForce: 3
   diveDuration: 0.6

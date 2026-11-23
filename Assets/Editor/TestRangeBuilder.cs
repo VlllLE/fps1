@@ -302,7 +302,7 @@ public class TestRangeBuilder : MonoBehaviour
         var inputProp = movementSO.FindProperty("input");
         if (inputProp != null) inputProp.objectReferenceValue = inputHandler;
         var camProp = movementSO.FindProperty("cameraTransform");
-        if (camProp != null) camProp.objectReferenceValue = cam.transform;
+        if (camProp != null) camProp.objectReferenceValue = cameraHolder.transform;
         movementSO.ApplyModifiedPropertiesWithoutUndo();
         
         var weaponHolder = new GameObject("WeaponHolder");

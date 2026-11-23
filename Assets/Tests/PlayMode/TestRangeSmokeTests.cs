@@ -31,6 +31,12 @@ public class TestRangeSmokeTests
             movement = player.GetComponent<MovementController>();
             characterController = player.GetComponent<CharacterController>();
             inputHandler = player.GetComponent<InputHandler>();
+            inputHandler.SetTestInputLocked(true);
+            inputHandler.SetMoveInput(Vector2.zero);
+            inputHandler.SimulateSprintHeld(false);
+            inputHandler.SetCrouchHeld(false);
+            inputHandler.SetJumpHeld(false);
+            inputHandler.SetTestInputLocked(false);
         }
     }
     
@@ -277,6 +283,44 @@ public class TestRangeSmokeTests
     {
         Assert.IsNotNull(movement, "Movement controller should exist");
         yield return null;
+    }
+    
+    [UnityTest]
+    public IEnumerator Player_Idle_WithNoInput_VelocityDampens()
+    {
+        Assert.IsNotNull(movement);
+        Assert.IsNotNull(inputHandler);
+        
+        inputHandler.SetTestInputLocked(true);
+        inputHandler.SetMoveInput(Vector2.zero);
+        
+        for (int i = 0; i < 30; i++)
+        {
+            if (!characterController.isGrounded)
+                characterController.Move(Vector3.down * 0.2f);
+            yield return null;
+        }
+        inputHandler.SimulateSprintHeld(false);
+        inputHandler.SetCrouchHeld(false);
+        inputHandler.SetJumpHeld(false);
+        
+        Assert.IsTrue(movement.IsGrounded || characterController.isGrounded,
+            "Idle damp test requires grounded player");
+        
+        movement.SetVelocity(player.transform.forward * 6f);
+        yield return null;
+        
+        Assert.Greater(new Vector3(movement.Velocity.x, 0f, movement.Velocity.z).magnitude, 0.5f);
+        
+        for (int i = 0; i < 60; i++)
+            yield return null;
+        
+        Assert.IsFalse(inputHandler.HasMoveInput, "Idle test should have zero move input");
+        float horizSpeed = new Vector3(movement.Velocity.x, 0f, movement.Velocity.z).magnitude;
+        inputHandler.SetTestInputLocked(false);
+        
+        Assert.Less(horizSpeed, 0.35f,
+            $"Horizontal velocity should decay when idle with no input (speed={horizSpeed:F2} state={movement.CurrentState} grounded={movement.IsGrounded} move={inputHandler.MoveInput} dt={Time.deltaTime:F4})");
     }
     
     [UnityTest]
