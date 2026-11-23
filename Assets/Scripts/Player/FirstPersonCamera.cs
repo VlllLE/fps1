@@ -12,6 +12,7 @@ public class FirstPersonCamera : MonoBehaviour
     [SerializeField] private bool invertY = false;
     
     private float xRotation = 0f;
+    private float yRotation = 0f;
     private bool cursorLocked = true;
     
     private void Awake()
@@ -25,6 +26,8 @@ public class FirstPersonCamera : MonoBehaviour
     
     private void Start()
     {
+        if (playerBody != null)
+            yRotation = playerBody.eulerAngles.y;
         SetCursorLock(true);
     }
     
@@ -44,13 +47,13 @@ public class FirstPersonCamera : MonoBehaviour
         float mouseY = lookInput.y * mouseSensitivity * (invertY ? 1f : -1f);
         
         xRotation = Mathf.Clamp(xRotation + mouseY, -maxLookAngle, maxLookAngle);
+        yRotation += mouseX;
         
         transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
         
+        // Absolute yaw — avoids CharacterController.Rotate incremental depenetration slides.
         if (playerBody != null)
-        {
-            playerBody.Rotate(Vector3.up * mouseX);
-        }
+            playerBody.rotation = Quaternion.Euler(0f, yRotation, 0f);
     }
     
     public void SetCursorLock(bool locked)
