@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c4e2a91b8d64f0e9a3c5d1e2f6b8a04, type: 3}
+  m_Name: Class_SMG
+  m_EditorClassIdentifier: Scripts::ClassDefinition
+  className: SMG
+  description: Close-quarters class. UMP primary with SCAR backup.
+  primaryWeaponPrefab: {fileID: 430000017, guid: 475bfb7dc087434ea682ff192c2580e0, type: 3}
+  primaryWeaponConfig: {fileID: 11400000, guid: df8486a523b29e94fa96ac9196b3c005, type: 2}
+  secondaryWeaponPrefab: {fileID: 420000017, guid: e3a553387eb74606b410bdcbee6efd99, type: 3}
+  secondaryWeaponConfig: {fileID: 11400000, guid: a2a0f52bcdb367f44ae16cbba68521f2, type: 2}
+  meleeWeaponPrefab: {fileID: 0}
+  meleeWeaponConfig: {fileID: 0}
+  moveSpeedMultiplier: 1.08

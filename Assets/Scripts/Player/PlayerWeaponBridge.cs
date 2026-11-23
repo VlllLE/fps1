@@ -13,6 +13,8 @@ public class PlayerWeaponBridge : MonoBehaviour
 
     private WeaponController ActiveWeapon =>
         weaponSwitcher != null ? weaponSwitcher.CurrentWeapon : weapon;
+
+    public WeaponSwitcher WeaponSwitcher => weaponSwitcher;
     
     private void Awake()
     {
@@ -31,6 +33,16 @@ public class PlayerWeaponBridge : MonoBehaviour
         
         if (weaponSwitcher == null && weapon != null)
             weapon.Equip();
+    }
+
+    /// <summary>
+    /// Rebinds the active <see cref="WeaponSwitcher"/> after a class/loadout swap.
+    /// </summary>
+    public void BindSwitcher(WeaponSwitcher switcher)
+    {
+        weaponSwitcher = switcher;
+        if (weaponSwitcher != null)
+            weapon = weaponSwitcher.CurrentWeapon;
     }
     
     private void Update()
