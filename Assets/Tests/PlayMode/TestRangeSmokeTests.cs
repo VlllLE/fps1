@@ -321,6 +321,45 @@ public class TestRangeSmokeTests
         Assert.Less(horizSpeed, 0.35f,
             $"Horizontal velocity should decay when idle with no input (speed={horizSpeed:F2} state={movement.CurrentState} grounded={movement.IsGrounded} move={inputHandler.MoveInput} dt={Time.deltaTime:F4})");
     }
+
+    [UnityTest]
+    public IEnumerator Player_Idle_Grounded_DoesNotDriftHorizontally()
+    {
+        Assert.IsNotNull(movement);
+        Assert.IsNotNull(inputHandler);
+        Assert.IsNotNull(characterController);
+
+        inputHandler.SetTestInputLocked(true);
+        inputHandler.SetMoveInput(Vector2.zero);
+        inputHandler.SimulateSprintHeld(false);
+        inputHandler.SetCrouchHeld(false);
+        inputHandler.SetJumpHeld(false);
+
+        for (int i = 0; i < 45; i++)
+        {
+            if (!characterController.isGrounded)
+                characterController.Move(Vector3.down * 0.2f);
+            yield return null;
+        }
+
+        Assert.IsTrue(movement.IsGrounded || characterController.isGrounded,
+            "Idle drift test requires grounded player");
+
+        movement.SetVelocity(Vector3.zero);
+        Vector3 start = player.transform.position;
+
+        for (int i = 0; i < 90; i++)
+            yield return null;
+
+        Vector3 end = player.transform.position;
+        float horizontalDrift = Vector2.Distance(
+            new Vector2(start.x, start.z),
+            new Vector2(end.x, end.z));
+        inputHandler.SetTestInputLocked(false);
+
+        Assert.Less(horizontalDrift, 0.05f,
+            $"Idle grounded player should not slide (drift={horizontalDrift:F4} start={start} end={end})");
+    }
     
     [UnityTest]
     public IEnumerator Player_Jump_SimulatedInput_LeavesGround()

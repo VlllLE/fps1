@@ -1028,8 +1028,56 @@ public class MovementController : MonoBehaviour
     private void ApplyMovement()
     {
         if (currentState == MovementState.Mantling) return;
-        
+
+        bool idleLock = ShouldLockIdleHorizontal();
+        float horizSqr = velocity.x * velocity.x + velocity.z * velocity.z;
+        bool fullyStopped = horizSqr < 0.0001f;
+
+        if (idleLock && fullyStopped)
+        {
+            velocity.x = 0f;
+            velocity.z = 0f;
+        }
+
+        bool groundedNow = isGrounded || (controller != null && controller.isGrounded);
+
+        // Idle + stopped + grounded: skip CharacterController.Move.
+        // A constant downward Move into CC projects along tiny slopes/mesh seams and invents
+        // horizontal slides that our velocity field never records (standing "drift").
+        if (idleLock && fullyStopped && groundedNow && controller.isGrounded)
+            return;
+
+        Vector3 posBefore = transform.position;
         controller.Move(velocity * Time.deltaTime);
+
+        // Safety net while fully stopped: keep Y settle but reject XZ slides from CC.
+        if (idleLock && fullyStopped)
+        {
+            Vector3 pos = transform.position;
+            float dx = pos.x - posBefore.x;
+            float dz = pos.z - posBefore.z;
+            if (dx * dx + dz * dz > 1e-8f)
+            {
+                bool wasEnabled = controller.enabled;
+                controller.enabled = false;
+                transform.position = new Vector3(posBefore.x, pos.y, posBefore.z);
+                controller.enabled = wasEnabled;
+                velocity.x = 0f;
+                velocity.z = 0f;
+            }
+        }
+    }
+
+    private bool ShouldLockIdleHorizontal()
+    {
+        if (input == null || input.HasMoveInput)
+            return false;
+
+        return currentState != MovementState.Sliding
+            && currentState != MovementState.Diving
+            && currentState != MovementState.DiveRecovery
+            && currentState != MovementState.Mantling
+            && currentState != MovementState.WallRunning;
     }
     
     private void DampenHorizontalVelocityWhenIdle()
@@ -1054,7 +1102,7 @@ public class MovementController : MonoBehaviour
         Vector3 horizontal = new Vector3(velocity.x, 0f, velocity.z);
         float speed = horizontal.magnitude;
         // Snap sooner when grounded so CharacterController micro-slides don't feel like drift.
-        float stopThreshold = groundedForBrake ? 0.35f : 0.05f;
+        float stopThreshold = groundedForBrake ? 0.5f : 0.05f;
         if (speed < stopThreshold)
         {
             velocity.x = 0f;
@@ -1064,7 +1112,7 @@ public class MovementController : MonoBehaviour
         
         // Linear decay so idle stops are predictable (avoids state-machine frames skipping friction).
         float dt = Mathf.Max(Time.deltaTime, Time.fixedDeltaTime);
-        float decay = groundedForBrake ? idleDecayPerSecond * 1.35f : idleDecayPerSecond;
+        float decay = groundedForBrake ? idleDecayPerSecond * 1.75f : idleDecayPerSecond;
         float scale = Mathf.Max(0f, 1f - decay * dt);
         velocity.x *= scale;
         velocity.z *= scale;
