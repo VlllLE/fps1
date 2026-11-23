@@ -1,0 +1,96 @@
+Shader "Skins/PulsingEmissive"
+{
+    Properties
+    {
+        _Color ("Base Tint", Color) = (0.08, 0.08, 0.1, 1)
+        _SkinColor ("Skin Color", Color) = (0.08, 0.08, 0.1, 1)
+        _EmissionColor ("Emission Color", Color) = (0.35, 0.75, 1.0, 1)
+        _AccentColor ("Accent Color", Color) = (0.35, 0.75, 1.0, 1)
+        _EnergyColor ("Energy Color", Color) = (0.35, 0.75, 1.0, 1)
+        _NoiseTex ("Noise (RGB)", 2D) = "gray" {}
+        _Speed ("Pulse Speed", Range(0,8)) = 1.25
+        _Intensity ("Emission Intensity", Range(0,8)) = 2.5
+        _Scale ("Triplanar Scale", Float) = 1.0
+        _BlendSharpness ("Blend Sharpness", Range(1,8)) = 4
+        _Glossiness ("Smoothness", Range(0,1)) = 0.45
+        _Metallic ("Metallic", Range(0,1)) = 0.4
+    }
+
+    SubShader
+    {
+        Tags { "RenderType"="Opaque" "Queue"="Geometry" }
+        LOD 200
+
+        CGPROGRAM
+        #pragma surface surf Standard fullforwardshadows vertex:vert
+        #pragma target 3.0
+
+        sampler2D _NoiseTex;
+        half _Glossiness;
+        half _Metallic;
+        fixed4 _Color;
+        fixed4 _SkinColor;
+        fixed4 _EmissionColor;
+        fixed4 _AccentColor;
+        fixed4 _EnergyColor;
+        float _Speed;
+        float _Intensity;
+        float _Scale;
+        float _BlendSharpness;
+
+        struct Input
+        {
+            float3 objPos;
+            float3 objNormal;
+        };
+
+        void vert(inout appdata_full v, out Input o)
+        {
+            UNITY_INITIALIZE_OUTPUT(Input, o);
+            o.objPos = v.vertex.xyz;
+            o.objNormal = v.normal;
+        }
+
+        float3 TriplanarWeights(float3 n, float sharpness)
+        {
+            float3 w = pow(abs(n), sharpness);
+            return w / max(w.x + w.y + w.z, 1e-5);
+        }
+
+        fixed4 TriplanarSample(sampler2D tex, float3 pos, float3 weights)
+        {
+            fixed4 x = tex2D(tex, pos.zy);
+            fixed4 y = tex2D(tex, pos.xz);
+            fixed4 z = tex2D(tex, pos.xy);
+            return x * weights.x + y * weights.y + z * weights.z;
+        }
+
+        void surf(Input IN, inout SurfaceOutputStandard o)
+        {
+            float3 weights = TriplanarWeights(IN.objNormal, _BlendSharpness);
+            float3 pos = IN.objPos * _Scale;
+            float t = _Time.y * _Speed;
+
+            fixed4 noise = TriplanarSample(_NoiseTex, pos, weights);
+            float cells = noise.b;
+            float soft = noise.r;
+
+            float beat = 0.5 + 0.5 * sin(t * 2.0);
+            float local = 0.5 + 0.5 * sin(t * 3.5 + soft * 8.0 + soft * 4.0);
+            float mask = saturate(pow(cells, 1.4) * 0.75 + soft * 0.35);
+            float pulse = lerp(0.25, 1.0, beat * local) * mask;
+
+            fixed3 baseCol = _Color.rgb * _SkinColor.rgb;
+            fixed3 emit = (_EmissionColor.rgb * _AccentColor.rgb * _EnergyColor.rgb) * pulse * _Intensity;
+
+            o.Albedo = baseCol + emit * 0.1;
+            o.Emission = emit;
+            o.Metallic = _Metallic;
+            o.Smoothness = _Glossiness;
+            o.Alpha = 1.0;
+        }
+        ENDCG
+    }
+
+    FallBack "Standard"
+}

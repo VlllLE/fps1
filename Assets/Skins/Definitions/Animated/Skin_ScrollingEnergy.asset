@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40c3bfe530754bafb16d4ffde8f0ed62, type: 3}
+  m_Name: Skin_ScrollingEnergy
+  m_EditorClassIdentifier: 
+  skinName: Scrolling Energy
+  description: Animated circuit energy scroll. Tweak speed, accent colour, intensity.
+  rarity: 3
+  icon: {fileID: 0}
+  material: {fileID: 2100000, guid: 560a858728fa44478aeecc59cddd2117, type: 2}
+  applyParameterOverrides: 1
+  skinColor: {r: 0.05, g: 0.07, b: 0.1, a: 1}
+  accentColor: {r: 0.2, g: 1.0, b: 0.55, a: 1}
+  speed: 1.5
+  intensity: 2.0
+  scale: 1.25
