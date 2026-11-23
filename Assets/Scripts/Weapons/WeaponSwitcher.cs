@@ -41,6 +41,7 @@ public class WeaponSwitcher : MonoBehaviour
     private int currentSlotIndex = -1;
     private int previousSlotIndex = -1;
     private bool isSwitching;
+    private bool hasStarted;
     private Coroutine switchCoroutine;
     
     private Dictionary<SlotType, int> slotTypeToIndex;
@@ -59,12 +60,53 @@ public class WeaponSwitcher : MonoBehaviour
     {
         InitializeSlotMapping();
     }
+
+    /// <summary>
+    /// Replaces the switcher's slot array (used by class / loadout systems).
+    /// Safe to call from another component's Awake before this Start runs;
+    /// if Start already ran, the starting slot is equipped immediately.
+    /// </summary>
+    public void ConfigureSlots(WeaponSlot[] slots, int startSlot = 0)
+    {
+        CancelSwitch();
+
+        if (currentSlotIndex >= 0 && weaponSlots != null
+            && currentSlotIndex < weaponSlots.Length
+            && weaponSlots[currentSlotIndex].weapon != null)
+        {
+            weaponSlots[currentSlotIndex].weapon.Holster();
+        }
+
+        weaponSlots = slots ?? Array.Empty<WeaponSlot>();
+        startingSlot = startSlot;
+        currentSlotIndex = -1;
+        previousSlotIndex = -1;
+
+        InitializeSlotMapping();
+        InitializeWeapons();
+
+        if (hasStarted)
+            EquipConfiguredStartingSlot();
+    }
+
+    /// <summary>
+    /// Forces an immediate equip of the configured starting slot after <see cref="ConfigureSlots"/>.
+    /// </summary>
+    public void EquipConfiguredStartingSlot()
+    {
+        if (startingSlot >= 0 && weaponSlots != null && startingSlot < weaponSlots.Length
+            && weaponSlots[startingSlot].weapon != null)
+        {
+            EquipSlotImmediate(startingSlot);
+        }
+    }
     
     private void Start()
     {
+        hasStarted = true;
         InitializeWeapons();
         
-        if (startingSlot >= 0 && startingSlot < weaponSlots.Length)
+        if (startingSlot >= 0 && weaponSlots != null && startingSlot < weaponSlots.Length)
         {
             EquipSlotImmediate(startingSlot);
         }
@@ -78,6 +120,8 @@ public class WeaponSwitcher : MonoBehaviour
     private void InitializeSlotMapping()
     {
         slotTypeToIndex = new Dictionary<SlotType, int>();
+        if (weaponSlots == null)
+            weaponSlots = Array.Empty<WeaponSlot>();
         
         for (int i = 0; i < weaponSlots.Length; i++)
         {
@@ -90,6 +134,9 @@ public class WeaponSwitcher : MonoBehaviour
     
     private void InitializeWeapons()
     {
+        if (weaponSlots == null)
+            return;
+
         for (int i = 0; i < weaponSlots.Length; i++)
         {
             if (weaponSlots[i].weapon != null)

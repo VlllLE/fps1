@@ -46,6 +46,17 @@ public class MovementController : MonoBehaviour
     public Vector3 Velocity => velocity;
     public float CurrentSpeed => currentSpeed;
     public bool IsGrounded => isGrounded;
+
+    /// <summary>
+    /// External multiplier (e.g. from <c>ClassLoadoutApplier</c>). Defaults to 1 — does not change feel until set.
+    /// </summary>
+    public float ClassSpeedMultiplier
+    {
+        get => classSpeedMultiplier;
+        set => classSpeedMultiplier = Mathf.Max(0.1f, value);
+    }
+
+    private float classSpeedMultiplier = 1f;
     
     #endregion
 
@@ -382,6 +393,8 @@ public class MovementController : MonoBehaviour
         float targetSpeed = currentState == MovementState.Sprinting 
             ? config.walkSpeed * config.sprintMultiplier 
             : config.walkSpeed;
+
+        targetSpeed *= classSpeedMultiplier;
         
         if (IsStandingCrouch())
             targetSpeed *= config.crouchSpeedMultiplier;
