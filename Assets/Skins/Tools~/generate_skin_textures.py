@@ -312,6 +312,147 @@ def damascus(n=SIZE):
     return image * grain(63, n, 0.045)[..., None]
 
 
+
+def desert_tiger(n=SIZE):
+    """Sandy tiger-stripe desert camo with soft organic bands."""
+    ss = 2
+    m = n * ss
+    u, v = grid(m)
+    warp = fractal_noise(91, m, 2.0, octaves=3)
+    warp /= warp.std()
+    # Integer cycle counts so the sine wraps with the tile.
+    stripes = 0.5 + 0.5 * np.sin(2.0 * np.pi * (5.0 * v + 1.0 * u) + 2.4 * warp)
+    stripes = equalize(periodic_blur(stripes, 1.2))
+    blotch = equalize(spectral_noise(92, m, 3.2, sharpness=2.8, stretch=(1.4, 0.7)))
+    image = np.empty((m, m, 3))
+    image[:] = rgb("#c9a66b")
+    image[blotch > 0.58] = rgb("#a8844a")
+    image[stripes > 0.62] = rgb("#6e5330")
+    image[stripes > 0.82] = rgb("#3a2a16")
+    dust = equalize(spectral_noise(93, m, 8.0, sharpness=3.0))
+    image = image * (0.92 + 0.08 * dust[..., None])
+    return downsample(image, ss) * grain(94, n, 0.04)[..., None]
+
+
+def urban_hex(n=SIZE):
+    """Cool grey hex-grid urban digital camo."""
+    cells = 32
+    field = equalize(spectral_noise(101, cells, 3.5) + 0.4 * spectral_noise(102, cells, 8.0))
+    palette = [rgb("#2a2e34"), rgb("#4b515a"), rgb("#7a828c"), rgb("#aeb6bf")]
+    index = np.digitize(field, [0.22, 0.48, 0.72])
+    image = np.stack(palette)[index]
+    image = np.repeat(np.repeat(image, n // cells, axis=0), n // cells, axis=1)
+    u, v = grid(n)
+    groove = (
+        (1.0 - smoothstep(0.0, 0.015, np.abs(((u * 16) % 1.0) - 0.5)))
+        + (1.0 - smoothstep(0.0, 0.015, np.abs(((v * 16) % 1.0) - 0.5)))
+    )
+    groove = np.clip(groove, 0.0, 1.0) * 0.18
+    image = image * (1.0 - groove[..., None]) + rgb("#15181c") * groove[..., None]
+    return image * grain(103, n, 0.025)[..., None]
+
+
+def carbon_fiber(n=SIZE):
+    """Interlaced carbon-fiber weave."""
+    ss = 2
+    m = n * ss
+    u, v = grid(m)
+    weave = 24
+    a = 0.5 + 0.5 * np.sin(2.0 * np.pi * weave * u)
+    b = 0.5 + 0.5 * np.sin(2.0 * np.pi * weave * v)
+    cell_u = np.floor(u * weave).astype(int)
+    cell_v = np.floor(v * weave).astype(int)
+    horizontal = ((cell_u + cell_v) % 2) == 0
+    fiber = np.where(horizontal, a, b)
+    fu = np.abs(((u * weave) % 1.0) - 0.5)
+    fv = np.abs(((v * weave) % 1.0) - 0.5)
+    ridge = np.where(horizontal, 1.0 - smoothstep(0.42, 0.5, fu), 1.0 - smoothstep(0.42, 0.5, fv))
+    value = 0.18 + 0.55 * fiber + 0.22 * ridge
+    stops = [
+        (0.0, rgb("#0b0c0e")),
+        (0.45, rgb("#1a1c20")),
+        (0.75, rgb("#2c3036")),
+        (1.0, rgb("#4a5058")),
+    ]
+    image = ramp(stops, value)
+    image = downsample(image, ss)
+    return image * grain(111, n, 0.02)[..., None]
+
+
+def copper_patina(n=SIZE):
+    """Oxidized copper with turquoise verdigris patches."""
+    base = equalize(fractal_noise(121, n, 2.2, octaves=4))
+    oxide = equalize(fractal_noise(122, n, 4.0, octaves=3))
+    veins = equalize(spectral_noise(123, n, 6.0, sharpness=2.4, stretch=(0.6, 1.8)))
+    copper = ramp(
+        [(0.0, rgb("#3a1e12")), (0.45, rgb("#8a4a28")), (0.8, rgb("#c97a3c")), (1.0, rgb("#e0a86a"))],
+        base,
+    )
+    patina = ramp(
+        [(0.0, rgb("#1f4a42")), (0.55, rgb("#2f7a68")), (1.0, rgb("#7ecfb0"))],
+        oxide,
+    )
+    mask = smoothstep(0.55, 0.78, oxide) * (0.65 + 0.35 * veins)
+    image = copper * (1.0 - mask[..., None]) + patina * mask[..., None]
+    return image * grain(124, n, 0.035)[..., None]
+
+
+def kryptek_fracture(n=SIZE):
+    """Angular fracture / scale camo in olive and bone."""
+    ss = 2
+    m = n * ss
+    cells = 10
+    pitch = m / cells
+    rng = np.random.default_rng(131)
+    jitter = rng.uniform(-0.28, 0.28, size=(cells, cells, 2))
+    flip = rng.random((cells, cells)) < 0.5
+    tone = rng.uniform(0.0, 1.0, size=(cells, cells, 2))
+    palette = [
+        rgb("#2f3424"),
+        rgb("#556044"),
+        rgb("#8a8660"),
+        rgb("#cfc6a4"),
+        rgb("#1a1c14"),
+    ]
+
+    def vertex(i, j):
+        jx, jy = jitter[j % cells, i % cells]
+        return ((i + jx) * pitch, (j + jy) * pitch)
+
+    canvas = Image.new("RGB", (m, m))
+    draw = ImageDraw.Draw(canvas)
+    for j in range(-1, cells + 1):
+        for i in range(-1, cells + 1):
+            a, b, c, d = vertex(i, j), vertex(i + 1, j), vertex(i + 1, j + 1), vertex(i, j + 1)
+            tris = [(a, b, c), (a, c, d)] if flip[j % cells, i % cells] else [(a, b, d), (b, c, d)]
+            for k, tri in enumerate(tris):
+                t = tone[j % cells, i % cells, k]
+                colour = palette[int(t * (len(palette) - 1e-6))]
+                fill = tuple(int(x * 255 + 0.5) for x in colour)
+                draw.polygon(tri, fill=fill)
+                draw.line(tri + (tri[0],), fill=(18, 20, 14), width=2)
+    image = np.asarray(canvas, dtype=np.float64) / 255.0
+    return downsample(image, ss) * grain(132, n, 0.02)[..., None]
+
+
+def night_viper(n=SIZE):
+    """Near-black digital camo with sparse neon-green ticks."""
+    cells = 64
+    field = equalize(spectral_noise(141, cells, 2.8) + 0.55 * spectral_noise(142, cells, 7.0))
+    palette = [rgb("#050607"), rgb("#12151a"), rgb("#222830"), rgb("#343c46")]
+    index = np.digitize(field, [0.18, 0.45, 0.72])
+    image = np.stack(palette)[index]
+    image = np.repeat(np.repeat(image, n // cells, axis=0), n // cells, axis=1)
+    rng = np.random.default_rng(143)
+    ticks = rng.random((cells, cells)) < 0.045
+    accent = np.zeros((cells, cells, 3))
+    accent[ticks] = rgb("#39ff14")
+    accent = np.repeat(np.repeat(accent, n // cells, axis=0), n // cells, axis=1)
+    glow = periodic_blur(accent[..., 1], 1.5)[..., None]
+    image = np.clip(image + accent * 0.85 + glow * np.array(rgb("#1a5c12"))[None, None, :] * 0.35, 0.0, 1.0)
+    return image * grain(144, n, 0.02)[..., None]
+
+
 # --------------------------------------------------------------------------
 # Support textures for the animated shaders (data, imported as linear)
 # --------------------------------------------------------------------------
@@ -421,6 +562,22 @@ STATIC_TEXTURES = {
     "Skin_Prism": (prism, "Prism"),
     "Skin_HalftonePop": (halftone_pop, "Halftone Pop"),
     "Skin_Damascus": (damascus, "Damascus"),
+    # Batch 2
+    "Skin_DesertTiger": (desert_tiger, "Desert Tiger"),
+    "Skin_UrbanHex": (urban_hex, "Urban Hex"),
+    "Skin_CarbonFiber": (carbon_fiber, "Carbon Fiber"),
+    "Skin_CopperPatina": (copper_patina, "Copper Patina"),
+    "Skin_KryptekFracture": (kryptek_fracture, "Kryptek Fracture"),
+    "Skin_NightViper": (night_viper, "Night Viper"),
+}
+
+BATCH2_STATIC = {
+    "Skin_DesertTiger": (desert_tiger, "Desert Tiger"),
+    "Skin_UrbanHex": (urban_hex, "Urban Hex"),
+    "Skin_CarbonFiber": (carbon_fiber, "Carbon Fiber"),
+    "Skin_CopperPatina": (copper_patina, "Copper Patina"),
+    "Skin_KryptekFracture": (kryptek_fracture, "Kryptek Fracture"),
+    "Skin_NightViper": (night_viper, "Night Viper"),
 }
 
 SUPPORT_TEXTURES = {
@@ -483,6 +640,7 @@ def main():
     parser.add_argument("--out", default=os.path.join(here, "..", "Textures"), help="texture output folder")
     parser.add_argument("--previews", default=None, help="optional folder for preview PNGs and a contact sheet")
     parser.add_argument("--check", action="store_true", help="generate in memory and report seam ratios only")
+    parser.add_argument("--batch2-previews", action="store_true", help="when used with --previews, only emit batch-2 static skins")
     args = parser.parse_args()
 
     generated = {}
@@ -506,15 +664,40 @@ def main():
     for name, image in generated.items():
         image.save(os.path.join(args.out, name + ".png"), optimize=True)
 
+    preview_names = {
+        "Skin_WoodlandCamo": "woodland-camo.png",
+        "Skin_ArcticDigital": "arctic-digital.png",
+        "Skin_Honeycomb": "honeycomb.png",
+        "Skin_Prism": "prism.png",
+        "Skin_HalftonePop": "halftone-pop.png",
+        "Skin_Damascus": "damascus.png",
+        "Skin_DesertTiger": "desert-tiger.png",
+        "Skin_UrbanHex": "urban-hex.png",
+        "Skin_CarbonFiber": "carbon-fiber.png",
+        "Skin_CopperPatina": "copper-patina.png",
+        "Skin_KryptekFracture": "kryptek-fracture.png",
+        "Skin_NightViper": "night-viper.png",
+    }
+
     if args.previews:
         os.makedirs(args.previews, exist_ok=True)
+        preview_set = BATCH2_STATIC if args.batch2_previews else STATIC_TEXTURES
         images, labels = [], []
-        for name, (_, label) in STATIC_TEXTURES.items():
-            file_name = name.replace("Skin_", "").lower() + ".png"
+        for name, (_, label) in preview_set.items():
+            file_name = preview_names[name]
             generated[name].save(os.path.join(args.previews, file_name), optimize=True)
             images.append(generated[name])
             labels.append(label)
-        contact_sheet(images, labels).save(os.path.join(args.previews, "contact-sheet.png"), optimize=True)
+        title = (
+            "Weapon skins batch 2: static textures (one tile each)"
+            if args.batch2_previews
+            else "Weapon skins: static textures (one tile each)"
+        )
+        sheet = contact_sheet(images, labels)
+        draw = ImageDraw.Draw(sheet)
+        draw.rectangle((0, 0, sheet.size[0], 64), fill=(18, 19, 23))
+        draw.text((24, 18), title, fill=(235, 237, 240), font=load_font(26))
+        sheet.save(os.path.join(args.previews, "contact-sheet.png"), optimize=True)
 
 
 if __name__ == "__main__":
