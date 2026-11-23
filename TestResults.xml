@@ -1,121 +1,121 @@
 <?xml version="1.0" encoding="utf-8"?>
-<test-run id="2" testcasecount="17" result="Passed" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-23 15:24:49Z" end-time="2026-11-23 15:24:50Z" duration="0.0764878">
-  <test-suite type="TestSuite" id="1000" name="CoD-Movement-Shooter" fullname="CoD-Movement-Shooter" runstate="Runnable" testcasecount="17" result="Passed" start-time="2026-11-23 15:24:49Z" end-time="2026-11-23 15:24:50Z" duration="0.076488" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+<test-run id="2" testcasecount="17" result="Passed" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.0705435">
+  <test-suite type="TestSuite" id="1000" name="CoD-Movement-Shooter" fullname="CoD-Movement-Shooter" runstate="Runnable" testcasecount="17" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.070544" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
     <properties>
       <property name="platform" value="EditMode" />
     </properties>
-    <test-suite type="Assembly" id="1021" name="Tests.dll" fullname="C:/Users/Oldst/OneDrive/Desktop/CoD-Movement-Shooter/Library/ScriptAssemblies/Tests.dll" runstate="Runnable" testcasecount="17" result="Passed" start-time="2026-11-23 15:24:49Z" end-time="2026-11-23 15:24:50Z" duration="0.065854" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <test-suite type="Assembly" id="1021" name="Tests.dll" fullname="C:/Users/Oldst/OneDrive/Desktop/CoD-Movement-Shooter/Library/ScriptAssemblies/Tests.dll" runstate="Runnable" testcasecount="17" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.061931" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
       <properties>
-        <property name="_PID" value="40444" />
+        <property name="_PID" value="6296" />
         <property name="_APPDOMAIN" value="Unity Child Domain" />
         <property name="platform" value="EditMode" />
         <property name="EditorOnly" value="True" />
       </properties>
-      <test-suite type="TestFixture" id="1001" name="HitDetectionTests" fullname="HitDetectionTests" classname="HitDetectionTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-11-23 15:24:49Z" end-time="2026-11-23 15:24:50Z" duration="0.055406" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <test-suite type="TestFixture" id="1001" name="HitDetectionTests" fullname="HitDetectionTests" classname="HitDetectionTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.052072" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
         <properties />
-        <test-suite type="ParameterizedMethod" id="1006" name="Resolve_AppliesConfiguredZoneMultiplier" fullname="HitDetectionTests.Resolve_AppliesConfiguredZoneMultiplier" classname="HitDetectionTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-23 15:24:49Z" end-time="2026-11-23 15:24:50Z" duration="0.035327" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <test-suite type="ParameterizedMethod" id="1006" name="Resolve_AppliesConfiguredZoneMultiplier" fullname="HitDetectionTests.Resolve_AppliesConfiguredZoneMultiplier" classname="HitDetectionTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.032545" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
           <properties />
-          <test-case id="1003" name="Resolve_AppliesConfiguredZoneMultiplier(Head,2.0f,40.0f)" fullname="HitDetectionTests.Resolve_AppliesConfiguredZoneMultiplier(Head,2.0f,40.0f)" methodname="Resolve_AppliesConfiguredZoneMultiplier" classname="HitDetectionTests" runstate="Runnable" seed="257077188" result="Passed" start-time="2026-11-23 15:24:49Z" end-time="2026-11-23 15:24:50Z" duration="0.027744" asserts="0">
+          <test-case id="1003" name="Resolve_AppliesConfiguredZoneMultiplier(Head,2.0f,40.0f)" fullname="HitDetectionTests.Resolve_AppliesConfiguredZoneMultiplier(Head,2.0f,40.0f)" methodname="Resolve_AppliesConfiguredZoneMultiplier" classname="HitDetectionTests" runstate="Runnable" seed="166073208" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.024831" asserts="0">
             <properties>
               <property name="retryIteration" value="0" />
               <property name="repeatIteration" value="0" />
             </properties>
           </test-case>
-          <test-case id="1004" name="Resolve_AppliesConfiguredZoneMultiplier(Body,1.0f,20.0f)" fullname="HitDetectionTests.Resolve_AppliesConfiguredZoneMultiplier(Body,1.0f,20.0f)" methodname="Resolve_AppliesConfiguredZoneMultiplier" classname="HitDetectionTests" runstate="Runnable" seed="1219839323" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.000613" asserts="0">
+          <test-case id="1004" name="Resolve_AppliesConfiguredZoneMultiplier(Body,1.0f,20.0f)" fullname="HitDetectionTests.Resolve_AppliesConfiguredZoneMultiplier(Body,1.0f,20.0f)" methodname="Resolve_AppliesConfiguredZoneMultiplier" classname="HitDetectionTests" runstate="Runnable" seed="1408416231" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.000541" asserts="0">
             <properties>
               <property name="retryIteration" value="0" />
               <property name="repeatIteration" value="0" />
             </properties>
           </test-case>
-          <test-case id="1005" name="Resolve_AppliesConfiguredZoneMultiplier(Limb,0.75f,15.0f)" fullname="HitDetectionTests.Resolve_AppliesConfiguredZoneMultiplier(Limb,0.75f,15.0f)" methodname="Resolve_AppliesConfiguredZoneMultiplier" classname="HitDetectionTests" runstate="Runnable" seed="11123440" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.000327" asserts="0">
+          <test-case id="1005" name="Resolve_AppliesConfiguredZoneMultiplier(Limb,0.75f,15.0f)" fullname="HitDetectionTests.Resolve_AppliesConfiguredZoneMultiplier(Limb,0.75f,15.0f)" methodname="Resolve_AppliesConfiguredZoneMultiplier" classname="HitDetectionTests" runstate="Runnable" seed="1732308424" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.000316" asserts="0">
             <properties>
               <property name="retryIteration" value="0" />
               <property name="repeatIteration" value="0" />
             </properties>
           </test-case>
         </test-suite>
-        <test-case id="1008" name="Resolve_IgnoresShooterHierarchy" fullname="HitDetectionTests.Resolve_IgnoresShooterHierarchy" methodname="Resolve_IgnoresShooterHierarchy" classname="HitDetectionTests" runstate="Runnable" seed="1258152919" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.001280" asserts="0">
+        <test-case id="1008" name="Resolve_IgnoresShooterHierarchy" fullname="HitDetectionTests.Resolve_IgnoresShooterHierarchy" methodname="Resolve_IgnoresShooterHierarchy" classname="HitDetectionTests" runstate="Runnable" seed="230380726" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.001191" asserts="0">
           <properties>
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1011" name="Resolve_InvokesSurfaceHookAndImpactEvent" fullname="HitDetectionTests.Resolve_InvokesSurfaceHookAndImpactEvent" methodname="Resolve_InvokesSurfaceHookAndImpactEvent" classname="HitDetectionTests" runstate="Runnable" seed="1757657568" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.000867" asserts="0">
+        <test-case id="1011" name="Resolve_InvokesSurfaceHookAndImpactEvent" fullname="HitDetectionTests.Resolve_InvokesSurfaceHookAndImpactEvent" methodname="Resolve_InvokesSurfaceHookAndImpactEvent" classname="HitDetectionTests" runstate="Runnable" seed="849593389" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.000828" asserts="0">
           <properties>
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1002" name="Resolve_Miss_ReturnsEmptyResult" fullname="HitDetectionTests.Resolve_Miss_ReturnsEmptyResult" methodname="Resolve_Miss_ReturnsEmptyResult" classname="HitDetectionTests" runstate="Runnable" seed="1350052500" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.001453" asserts="0">
+        <test-case id="1002" name="Resolve_Miss_ReturnsEmptyResult" fullname="HitDetectionTests.Resolve_Miss_ReturnsEmptyResult" methodname="Resolve_Miss_ReturnsEmptyResult" classname="HitDetectionTests" runstate="Runnable" seed="1787134857" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.001337" asserts="0">
           <properties>
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1007" name="Resolve_NonAuthoritativeRequest_ReportsHitWithoutMutatingHealth" fullname="HitDetectionTests.Resolve_NonAuthoritativeRequest_ReportsHitWithoutMutatingHealth" methodname="Resolve_NonAuthoritativeRequest_ReportsHitWithoutMutatingHealth" classname="HitDetectionTests" runstate="Runnable" seed="243204373" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.000779" asserts="0">
+        <test-case id="1007" name="Resolve_NonAuthoritativeRequest_ReportsHitWithoutMutatingHealth" fullname="HitDetectionTests.Resolve_NonAuthoritativeRequest_ReportsHitWithoutMutatingHealth" methodname="Resolve_NonAuthoritativeRequest_ReportsHitWithoutMutatingHealth" classname="HitDetectionTests" runstate="Runnable" seed="2010580598" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.000636" asserts="0">
           <properties>
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1010" name="Resolve_PenetrationRetainsDamageAndHitsNextTarget" fullname="HitDetectionTests.Resolve_PenetrationRetainsDamageAndHitsNextTarget" methodname="Resolve_PenetrationRetainsDamageAndHitsNextTarget" classname="HitDetectionTests" runstate="Runnable" seed="1965518443" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.002719" asserts="0">
+        <test-case id="1010" name="Resolve_PenetrationRetainsDamageAndHitsNextTarget" fullname="HitDetectionTests.Resolve_PenetrationRetainsDamageAndHitsNextTarget" methodname="Resolve_PenetrationRetainsDamageAndHitsNextTarget" classname="HitDetectionTests" runstate="Runnable" seed="1825387645" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.002636" asserts="0">
           <properties>
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1012" name="Resolve_RejectsInvalidDirection" fullname="HitDetectionTests.Resolve_RejectsInvalidDirection" methodname="Resolve_RejectsInvalidDirection" classname="HitDetectionTests" runstate="Runnable" seed="1121504378" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.002442" asserts="0">
+        <test-case id="1012" name="Resolve_RejectsInvalidDirection" fullname="HitDetectionTests.Resolve_RejectsInvalidDirection" methodname="Resolve_RejectsInvalidDirection" classname="HitDetectionTests" runstate="Runnable" seed="799421397" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.002335" asserts="0">
           <properties>
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1009" name="Resolve_RespectsRequestLayerMask" fullname="HitDetectionTests.Resolve_RespectsRequestLayerMask" methodname="Resolve_RespectsRequestLayerMask" classname="HitDetectionTests" runstate="Runnable" seed="99024542" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.000938" asserts="0">
+        <test-case id="1009" name="Resolve_RespectsRequestLayerMask" fullname="HitDetectionTests.Resolve_RespectsRequestLayerMask" methodname="Resolve_RespectsRequestLayerMask" classname="HitDetectionTests" runstate="Runnable" seed="2054043393" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.000782" asserts="0">
           <properties>
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
       </test-suite>
-      <test-suite type="TestFixture" id="1013" name="MovementTests" fullname="MovementTests" classname="MovementTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.009240" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <test-suite type="TestFixture" id="1013" name="MovementTests" fullname="MovementTests" classname="MovementTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.008678" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
         <properties />
-        <test-case id="1020" name="ConfigInstances_DoNotShareRuntimeMutation" fullname="MovementTests.ConfigInstances_DoNotShareRuntimeMutation" methodname="ConfigInstances_DoNotShareRuntimeMutation" classname="MovementTests" runstate="Runnable" seed="965034044" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.000948" asserts="0">
+        <test-case id="1020" name="ConfigInstances_DoNotShareRuntimeMutation" fullname="MovementTests.ConfigInstances_DoNotShareRuntimeMutation" methodname="ConfigInstances_DoNotShareRuntimeMutation" classname="MovementTests" runstate="Runnable" seed="1820452628" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.000708" asserts="0">
           <properties>
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1017" name="DefaultConfig_BhopRetentionAndCapAreSafe" fullname="MovementTests.DefaultConfig_BhopRetentionAndCapAreSafe" methodname="DefaultConfig_BhopRetentionAndCapAreSafe" classname="MovementTests" runstate="Runnable" seed="831988436" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.001922" asserts="0">
+        <test-case id="1017" name="DefaultConfig_BhopRetentionAndCapAreSafe" fullname="MovementTests.DefaultConfig_BhopRetentionAndCapAreSafe" methodname="DefaultConfig_BhopRetentionAndCapAreSafe" classname="MovementTests" runstate="Runnable" seed="158256341" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.001780" asserts="0">
           <properties>
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1018" name="DefaultConfig_DiveAndWallDurationsArePositive" fullname="MovementTests.DefaultConfig_DiveAndWallDurationsArePositive" methodname="DefaultConfig_DiveAndWallDurationsArePositive" classname="MovementTests" runstate="Runnable" seed="1456165098" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.000346" asserts="0">
+        <test-case id="1018" name="DefaultConfig_DiveAndWallDurationsArePositive" fullname="MovementTests.DefaultConfig_DiveAndWallDurationsArePositive" methodname="DefaultConfig_DiveAndWallDurationsArePositive" classname="MovementTests" runstate="Runnable" seed="1946242392" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.000347" asserts="0">
           <properties>
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1014" name="DefaultConfig_HasOrderedGroundSpeeds" fullname="MovementTests.DefaultConfig_HasOrderedGroundSpeeds" methodname="DefaultConfig_HasOrderedGroundSpeeds" classname="MovementTests" runstate="Runnable" seed="1299969069" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.000270" asserts="0">
+        <test-case id="1014" name="DefaultConfig_HasOrderedGroundSpeeds" fullname="MovementTests.DefaultConfig_HasOrderedGroundSpeeds" methodname="DefaultConfig_HasOrderedGroundSpeeds" classname="MovementTests" runstate="Runnable" seed="1398656373" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.000276" asserts="0">
           <properties>
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1015" name="DefaultConfig_JumpWindowsAndGravityAreValid" fullname="MovementTests.DefaultConfig_JumpWindowsAndGravityAreValid" methodname="DefaultConfig_JumpWindowsAndGravityAreValid" classname="MovementTests" runstate="Runnable" seed="1936322501" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.000251" asserts="0">
+        <test-case id="1015" name="DefaultConfig_JumpWindowsAndGravityAreValid" fullname="MovementTests.DefaultConfig_JumpWindowsAndGravityAreValid" methodname="DefaultConfig_JumpWindowsAndGravityAreValid" classname="MovementTests" runstate="Runnable" seed="562522244" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.000260" asserts="0">
           <properties>
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1016" name="DefaultConfig_SlideThresholdAndColliderAreValid" fullname="MovementTests.DefaultConfig_SlideThresholdAndColliderAreValid" methodname="DefaultConfig_SlideThresholdAndColliderAreValid" classname="MovementTests" runstate="Runnable" seed="680422851" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.000251" asserts="0">
+        <test-case id="1016" name="DefaultConfig_SlideThresholdAndColliderAreValid" fullname="MovementTests.DefaultConfig_SlideThresholdAndColliderAreValid" methodname="DefaultConfig_SlideThresholdAndColliderAreValid" classname="MovementTests" runstate="Runnable" seed="1499696506" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.000261" asserts="0">
           <properties>
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />
           </properties>
         </test-case>
-        <test-case id="1019" name="MovementState_ContainsExpectedDistinctStates" fullname="MovementTests.MovementState_ContainsExpectedDistinctStates" methodname="MovementState_ContainsExpectedDistinctStates" classname="MovementTests" runstate="Runnable" seed="795849347" result="Passed" start-time="2026-11-23 15:24:50Z" end-time="2026-11-23 15:24:50Z" duration="0.003080" asserts="0">
+        <test-case id="1019" name="MovementState_ContainsExpectedDistinctStates" fullname="MovementTests.MovementState_ContainsExpectedDistinctStates" methodname="MovementState_ContainsExpectedDistinctStates" classname="MovementTests" runstate="Runnable" seed="1320698666" result="Passed" start-time="2026-11-23 15:38:57Z" end-time="2026-11-23 15:38:57Z" duration="0.002894" asserts="0">
           <properties>
             <property name="retryIteration" value="0" />
             <property name="repeatIteration" value="0" />

@@ -13,12 +13,33 @@ public class TestRangeBuilder : MonoBehaviour
         CreateScene();
         CreatePlayerPrefab();
         AddSceneToBuildSettings();
+        EnsurePlayerPresentBeforeSave();
         
         var scene = EditorSceneManager.GetActiveScene();
         EditorSceneManager.MarkSceneDirty(scene);
-        EditorSceneManager.SaveScene(scene, "Assets/Scenes/TestRange.unity");
+        if (!EditorSceneManager.SaveScene(scene, "Assets/Scenes/TestRange.unity"))
+            throw new System.InvalidOperationException("BuildTestRange: failed to save TestRange.unity");
         
-        Debug.Log("Test Range build complete!");
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        
+        Debug.Log("Test Range build complete (player saved in scene).");
+    }
+    
+    private static void EnsurePlayerPresentBeforeSave()
+    {
+        if (GameObject.Find("Player") != null)
+            return;
+        
+        var movement = Object.FindAnyObjectByType<MovementController>();
+        if (movement != null)
+        {
+            movement.gameObject.name = "Player";
+            return;
+        }
+        
+        throw new System.InvalidOperationException(
+            "BuildTestRange: Player is missing from the active scene. CreatePlayerPrefab must run before SaveScene.");
     }
     
     private static void CreateDirectories()
