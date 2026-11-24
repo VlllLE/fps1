@@ -22,9 +22,13 @@ public class LocalPlayerBodyVisibility : MonoBehaviour
     [SerializeField] private bool disableRenderersWhenLayerMissing = true;
 
     private int hideLayer = -1;
+    private bool awoken;
+
+    public Transform[] HideTargets => hideFromLocalCamera;
 
     private void Awake()
     {
+        awoken = true;
         if (!isLocalPlayer)
             return;
 
@@ -33,6 +37,17 @@ public class LocalPlayerBodyVisibility : MonoBehaviour
 
         hideLayer = LayerMask.NameToLayer(hideLayerName);
         ApplyLocalVisibility();
+    }
+
+    /// <summary>
+    /// Replaces the set of parts hidden from the local camera (used when the body is generated at runtime).
+    /// Applies immediately when this component has already initialised; otherwise Awake applies it.
+    /// </summary>
+    public void SetHideTargets(Transform[] targets)
+    {
+        hideFromLocalCamera = targets;
+        if (awoken)
+            ApplyLocalVisibility();
     }
 
     /// <summary>

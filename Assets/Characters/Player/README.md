@@ -1,34 +1,51 @@
-# PlayerCharacter (primitive FPS humanoid)
+# PlayerCharacter (procedural humanoid FPS body)
 
 Drop-in full-body player under `Assets/Characters/Player/PlayerCharacter.prefab`.
 
-Built from Unity primitives only (no Asset Store). Intended for third-person /
-shadows / looking-down body visibility, with separate first-person arms under the camera.
+The visible character is **original procedural geometry** (no Asset Store, no copied
+assets). It is generated at runtime by `Assets/Scripts/Characters/`:
 
-**Status:** Prefab YAML and `.meta` GUIDs were authored without a Unity Editor run.
-Open the project once and, if anything looks off, regenerate via
-**Tools → Build Player Character Prefab**.
+| Script | Role |
+|--------|------|
+| `HumanoidBody` | Builds a 19-bone body under `BodyRoot`, sized to the `CharacterController` (feet at the capsule bottom, 2 m = standard height). Optional hit volumes for targets. |
+| `HumanoidParts` / `HumanoidMeshBuilder` / `HumanoidMaterials` | Stylised limb, torso, head, boot and visor meshes plus a 5-slot suit palette (Standard shader). |
+| `HumanoidAnimator` / `HumanoidIK` | Code-driven idle breathing, walk/strafe gait, crouch, slide, airborne, dive and weapon-ready arm poses using two-bone IK. No Animator clips needed. |
+| `ProceduralFirstPersonArms` | First-person arms on the camera. Hands IK to grip points on `WeaponHolder`, so weapon attachment points are untouched. |
+| `HumanoidBodyBootstrap` | At scene load, upgrades legacy primitive players and targets (old scenes/prefabs) to the procedural body. Idempotent. |
+
+Bodies are rebuilt every time the scene loads and are not saved into scenes or prefabs
+(`BodyRoot` uses `HideFlags.DontSaveInEditor`), so there is no baked mesh to go stale.
+Select a `HumanoidBody` and use the context menu **Build** to preview it in the editor.
+
+Movement, input and drift code only supplies velocity and state to the animator; it is not
+modified.
+
+**Status:** written without a Unity Editor run. Open the project once and, if anything
+looks off, regenerate via **Tools → Build Player Character Prefab**.
 
 ## Hierarchy
 
 ```
-PlayerCharacter                    CharacterController + movement/input/weapon bridge
+PlayerCharacter                    CharacterController + movement/input/weapon bridge + HumanoidBody
 ├── CameraHolder (y=1.6)           FirstPersonCamera
-│   └── MainCamera                 culls PlayerLocalHide
+│   └── MainCamera                 culls PlayerLocalHide, ProceduralFirstPersonArms
 │       ├── WeaponHolder / TestPistol
-│       └── FirstPersonArms        FP view arms (pitch with camera)
-└── BodyRoot                       third-person / shadow body
+│       └── FirstPersonArms        generated FP arms (hands follow the weapon holder)
+└── BodyRoot                       generated third-person / shadow body
     └── Hips
-        ├── Torso, Head*, Neck*
-        ├── Left/Right shoulders + arms
-        └── Left/Right hips + legs + boots
+        ├── Spine > Chest > Neck > Head (+ ShoulderL/R > UpperArm > Forearm > Hand)
+        └── ThighL/R > ShinL/R > FootL/R
 ```
 
-`*` Head and Neck use layer `PlayerLocalHide` so the local camera does not draw them
-(avoids head clipping). Legs/arms stay visible when looking down.
-`LocalPlayerBodyVisibility` enforces this at runtime.
+Neck, Head and the shoulder chain (which carries the body arms) are hidden from the local
+camera by `LocalPlayerBodyVisibility` (`PlayerLocalHide` layer); `HumanoidBody` registers
+them through `SetHideTargets`. Legs stay visible when looking down.
 
-Animator uses empty `Animations/PlayerAnimator.controller` (placeholder only).
+Targets built by `HumanoidBody.AddTo(target, HumanoidBodySettings.Target(color, scale))`
+keep direct-child `Head`, `Body`, `Arm_L/R`, `Leg_L/R` hit volumes (`HitZone`) that match
+the mesh proportions.
+
+The `Animations/PlayerAnimator.controller` is still an empty placeholder; animation is procedural.
 
 ## CharacterController (do not change when swapping)
 
@@ -68,10 +85,10 @@ Do **not** retune movement physics or class systems as part of this swap.
 
 1. Select scene `Player`.
 2. Delete child `PlayerBody` (the capsule mesh).
-3. Open `PlayerCharacter` prefab, copy `BodyRoot` (and optionally `FirstPersonArms`),
-   paste as children of the scene `Player` / `MainCamera` respectively.
-4. Add `LocalPlayerBodyVisibility` to the root; assign `MainCamera` and Head/Neck
-   into `hideFromLocalCamera`.
+3. Add `HumanoidBody` to the scene `Player` root and `ProceduralFirstPersonArms` to
+   `MainCamera` (both build themselves on Awake).
+4. Add `LocalPlayerBodyVisibility` to the root and assign `MainCamera`; `HumanoidBody`
+   registers the hidden bones itself.
 5. Leave `CharacterController`, `MovementController`, and configs untouched.
 
 ### Layer setup
@@ -93,4 +110,4 @@ layer, and overwrites `PlayerCharacter.prefab`. Safe to re-run; does not edit
 
 - `Assets/Prefabs/Player.prefab` and TestRange scene are left as-is until you swap.
 - Movement physics defaults and class/loadout systems are untouched.
-- No idle/run animation clips — controller is empty until animation work lands.
+- No animation clips — the controller is still empty; `HumanoidAnimator` poses bones from code.

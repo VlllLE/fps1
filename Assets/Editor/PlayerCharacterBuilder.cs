@@ -3,7 +3,8 @@ using UnityEditor;
 using System.IO;
 
 /// <summary>
-/// Builds / rebuilds Assets/Characters/Player/PlayerCharacter.prefab from Unity primitives.
+/// Builds / rebuilds Assets/Characters/Player/PlayerCharacter.prefab. The humanoid body and first-person
+/// arms are procedural components that generate their geometry at runtime; the weapon is still primitive.
 /// Safe to re-run; does not modify MovementConfig defaults or class systems.
 /// </summary>
 public static class PlayerCharacterBuilder
@@ -104,10 +105,6 @@ public static class PlayerCharacterBuilder
 
     private static GameObject BuildHierarchy()
     {
-        var suit = AssetDatabase.LoadAssetAtPath<Material>(SuitMatPath);
-        var skin = AssetDatabase.LoadAssetAtPath<Material>(SkinMatPath);
-        var arms = AssetDatabase.LoadAssetAtPath<Material>(ArmsMatPath);
-        var accent = AssetDatabase.LoadAssetAtPath<Material>(AccentMatPath);
         var animatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(AnimatorPath);
 
         var player = new GameObject("PlayerCharacter");
@@ -164,68 +161,16 @@ public static class PlayerCharacterBuilder
         weaponHolder.transform.SetParent(camGo.transform, false);
         weaponHolder.transform.localPosition = new Vector3(0.3f, -0.2f, 0.5f);
 
-        var fpArms = BuildFirstPersonArms(camGo.transform, arms, skin);
+        camGo.AddComponent<ProceduralFirstPersonArms>();
         var weapon = CreatePrimitiveGun(weaponHolder.transform);
         SetObjectRef(weaponBridge, "weapon", weapon);
         SetObjectRef(weaponBridge, "cameraTransform", camGo.transform);
         SetObjectRef(weaponBridge, "inputHandler", inputHandler);
 
-        // --- Third-person / shadow body (replaces capsule PlayerBody) ---
-        var bodyRoot = new GameObject("BodyRoot");
-        bodyRoot.transform.SetParent(player.transform, false);
-        bodyRoot.transform.localPosition = Vector3.zero;
-
-        var hips = new GameObject("Hips");
-        hips.transform.SetParent(bodyRoot.transform, false);
-        hips.transform.localPosition = new Vector3(0f, 0.95f, 0f);
-
-        // Torso (capsule, slightly shorter than full body capsule)
-        var torso = CreateLimb("Torso", hips.transform, PrimitiveType.Capsule,
-            new Vector3(0f, 0.25f, 0f), new Vector3(0.45f, 0.35f, 0.28f), suit);
-
-        var head = CreateLimb("Head", hips.transform, PrimitiveType.Sphere,
-            new Vector3(0f, 0.72f, 0f), new Vector3(0.28f, 0.28f, 0.28f), skin);
-
-        // Neck accent ring
-        CreateLimb("Neck", hips.transform, PrimitiveType.Cylinder,
-            new Vector3(0f, 0.55f, 0f), new Vector3(0.12f, 0.04f, 0.12f), accent);
-
-        // Arms
-        var leftShoulder = CreateEmpty("LeftShoulder", hips.transform, new Vector3(-0.32f, 0.35f, 0f));
-        CreateLimb("LeftUpperArm", leftShoulder, PrimitiveType.Capsule,
-            new Vector3(-0.18f, -0.05f, 0f), new Vector3(0.12f, 0.22f, 0.12f), suit);
-        CreateLimb("LeftForearm", leftShoulder, PrimitiveType.Capsule,
-            new Vector3(-0.38f, -0.28f, 0.05f), new Vector3(0.1f, 0.2f, 0.1f), suit);
-
-        var rightShoulder = CreateEmpty("RightShoulder", hips.transform, new Vector3(0.32f, 0.35f, 0f));
-        CreateLimb("RightUpperArm", rightShoulder, PrimitiveType.Capsule,
-            new Vector3(0.18f, -0.05f, 0f), new Vector3(0.12f, 0.22f, 0.12f), suit);
-        CreateLimb("RightForearm", rightShoulder, PrimitiveType.Capsule,
-            new Vector3(0.38f, -0.28f, 0.05f), new Vector3(0.1f, 0.2f, 0.1f), suit);
-
-        // Legs
-        var leftHip = CreateEmpty("LeftHip", hips.transform, new Vector3(-0.12f, -0.15f, 0f));
-        CreateLimb("LeftThigh", leftHip, PrimitiveType.Capsule,
-            new Vector3(0f, -0.28f, 0f), new Vector3(0.16f, 0.28f, 0.16f), suit);
-        CreateLimb("LeftShin", leftHip, PrimitiveType.Capsule,
-            new Vector3(0f, -0.72f, 0f), new Vector3(0.13f, 0.26f, 0.13f), suit);
-        CreateLimb("LeftBoot", leftHip, PrimitiveType.Cube,
-            new Vector3(0f, -1.05f, 0.04f), new Vector3(0.16f, 0.1f, 0.26f), accent);
-
-        var rightHip = CreateEmpty("RightHip", hips.transform, new Vector3(0.12f, -0.15f, 0f));
-        CreateLimb("RightThigh", rightHip, PrimitiveType.Capsule,
-            new Vector3(0f, -0.28f, 0f), new Vector3(0.16f, 0.28f, 0.16f), suit);
-        CreateLimb("RightShin", rightHip, PrimitiveType.Capsule,
-            new Vector3(0f, -0.72f, 0f), new Vector3(0.13f, 0.26f, 0.13f), suit);
-        CreateLimb("RightBoot", rightHip, PrimitiveType.Cube,
-            new Vector3(0f, -1.05f, 0.04f), new Vector3(0.16f, 0.1f, 0.26f), accent);
-
-        // Wire visibility: hide head (+ neck) from local FP camera
-        var neck = hips.transform.Find("Neck");
-        var hideTargets = neck != null
-            ? new Object[] { head.transform, neck }
-            : new Object[] { head.transform };
-        SetObjectRef(bodyVisibility, "hideFromLocalCamera", hideTargets);
+        // --- Third-person / shadow body ---
+        // Generated at runtime from procedural geometry sized to the CharacterController above;
+        // it also registers its head/neck/arm parts with LocalPlayerBodyVisibility.
+        player.AddComponent<HumanoidBody>();
         SetObjectRef(bodyVisibility, "playerCamera", camera);
 
         // Spawn pose matches TestRange player
@@ -233,44 +178,7 @@ public static class PlayerCharacterBuilder
 
         MovementJuiceSetup.EnsureFeedbackOnPlayer(player);
 
-        _ = fpArms;
-        _ = torso;
-
         return player;
-    }
-
-    private static GameObject BuildFirstPersonArms(Transform cameraTransform, Material armsMat, Material skinMat)
-    {
-        var root = new GameObject("FirstPersonArms");
-        root.transform.SetParent(cameraTransform, false);
-        root.transform.localPosition = new Vector3(0f, -0.35f, 0.35f);
-        root.transform.localRotation = Quaternion.identity;
-
-        // Right arm (weapon side)
-        CreateLimb("FP_RightUpper", root.transform, PrimitiveType.Capsule,
-            new Vector3(0.22f, -0.05f, 0.15f), new Vector3(0.08f, 0.14f, 0.08f), armsMat);
-        CreateLimb("FP_RightForearm", root.transform, PrimitiveType.Capsule,
-            new Vector3(0.28f, -0.12f, 0.35f), new Vector3(0.07f, 0.12f, 0.07f), armsMat);
-        CreateLimb("FP_RightHand", root.transform, PrimitiveType.Sphere,
-            new Vector3(0.3f, -0.15f, 0.48f), new Vector3(0.08f, 0.08f, 0.08f), skinMat);
-
-        // Left support arm
-        CreateLimb("FP_LeftUpper", root.transform, PrimitiveType.Capsule,
-            new Vector3(-0.05f, -0.08f, 0.2f), new Vector3(0.07f, 0.12f, 0.07f), armsMat);
-        CreateLimb("FP_LeftForearm", root.transform, PrimitiveType.Capsule,
-            new Vector3(0.05f, -0.1f, 0.38f), new Vector3(0.06f, 0.1f, 0.06f), armsMat);
-        CreateLimb("FP_LeftHand", root.transform, PrimitiveType.Sphere,
-            new Vector3(0.12f, -0.12f, 0.5f), new Vector3(0.07f, 0.07f, 0.07f), skinMat);
-
-        return root;
-    }
-
-    private static Transform CreateEmpty(string name, Transform parent, Vector3 localPos)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        go.transform.localPosition = localPos;
-        return go.transform;
     }
 
     private static GameObject CreateLimb(

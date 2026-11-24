@@ -209,35 +209,13 @@ public class TestRangeBuilder : MonoBehaviour
         var target = new GameObject(name);
         target.transform.position = position;
         target.layer = LayerMask.NameToLayer("Default");
-        
-        var body = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        body.name = "Body";
-        body.transform.SetParent(target.transform);
-        body.transform.localPosition = Vector3.zero;
-        body.transform.localScale = new Vector3(0.8f * scale, 1f * scale, 0.8f * scale);
-        
-        var bodyZone = body.AddComponent<HitZone>();
-        bodyZone.Configure(HitZoneType.Body);
-        
-        var bodyRenderer = body.GetComponent<Renderer>();
-        var bodyMat = new Material(TestRangeVisuals.TargetBodyMaterial);
-        bodyMat.color = color;
-        bodyRenderer.sharedMaterial = bodyMat;
-        
-        var head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        head.name = "Head";
-        head.transform.SetParent(target.transform);
-        head.transform.localPosition = new Vector3(0, 1.3f * scale, 0);
-        head.transform.localScale = Vector3.one * 0.5f * scale;
-        
-        var headZone = head.AddComponent<HitZone>();
-        headZone.Configure(HitZoneType.Head);
-        
-        TestRangeVisuals.ApplyMaterial(head.GetComponent<Renderer>(), TestRangeVisuals.TargetHeadMaterial);
-        
+
+        // The humanoid (visuals plus Head/Body/limb hit volumes) is generated at runtime;
+        // the root pivot stays at the body centre so existing target placements still stand on the ground.
+        HumanoidBody.AddTo(target, HumanoidBodySettings.Target(color, scale));
         target.AddComponent<Target>();
     }
-    
+
     private static void CreateSpawnPoint()
     {
         var spawn = new GameObject("PlayerSpawn");

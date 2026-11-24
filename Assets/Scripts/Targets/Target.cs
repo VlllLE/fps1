@@ -10,8 +10,9 @@ public class Target : MonoBehaviour, IDamageable, IHitDamageReceiver
     private float currentHealth;
     private Vector3 startPosition;
     private Quaternion startRotation;
-    private Renderer targetRenderer;
-    private Color originalColor;
+    private static readonly int ColorPropertyId = Shader.PropertyToID("_Color");
+    private MaterialPropertyBlock flashBlock;
+    private readonly System.Collections.Generic.List<Renderer> flashRenderers = new System.Collections.Generic.List<Renderer>();
     
     public event Action<float, float> OnHealthChanged;
     public event Action<DamageInfo> OnDamageTaken;
@@ -27,9 +28,6 @@ public class Target : MonoBehaviour, IDamageable, IHitDamageReceiver
         currentHealth = maxHealth;
         startPosition = transform.position;
         startRotation = transform.rotation;
-        targetRenderer = GetComponentInChildren<Renderer>();
-        if (targetRenderer != null)
-            originalColor = targetRenderer.material.color;
     }
     
     public void TakeDamage(DamageInfo damageInfo)
@@ -71,17 +69,32 @@ public class Target : MonoBehaviour, IDamageable, IHitDamageReceiver
     
     private void FlashHitFeedback(bool isHeadshot)
     {
-        if (targetRenderer != null)
+        GetComponentsInChildren(false, flashRenderers);
+        if (flashRenderers.Count == 0)
+            return;
+
+        if (flashBlock == null)
+            flashBlock = new MaterialPropertyBlock();
+
+        flashBlock.SetColor(ColorPropertyId, isHeadshot ? Color.yellow : Color.red);
+        for (int i = 0; i < flashRenderers.Count; i++)
         {
-            targetRenderer.material.color = isHeadshot ? Color.yellow : Color.red;
-            Invoke(nameof(ResetColor), 0.1f);
+            if (flashRenderers[i] != null)
+                flashRenderers[i].SetPropertyBlock(flashBlock);
         }
+
+        CancelInvoke(nameof(ResetColor));
+        Invoke(nameof(ResetColor), 0.1f);
     }
     
     private void ResetColor()
     {
-        if (targetRenderer != null)
-            targetRenderer.material.color = originalColor;
+        GetComponentsInChildren(true, flashRenderers);
+        for (int i = 0; i < flashRenderers.Count; i++)
+        {
+            if (flashRenderers[i] != null)
+                flashRenderers[i].SetPropertyBlock(null);
+        }
     }
     
     private void Die()
@@ -107,6 +120,7 @@ public class Target : MonoBehaviour, IDamageable, IHitDamageReceiver
         transform.position = startPosition;
         transform.rotation = startRotation;
         gameObject.SetActive(true);
+        ResetColor();
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
     
