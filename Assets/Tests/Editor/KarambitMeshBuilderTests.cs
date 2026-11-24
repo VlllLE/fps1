@@ -185,11 +185,15 @@ public class KarambitMeshBuilderTests
 
         Transform model = prefab.transform.Find("Model");
         Assert.That(model, Is.Not.Null);
-        // FP_RightHand sits at (0.3, -0.5, 0.83) in camera space and the WeaponHolder at
-        // (0.3, -0.2, 0.5), i.e. (0, -0.30, 0.33) in holder space.
-        Assert.That(model.localPosition.x, Is.EqualTo(0f).Within(0.02f));
-        Assert.That(model.localPosition.y, Is.EqualTo(-0.30f).Within(0.03f));
-        Assert.That(model.localPosition.z, Is.EqualTo(0.33f).Within(0.03f));
+        // ProceduralFirstPersonArms pins the right wrist at holder-local (0, -0.09, -0.05); the palm
+        // centre is about 0.043 m further along the hand. The grip must sit in that palm and the
+        // blade must still point away from the player so it stays visible past the fist.
+        var wrist = new Vector3(0f, -0.09f, -0.05f);
+        Assert.That(Vector3.Distance(model.localPosition, wrist), Is.LessThan(0.08f),
+            "Karambit grip should be within the palm, not floating above the open hand.");
+
+        Vector3 bladeForward = model.localRotation * Vector3.forward;
+        Assert.That(bladeForward.z, Is.GreaterThan(0.3f), "Blade should point away from the camera.");
     }
 
     private static MeshFilter AddPart(GameObject root, string name)

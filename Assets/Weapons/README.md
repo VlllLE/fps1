@@ -12,14 +12,28 @@ from Unity built-in Cube / Cylinder meshes so they work out of the box.
 | `UMP` | SMG | ~0.30 m muzzle | Compact; angled mag |
 | `BoltActionSniper` | Bolt sniper | ~0.66 m muzzle | Scope + bipod + bolt handle |
 | `DMRSniper` | Semi DMR | ~0.58 m muzzle | Rail optic, shorter than bolt |
-| `Karambit` | Melee knife | ~0.1 m blade reach | Procedural curved blade + ring handle, secondary on every class |
+| `Karambit` | Melee knife | ~0.1 m blade reach | Imported Blender model (procedural fallback), secondary on every class |
 
 ## Karambit (melee)
 
-`Karambit.prefab` has no imported model: `KarambitModel` builds the blade, handle, bolster
-and pommel ring meshes in code (`KarambitMeshBuilder`, `Assets/Scripts/Weapons`) in `Awake`.
-Materials: `Mat_KarambitBlade` (steel), `Mat_KarambitHandle` (G10), `Mat_KarambitAccent`
-(anodised orange ring and bolster).
+The visible model is the imported `Assets/Weapons/Models/Karambit/Karambit.fbx` (about 19 cm,
+hawkbill blade with belly and false edge, G10 scales, bolster/guard and finger ring; a `.glb`
+copy sits next to it). It is generated headless by `Tools/Blender/build_karambit.py`:
+
+```
+blender -b --factory-startup --python Tools/Blender/build_karambit.py -- \
+    --out Assets/Weapons/Models/Karambit [--renders <dir>]
+```
+
+`KarambitModel` instantiates the FBX under the prefab's `Model/` child (the pivot is the handle
+centre, the blade points along +Z) and assigns `Mat_KarambitBlade`, `Mat_KarambitHandle` and
+`Mat_KarambitAccent` by material-name match. If the FBX reference is missing or has no mesh,
+the procedural `KarambitMeshBuilder` meshes are built instead (`UsesImportedModel` is false).
+
+Held pose: the `Model` transform is `(-0.0436, -0.0474, -0.0205)` in holder space, which is the
+right palm of `ProceduralFirstPersonArms` (wrist grip `(0, -0.09, -0.05)`), rotated so the
+handle lies across the fist and the blade points away from the player toward screen centre.
+`Tools/Blender/preview_karambit_held.py` renders a mock of that pose (`--pos`, `--quat`).
 
 - Config: `Assets/Configs/Weapons/KarambitConfig.asset` (`weaponType = Melee`; `meleeRange`,
   `meleeRadius`, `meleeHitDelay`, `meleeSwingDuration`). Attack rate comes from `fireRate`.
