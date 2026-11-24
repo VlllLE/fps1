@@ -729,49 +729,93 @@ public class TestRangeSmokeTests
         yield return SettlePlayerOnGround();
         Assert.IsTrue(movement.IsGrounded);
 
-        inputHandler.SetTestInputLocked(true);
-        inputHandler.SetMoveInput(new Vector2(0f, 1f));
-        inputHandler.SimulateSprintHeld(true);
-        for (int i = 0; i < 30; i++)
+        bool dived = false;
+        System.Action onDive = () => dived = true;
+        movement.Dived += onDive;
+
+        try
+        {
+            inputHandler.SetTestInputLocked(true);
+            inputHandler.SetMoveInput(new Vector2(0f, 1f));
+            inputHandler.SimulateSprintHeld(true);
+
+            float minDiveSpeed = movement.Config.minDiveSpeed + 0.5f;
+            float sprintDeadline = Time.time + 1.2f;
+            while ((movement.CurrentSpeed < minDiveSpeed || movement.CurrentState != MovementController.MovementState.Sprinting)
+                && Time.time < sprintDeadline)
+            {
+                yield return null;
+            }
+
+            Assert.GreaterOrEqual(movement.CurrentSpeed, movement.Config.minDiveSpeed, "Need sprint speed before dive");
+            inputHandler.SimulateDivePress();
+            yield return null;
             yield return null;
 
-        Assert.GreaterOrEqual(movement.CurrentSpeed, 5f, "Need sprint speed before dive");
-        inputHandler.SimulateDivePress();
-        for (int i = 0; i < 5; i++)
-            yield return null;
-        inputHandler.SetTestInputLocked(false);
-
-        Assert.AreEqual(MovementController.MovementState.Diving, movement.CurrentState,
-            "Sprint forward + V should dolphin dive");
+            Assert.IsTrue(dived, "Sprint forward + V should fire Dived event");
+            Assert.AreEqual(MovementController.MovementState.Diving, movement.CurrentState,
+                "Sprint forward + V should remain in Diving state instead of cancelling into DiveRecovery");
+        }
+        finally
+        {
+            movement.Dived -= onDive;
+            inputHandler.SimulateSprintHeld(false);
+            inputHandler.SetMoveInput(Vector2.zero);
+            inputHandler.SetTestInputLocked(false);
+        }
     }
 
     [UnityTest]
     public IEnumerator Player_WallBounce_HighSpeedNearWall_ChangesVelocity()
     {
-        yield return SettlePlayerOnGround();
         var wall = GameObject.Find("Wall_Right") ?? GameObject.Find("Wall_Left");
         Assert.IsNotNull(wall, "Need a wall in TestRange for wall bounce test");
 
-        Vector3 toWall = (wall.transform.position - player.transform.position);
-        toWall.y = 0f;
-        toWall.Normalize();
-        Vector3 nearWall = wall.transform.position - toWall * 1.1f;
-        nearWall.y = player.transform.position.y;
-        player.transform.SetPositionAndRotation(nearWall, Quaternion.LookRotation(toWall));
-        movement.SetVelocity(toWall * 8f);
-        yield return null;
-        yield return new WaitForSeconds(0.05f);
+        bool wallBounced = false;
+        System.Action onWallBounce = () => wallBounced = true;
+        movement.WallBounced += onWallBounce;
 
-        Assert.AreEqual(MovementController.MovementState.Airborne, movement.CurrentState);
+        try
+        {
+            Vector3 wallPos = wall.transform.position;
+            Vector3 toWall = wall.name == "Wall_Left" ? Vector3.left : Vector3.right;
+            float wallHalfThickness = wall.transform.localScale.x * 0.5f;
+            // Position player cleanly airborne approaching the wall perpendicularly inside wallCheckDistance + radius.
+            Vector3 startPos = new Vector3(
+                wallPos.x - toWall.x * (wallHalfThickness + 0.85f),
+                2.0f,
+                wallPos.z);
 
-        inputHandler.SetTestInputLocked(true);
-        inputHandler.SimulateJumpPress();
-        for (int i = 0; i < 8; i++)
+            characterController.enabled = false;
+            player.transform.SetPositionAndRotation(startPos, Quaternion.LookRotation(toWall));
+            characterController.enabled = true;
+            movement.ResetMovement();
+
+            inputHandler.SetTestInputLocked(true);
+            inputHandler.SetMoveInput(new Vector2(0f, 1f));
+            movement.SetVelocity(toWall * 8f + Vector3.up * 1.5f);
             yield return null;
-        inputHandler.SetTestInputLocked(false);
 
-        float awayDot = Vector3.Dot(new Vector3(movement.Velocity.x, 0f, movement.Velocity.z).normalized, toWall);
-        Assert.Less(awayDot, 0.2f, "Wall bounce jump should redirect away from the wall");
+            Assert.AreEqual(MovementController.MovementState.Airborne, movement.CurrentState,
+                "Player should be airborne approaching the wall before wall bounce");
+
+            inputHandler.SimulateJumpPress();
+            float bounceDeadline = Time.time + 0.25f;
+            while (!wallBounced && Time.time < bounceDeadline)
+                yield return null;
+
+            Assert.IsTrue(wallBounced, "Jumping at high speed near wall while airborne should trigger WallBounced");
+            float awayDot = Vector3.Dot(new Vector3(movement.Velocity.x, 0f, movement.Velocity.z).normalized, toWall);
+            Assert.Less(awayDot, 0.2f,
+                $"Wall bounce jump should redirect away from the wall (awayDot={awayDot:F2}, vel={movement.Velocity})");
+        }
+        finally
+        {
+            movement.WallBounced -= onWallBounce;
+            inputHandler.SetJumpHeld(false);
+            inputHandler.SetMoveInput(Vector2.zero);
+            inputHandler.SetTestInputLocked(false);
+        }
     }
 
     [UnityTest]
@@ -808,17 +852,28 @@ public class TestRangeSmokeTests
         yield return null;
 
         float startY = player.transform.position.y;
-        inputHandler.SetTestInputLocked(true);
-        inputHandler.SetMoveInput(Vector2.zero);
-        inputHandler.SimulateJumpPress();
         float peakY = startY;
-        for (int i = 0; i < 15; i++)
+        try
         {
+            inputHandler.SetTestInputLocked(true);
+            inputHandler.SetMoveInput(Vector2.zero);
+            inputHandler.SimulateJumpPress();
             yield return null;
-            if (player.transform.position.y > peakY)
-                peakY = player.transform.position.y;
+            inputHandler.SetJumpHeld(false);
+
+            float jumpDeadline = Time.time + 0.35f;
+            while (Time.time < jumpDeadline && (peakY - startY) < 0.6f)
+            {
+                yield return null;
+                if (player.transform.position.y > peakY)
+                    peakY = player.transform.position.y;
+            }
         }
-        inputHandler.SetTestInputLocked(false);
+        finally
+        {
+            inputHandler.SetJumpHeld(false);
+            inputHandler.SetTestInputLocked(false);
+        }
 
         Assert.Greater(peakY - startY, 0.25f,
             $"Standing jump from idle should lift player off ground (startY={startY:F2}, peakY={peakY:F2})");
@@ -837,7 +892,8 @@ public class TestRangeSmokeTests
         Assert.IsTrue(weapon.IsReloading, "TryReload should enter reloading state");
 
         float maxAngleDelta = 0f;
-        for (int i = 0; i < 40; i++)
+        float poseDeadline = Time.time + 0.6f;
+        while (Time.time < poseDeadline && maxAngleDelta < 15f)
         {
             yield return null;
             float delta = Quaternion.Angle(baseRot, weapon.transform.localRotation);
@@ -847,6 +903,13 @@ public class TestRangeSmokeTests
 
         Assert.Greater(maxAngleDelta, 5f,
             $"Weapon should visibly animate during reload (maxAngleDelta={maxAngleDelta:F2})");
+
+        float reloadDeadline = Time.time + (weapon.Config != null ? weapon.Config.reloadTime : 2.5f) + 0.75f;
+        while (weapon.IsReloading && Time.time < reloadDeadline)
+            yield return null;
+
+        Assert.IsFalse(weapon.IsReloading, "Reload should complete within configured reloadTime");
+        Assert.Greater(weapon.CurrentAmmo, 1, $"Reload should refill magazine ammo (ammo={weapon.CurrentAmmo})");
     }
 
     private IEnumerator SettlePlayerOnGround()
@@ -867,5 +930,7 @@ public class TestRangeSmokeTests
         movement.ResetMovement();
         yield return null;
         yield return SettlePlayerOnGround();
+        movement.ResetMovement();
+        yield return null;
     }
 }
