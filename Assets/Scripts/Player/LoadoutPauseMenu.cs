@@ -62,7 +62,7 @@ public class LoadoutPauseMenu : MonoBehaviour
         EnsureStyles();
 
         float w = 420f;
-        float h = 460f;
+        float h = Mathf.Min(560f, Screen.height - 20f);
         Rect panel = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
         GUI.Box(panel, GUIContent.none);
 
@@ -101,12 +101,46 @@ public class LoadoutPauseMenu : MonoBehaviour
             GUILayout.Label("No weapon slots yet — choose a class above or press F1–F4.", labelStyle);
         }
 
-        GUILayout.Space(16f);
+        GUILayout.Space(12f);
+        DrawMapSection();
+
+        GUILayout.Space(12f);
         GUILayout.Label("Movement: Shift+W then C = slide · hold Space = bhop · hold C = crouch", labelStyle);
         GUILayout.FlexibleSpace();
         if (GUILayout.Button("Resume (Esc)", buttonStyle, GUILayout.Height(36f)))
             SetOpen(false);
         GUILayout.EndArea();
+    }
+
+    private void DrawMapSection()
+    {
+        var selector = MapSelector.EnsureInstance();
+        int current = MapSelector.CurrentMapIndex;
+        string currentName = current >= 0 ? MapCatalog.Maps[current].DisplayName : MapSelector.CurrentSceneName;
+        GUILayout.Label($"Map: {currentName}  (F5/F6/F7, PgUp/PgDn)", labelStyle);
+
+        GUILayout.BeginHorizontal();
+        for (int i = 0; i < MapCatalog.Count; i++)
+        {
+            var entry = MapCatalog.Maps[i];
+            bool available = selector.IsMapAvailable(i);
+            bool isCurrent = i == current;
+            string label = isCurrent ? $"{entry.DisplayName} (current)" : available ? entry.DisplayName : $"{entry.DisplayName} (n/a)";
+
+            bool wasEnabled = GUI.enabled;
+            GUI.enabled = wasEnabled && available && !isCurrent && !selector.IsLoading;
+            if (GUILayout.Button(label, buttonStyle, GUILayout.Height(32f)))
+            {
+                if (selector.TryLoadMap(i))
+                    SetOpen(false);
+            }
+            GUI.enabled = wasEnabled;
+        }
+        GUILayout.EndHorizontal();
+
+        string status = selector.StatusMessage;
+        if (!string.IsNullOrEmpty(status))
+            GUILayout.Label(status, labelStyle);
     }
 
     private void DrawClassButton(string label, ClassDefinition definition)
