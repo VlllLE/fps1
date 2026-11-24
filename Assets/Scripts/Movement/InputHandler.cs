@@ -64,6 +64,10 @@ public class InputHandler : MonoBehaviour
     [Header("Deadzone")]
     [SerializeField] private float moveDeadzone = 0.15f;
 
+    [Header("Gamepad")]
+    [Tooltip("Opt-in gamepad stick movement via Horizontal_Joy/Vertical_Joy. Off by default so plugged-in controllers or HID devices cannot cause stick drift.")]
+    [SerializeField] private bool enableGamepadMove = false;
+
     #endregion
 
     #region Unity Lifecycle
@@ -228,25 +232,9 @@ public class InputHandler : MonoBehaviour
             return keys.sqrMagnitude > 1f ? keys.normalized : keys;
         }
 
-        // Fallback to Horizontal/Vertical axes with a strict threshold (>= 0.75):
-        // digital keys report exact +/-1 while resting gamepad stick noise stays well below.
-        float ax = 0f;
-        float ay = 0f;
-        if (!string.IsNullOrEmpty(horizontalAxis))
-            ax = Input.GetAxisRaw(horizontalAxis);
-        if (!string.IsNullOrEmpty(verticalAxis))
-            ay = Input.GetAxisRaw(verticalAxis);
-
-        if (Mathf.Abs(ax) >= 0.75f || Mathf.Abs(ay) >= 0.75f)
-        {
-            Vector2 axisMove = new Vector2(
-                Mathf.Abs(ax) >= 0.75f ? ax : 0f,
-                Mathf.Abs(ay) >= 0.75f ? ay : 0f);
-            return axisMove.sqrMagnitude > 1f ? axisMove.normalized : axisMove;
-        }
-
-        // Only poll dedicated *_Joy axes once InputManager.asset has reloaded.
-        if (!joyAxesAvailable)
+        // Never poll legacy Horizontal/Vertical axes — plugged-in controllers or HID devices
+        // bleed stick drift into them (especially before Unity reloads InputManager.asset).
+        if (!enableGamepadMove || !joyAxesAvailable)
             return Vector2.zero;
 
         try
