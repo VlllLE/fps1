@@ -106,11 +106,11 @@ public class MovementController : MonoBehaviour
     
     // Diving
     private float diveStartTime;
-    private float lastDiveTime;
+    private float lastDiveTime = -999f;
     private Vector3 diveDirection;
     
     // Wall Mechanics
-    private float lastWallBounceTime;
+    private float lastWallBounceTime = -999f;
     private Vector3 lastWallNormal;
     private float wallRunStartTime;
     private bool isWallRunning;
@@ -224,7 +224,8 @@ public class MovementController : MonoBehaviour
             feetY + groundCheckRadius + 0.01f,
             transform.position.z);
 
-        float castDist = currentState == MovementState.Airborne
+        bool isAirState = currentState == MovementState.Airborne || currentState == MovementState.Diving;
+        float castDist = isAirState
             ? Mathf.Min(groundCheckDistance, 0.15f)
             : groundCheckDistance;
 
@@ -240,9 +241,9 @@ public class MovementController : MonoBehaviour
         bool ccGrounded = controller != null && controller.isGrounded;
         isGrounded = sphereHit || ccGrounded;
 
-        // While ascending out of a jump/bhop, stay ungrounded so the spherecast cannot
-        // falsely trigger OnLand() on the frame right after leaving the floor.
-        if (currentState == MovementState.Airborne && velocity.y > 0.05f)
+        // While ascending out of a jump/bhop/dive, stay ungrounded so the spherecast cannot
+        // falsely trigger OnLand() or DiveRecovery on the frame right after leaving the floor.
+        if (isAirState && velocity.y > 0.05f)
         {
             isGrounded = false;
         }
@@ -366,9 +367,10 @@ public class MovementController : MonoBehaviour
         
         if (isGrounded || canCoyoteJump)
         {
-            // Timed tap right after landing (within bhopWindow) also chains a bhop.
+            // Timed tap right after landing (within bhopWindow) also chains a bhop,
+            // only when landing with horizontal momentum (never on a fresh takeoff after a standstill drop).
             bool inPostLandBhopWindow = (Time.time - lastLandTime) <= config.bhopWindow
-                && (lastLandHorizontalSpeed > 0.5f || currentSpeed > 0.5f);
+                && lastLandHorizontalSpeed > 0.5f;
             if (inPostLandBhopWindow)
             {
                 ExecuteBhop(Mathf.Max(currentSpeed, lastLandHorizontalSpeed), frameZeroBhop: false);
@@ -726,7 +728,7 @@ public class MovementController : MonoBehaviour
         {
             float baseSpeed = frameZeroBhop
                 ? entrySpeed * Mathf.Max(config.bhopSpeedRetention, 1f)
-                : entrySpeed * config.bhopSpeedRetention;
+                : Mathf.Max(currentSpeed, entrySpeed * config.bhopSpeedRetention);
             float walkFloor = config.walkSpeed * classSpeedMultiplier;
             if (frameZeroBhop && baseSpeed < walkFloor)
             {
@@ -854,6 +856,8 @@ public class MovementController : MonoBehaviour
         // Apply dive velocity
         velocity = diveDirection * config.diveForwardSpeed;
         velocity.y = config.diveUpwardForce;
+        isGrounded = false;
+        lastJumpInputTime = -999f;
         
         input.ConsumeDive();
         Dived?.Invoke();
@@ -866,15 +870,17 @@ public class MovementController : MonoBehaviour
     private bool CanWallBounce()
     {
         if (Time.time - lastWallBounceTime < config.wallBounceCooldown) return false;
-        if (currentSpeed < config.minWallBounceSpeed) return false;
+        Vector3 horizontalVel = new Vector3(velocity.x, 0f, velocity.z);
+        if (Mathf.Max(currentSpeed, horizontalVel.magnitude) < config.minWallBounceSpeed) return false;
         
-        // Check for wall
-        Vector3 moveDir = new Vector3(velocity.x, 0f, velocity.z).normalized;
+        // Check for wall (include capsule radius so wallCheckDistance is clearance outside the player)
+        Vector3 moveDir = horizontalVel.normalized;
         if (moveDir.sqrMagnitude < 0.1f) return false;
         
+        float rayDistance = config.wallCheckDistance + (controller != null ? controller.radius : 0.4f);
         RaycastHit hit;
         if (Physics.Raycast(transform.position + Vector3.up * 0.5f, moveDir, out hit, 
-            config.wallCheckDistance, config.wallLayers))
+            rayDistance, config.wallLayers, QueryTriggerInteraction.Ignore))
         {
             float wallAngle = Vector3.Angle(hit.normal, Vector3.up);
             if (wallAngle >= config.minWallAngle)
@@ -1415,6 +1421,8 @@ public class MovementController : MonoBehaviour
         velocity = Vector3.zero;
         currentState = MovementState.Walking;
         bhopChainCount = 0;
+        hasJumpedThisAirtime = false;
+        lastGroundedTime = -999f;
         lastLandTime = -999f;
         lastLandHorizontalSpeed = 0f;
         lastJumpInputTime = -999f;
