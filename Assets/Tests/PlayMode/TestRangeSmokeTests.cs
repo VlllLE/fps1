@@ -524,6 +524,206 @@ public class TestRangeSmokeTests
     }
 
     [UnityTest]
+    public IEnumerator Player_Bhop_HoldSpace_AutoRejumpsAndBuildsSpeed()
+    {
+        yield return MovePlayerToOpenLane();
+        Assert.IsTrue(movement.IsGrounded, "Player must be grounded before hold-Space bhop test");
+
+        int bhopCount = 0;
+        float speedAtLastBhop = 0f;
+        float maxObservedSpeed = 0f;
+        System.Action onBhop = () =>
+        {
+            bhopCount++;
+            speedAtLastBhop = new Vector3(movement.Velocity.x, 0f, movement.Velocity.z).magnitude;
+        };
+        movement.BunnyHopped += onBhop;
+
+        try
+        {
+            inputHandler.SetTestInputLocked(true);
+            inputHandler.SetMoveInput(new Vector2(0f, 1f));
+            inputHandler.SimulateSprintHeld(true);
+
+            float sprintTarget = movement.Config.walkSpeed * 1.3f * movement.ClassSpeedMultiplier;
+            float sprintDeadline = Time.time + 1.2f;
+            while (movement.CurrentSpeed < sprintTarget && Time.time < sprintDeadline)
+                yield return null;
+
+            float speedBeforeJump = movement.CurrentSpeed;
+            Assert.GreaterOrEqual(speedBeforeJump, movement.Config.walkSpeed * movement.ClassSpeedMultiplier * 0.9f,
+                $"Expected sprint speed before jump (got {speedBeforeJump:F2})");
+
+            // Single Jump press, then keep Space held — no second SimulateJumpPress call.
+            inputHandler.SimulateJumpPress();
+            yield return null;
+
+            float bhopDeadline = Time.time + 3.5f;
+            while (bhopCount < 2 && Time.time < bhopDeadline)
+            {
+                float horiz = new Vector3(movement.Velocity.x, 0f, movement.Velocity.z).magnitude;
+                if (horiz > maxObservedSpeed)
+                    maxObservedSpeed = horiz;
+                yield return null;
+            }
+
+            float cap = movement.Config.bhopMaxSpeed * movement.ClassSpeedMultiplier;
+            Assert.GreaterOrEqual(bhopCount, 2,
+                $"Holding Jump should auto-rejump into consecutive bhops (bhops={bhopCount}, chain={movement.BhopChainCount}, state={movement.CurrentState})");
+            Assert.GreaterOrEqual(movement.BhopChainCount, 2,
+                $"BhopChainCount should increment across hold-Space landings (chain={movement.BhopChainCount})");
+            Assert.Greater(speedAtLastBhop, speedBeforeJump,
+                $"Chained bhops should preserve and build speed without landing friction loss (before={speedBeforeJump:F2}, after={speedAtLastBhop:F2})");
+            Assert.LessOrEqual(maxObservedSpeed, cap + 0.05f,
+                $"Bhop speed must stay capped by MovementConfig.bhopMaxSpeed (max={maxObservedSpeed:F2}, cap={cap:F2})");
+
+            // Release Space + WASD and confirm clean return to idle with no drift/sticking.
+            inputHandler.SetJumpHeld(false);
+            inputHandler.SimulateSprintHeld(false);
+            inputHandler.SetMoveInput(Vector2.zero);
+
+            float settleDeadline = Time.time + 2.0f;
+            while ((!movement.IsGrounded || movement.CurrentSpeed > 0.35f) && Time.time < settleDeadline)
+                yield return null;
+
+            Assert.IsTrue(movement.IsGrounded, "Releasing Jump should allow player to land cleanly");
+            Assert.Less(movement.CurrentSpeed, 0.35f,
+                $"Releasing inputs after bhop should settle to idle (speed={movement.CurrentSpeed:F2})");
+        }
+        finally
+        {
+            movement.BunnyHopped -= onBhop;
+            inputHandler.SetJumpHeld(false);
+            inputHandler.SimulateSprintHeld(false);
+            inputHandler.SetMoveInput(Vector2.zero);
+            inputHandler.SetTestInputLocked(false);
+        }
+    }
+
+    [UnityTest]
+    public IEnumerator Player_Bhop_AirStrafe_BuildsSpeedWithinCap()
+    {
+        yield return MovePlayerToOpenLane();
+        Assert.IsTrue(movement.IsGrounded, "Player must be grounded before air-strafe bhop test");
+
+        int bhopCount = 0;
+        float peakSpeed = 0f;
+        System.Action onBhop = () => bhopCount++;
+        movement.BunnyHopped += onBhop;
+
+        try
+        {
+            inputHandler.SetTestInputLocked(true);
+            inputHandler.SetMoveInput(new Vector2(0f, 1f));
+            inputHandler.SimulateSprintHeld(false);
+
+            float walkTarget = movement.Config.walkSpeed * 0.9f * movement.ClassSpeedMultiplier;
+            float accelDeadline = Time.time + 1.2f;
+            while (movement.CurrentSpeed < walkTarget && Time.time < accelDeadline)
+                yield return null;
+
+            float speedBeforeJump = movement.CurrentSpeed;
+            inputHandler.SimulateJumpPress();
+            yield return null;
+
+            float deadline = Time.time + 3.5f;
+            while (bhopCount < 2 && Time.time < deadline)
+            {
+                // Alternate left/right air-strafes across hops while keeping Jump held.
+                float strafeX = (bhopCount % 2 == 0) ? 0.85f : -0.85f;
+                inputHandler.SetMoveInput(new Vector2(strafeX, 0.5f).normalized);
+
+                float horiz = new Vector3(movement.Velocity.x, 0f, movement.Velocity.z).magnitude;
+                if (horiz > peakSpeed)
+                    peakSpeed = horiz;
+                yield return null;
+            }
+
+            float cap = movement.Config.bhopMaxSpeed * movement.ClassSpeedMultiplier;
+            Assert.GreaterOrEqual(bhopCount, 2,
+                $"Holding Jump while air-strafing should chain bhops (bhops={bhopCount})");
+            Assert.Greater(peakSpeed, speedBeforeJump + 0.3f,
+                $"Air-strafing with bhop should build horizontal speed (before={speedBeforeJump:F2}, peak={peakSpeed:F2})");
+            Assert.LessOrEqual(peakSpeed, cap + 0.05f,
+                $"Air-strafe + bhop speed must stay within config cap (peak={peakSpeed:F2}, cap={cap:F2})");
+        }
+        finally
+        {
+            movement.BunnyHopped -= onBhop;
+            inputHandler.SetJumpHeld(false);
+            inputHandler.SetMoveInput(Vector2.zero);
+            inputHandler.SetTestInputLocked(false);
+        }
+    }
+
+    [UnityTest]
+    public IEnumerator Player_SlideCancel_IntoHoldSpaceBhop_PreservesMomentum()
+    {
+        yield return MovePlayerToOpenLane();
+        Assert.IsTrue(movement.IsGrounded, "Player must be grounded before slide-cancel bhop test");
+
+        bool slideCancelled = false;
+        int bhopCount = 0;
+        float speedAfterBhop = 0f;
+        System.Action onSlideCancel = () => slideCancelled = true;
+        System.Action onBhop = () =>
+        {
+            bhopCount++;
+            speedAfterBhop = new Vector3(movement.Velocity.x, 0f, movement.Velocity.z).magnitude;
+        };
+        movement.SlideCancelled += onSlideCancel;
+        movement.BunnyHopped += onBhop;
+
+        try
+        {
+            inputHandler.SetTestInputLocked(true);
+            inputHandler.SetMoveInput(new Vector2(0f, 1f));
+            inputHandler.SimulateSprintHeld(true);
+
+            float sprintTarget = movement.Config.walkSpeed * 1.2f * movement.ClassSpeedMultiplier;
+            float sprintDeadline = Time.time + 1.2f;
+            while (movement.CurrentSpeed < sprintTarget && Time.time < sprintDeadline)
+                yield return null;
+
+            inputHandler.SimulateCrouchPress();
+            inputHandler.SetCrouchHeld(true);
+            for (int i = 0; i < 6; i++)
+                yield return null;
+
+            Assert.AreEqual(MovementController.MovementState.Sliding, movement.CurrentState,
+                "Should be sliding before slide-cancel");
+
+            // Jump out of slide and keep Jump held into the landing bhop.
+            inputHandler.SimulateJumpPress();
+            yield return null;
+            inputHandler.SetCrouchHeld(false);
+
+            float deadline = Time.time + 2.5f;
+            while (bhopCount < 1 && Time.time < deadline)
+                yield return null;
+
+            float cap = movement.Config.bhopMaxSpeed * movement.ClassSpeedMultiplier;
+            Assert.IsTrue(slideCancelled, "Jumping during slide should fire SlideCancelled");
+            Assert.GreaterOrEqual(bhopCount, 1,
+                $"Holding Jump after slide-cancel should chain into a bhop on landing (bhops={bhopCount})");
+            Assert.GreaterOrEqual(speedAfterBhop, movement.Config.walkSpeed * movement.ClassSpeedMultiplier,
+                $"Slide-cancel into bhop should keep high horizontal speed (speed={speedAfterBhop:F2})");
+            Assert.LessOrEqual(speedAfterBhop, cap + 0.05f,
+                $"Slide-cancel into bhop speed must stay within config cap (speed={speedAfterBhop:F2}, cap={cap:F2})");
+        }
+        finally
+        {
+            movement.SlideCancelled -= onSlideCancel;
+            movement.BunnyHopped -= onBhop;
+            inputHandler.SetJumpHeld(false);
+            inputHandler.SetCrouchHeld(false);
+            inputHandler.SimulateSprintHeld(false);
+            inputHandler.SetMoveInput(Vector2.zero);
+            inputHandler.SetTestInputLocked(false);
+        }
+    }
+
+    [UnityTest]
     public IEnumerator Player_Dive_SprintForward_EntersDiving()
     {
         yield return SettlePlayerOnGround();
@@ -657,5 +857,15 @@ public class TestRangeSmokeTests
                 characterController.Move(Vector3.down * 0.2f);
             yield return null;
         }
+    }
+
+    private IEnumerator MovePlayerToOpenLane()
+    {
+        characterController.enabled = false;
+        player.transform.SetPositionAndRotation(new Vector3(14f, 1.5f, -18f), Quaternion.identity);
+        characterController.enabled = true;
+        movement.ResetMovement();
+        yield return null;
+        yield return SettlePlayerOnGround();
     }
 }
