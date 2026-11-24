@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 114fae769e7c410ca37f61567404cbba, type: 3}
+  m_Name: WeaponLoadoutCatalog
+  m_EditorClassIdentifier: Loadout::WeaponLoadoutCatalog
+  weapons:
+  - displayName: M4A1
+    prefab: {fileID: 410000017, guid: eabc44e128d54d26a4a7af49269f1c9c, type: 3}
+    config: {fileID: 11400000, guid: 5d6dd39ba47344847b6a6b662092fd77, type: 2}
+    allowPrimary: 1
+    allowSecondary: 1
+  - displayName: SCAR-H
+    prefab: {fileID: 420000017, guid: e3a553387eb74606b410bdcbee6efd99, type: 3}
+    config: {fileID: 11400000, guid: a2a0f52bcdb367f44ae16cbba68521f2, type: 2}
+    allowPrimary: 1
+    allowSecondary: 1
+  - displayName: UMP45
+    prefab: {fileID: 430000017, guid: 475bfb7dc087434ea682ff192c2580e0, type: 3}
+    config: {fileID: 11400000, guid: df8486a523b29e94fa96ac9196b3c005, type: 2}
+    allowPrimary: 1
+    allowSecondary: 1
+  - displayName: Bolt-Action Sniper
+    prefab: {fileID: 440000017, guid: 7f85a43c3cd6431ba5d3b3c69f4d36e6, type: 3}
+    config: {fileID: 11400000, guid: 0b96b699b4ace27439855f4c5b369564, type: 2}
+    allowPrimary: 1
+    allowSecondary: 1
+  - displayName: DMR
+    prefab: {fileID: 450000017, guid: e4b8dde66e484f53a3b6ba5e2588d97d, type: 3}
+    config: {fileID: 11400000, guid: 6c9de9d063025b242bc308e01a73d3a7, type: 2}
+    allowPrimary: 1
+    allowSecondary: 1
+  - displayName: Karambit
+    prefab: {fileID: 460000001, guid: 6699551ebfa5498b8cab5606e70c0be9, type: 3}
+    config: {fileID: 11400000, guid: 926e9754f3534e8abea82ceacf91450d, type: 2}
+    allowPrimary: 0
+    allowSecondary: 1
+  skins:
+  - {fileID: 11400000, guid: b98855beb6754a51a8f0635105698e79, type: 2}
+  - {fileID: 11400000, guid: 40004db994d741298e468f393526aee5, type: 2}
+  - {fileID: 11400000, guid: 45a68f581fdc4b89a7523f43386dbe31, type: 2}
+  - {fileID: 11400000, guid: e37ec62055564acca64a2098f869dde0, type: 2}
+  - {fileID: 11400000, guid: 11c23a9489c9491a86f044323ba8efee, type: 2}
+  - {fileID: 11400000, guid: 25ece70f919d4ad78599b88db4eba6a2, type: 2}
+  - {fileID: 11400000, guid: 466f059384294303bbc050f72324a898, type: 2}
+  - {fileID: 11400000, guid: 54a2a129e08a4f28a6f83b13f0615cc8, type: 2}
+  - {fileID: 11400000, guid: 7ca7c19fa5f24a69ac2a4332e5aea811, type: 2}
+  - {fileID: 11400000, guid: 35c677469db64db18435035a8379bd99, type: 2}
+  - {fileID: 11400000, guid: 948a340e10fd4580a82dc7fd2fce563f, type: 2}
+  - {fileID: 11400000, guid: f8ff666595f84e1eb66cfd719752e8c1, type: 2}
+  - {fileID: 11400000, guid: f6c9f54ae93e463f9d6bafe226fb7bda, type: 2}
+  - {fileID: 11400000, guid: 697a6589dea646509016ef6459d266b0, type: 2}
+  - {fileID: 11400000, guid: f79c9f2a9fb04729b55724d422f90d39, type: 2}
+  - {fileID: 11400000, guid: 103493a425f24d2d8fa13214210bcc72, type: 2}
+  - {fileID: 11400000, guid: a7e6e189750f4d6eb33f4d4b55120d0e, type: 2}
+  - {fileID: 11400000, guid: d8bd663c5317466fa14f370e0f30f7ad, type: 2}
+  - {fileID: 11400000, guid: e3e398d383e84eff8519853f0ca03561, type: 2}
+  - {fileID: 11400000, guid: 048d579b08534a40a78e0d5cd4f2b792, type: 2}
+  classes:
+  - {fileID: 11400000, guid: a11b22c33d44e55f6677889900aabb01, type: 2}
+  - {fileID: 11400000, guid: a11b22c33d44e55f6677889900aabb02, type: 2}
+  - {fileID: 11400000, guid: a11b22c33d44e55f6677889900aabb03, type: 2}
+  - {fileID: 11400000, guid: a11b22c33d44e55f6677889900aabb04, type: 2}

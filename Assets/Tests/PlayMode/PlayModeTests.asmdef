@@ -5,7 +5,8 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Scripts",
-        "Skins"
+        "Skins",
+        "Loadout"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

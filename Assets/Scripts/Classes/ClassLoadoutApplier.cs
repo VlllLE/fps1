@@ -60,6 +60,15 @@ public class ClassLoadoutApplier : MonoBehaviour
     /// </summary>
     public bool ApplyLoadout(ClassDefinition definition)
     {
+        return ApplyLoadout(definition, startingSlot);
+    }
+
+    /// <summary>
+    /// Same as <see cref="ApplyLoadout(ClassDefinition)"/> but equips <paramref name="startSlot"/> (clamped)
+    /// instead of the inspector starting slot, so menus can keep the player on the slot they were holding.
+    /// </summary>
+    public bool ApplyLoadout(ClassDefinition definition, int startSlot)
+    {
         ResolveReferences();
 
         if (definition == null)
@@ -132,7 +141,7 @@ public class ClassLoadoutApplier : MonoBehaviour
             return false;
         }
 
-        int start = Mathf.Clamp(startingSlot, 0, slots.Count - 1);
+        int start = Mathf.Clamp(startSlot, 0, slots.Count - 1);
         weaponSwitcher.ConfigureSlots(slots.ToArray(), start);
 
         if (movementController != null)

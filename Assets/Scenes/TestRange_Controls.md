@@ -18,7 +18,7 @@
 | Aim (ADS) | Right mouse |
 | Reload | R |
 | Class loadout | `F1` Assault · `F2` SMG · `F3` Sniper · `F4` Hybrid |
-| Loadout menu | `Esc` — class buttons + weapon slots |
+| Loadout menu | `Esc` (pause menu) or `L` (straight to the Loadout tab) — class, primary, secondary (incl. Karambit), skin per weapon, live preview |
 | Weapon slot | `1` Primary · `2` Secondary (per class) |
 | Cycle weapons | Mouse scroll (when slots filled) |
 | Last weapon | Q |
@@ -49,3 +49,11 @@ If jumps or slides never register but WASD works, run **Tools → Sync Test Rang
 | F4 | Hybrid | DMR | M4A1 |
 
 Re-sync scene player: **Tools → Sync Test Range Player (Character + Classes)**.
+
+### Weapon selection menu (`Esc` / `L`)
+
+- **LOADOUT** tab: pick a **class**, then override the **primary** and **secondary** (the Karambit is secondary-only) and choose a **skin per weapon**. The preview on the right turns the focused weapon; hover a skin to preview it before picking.
+- Choices apply to the player immediately and are saved in `PlayerPrefs` (key `FPS.Loadout.v1`), so they survive scene / map changes and restarts. `F1`–`F4` class picks are saved too. **Reset loadout to defaults** clears the save.
+- **MAP** tab: the map selector (unchanged).
+- `Esc` closes the menu, `L` toggles it on the Loadout tab. Closing always re-locks the cursor and restores the time scale; firing / weapon switching are suppressed while it is open.
+- The weapon/skin/class lists come from `Assets/Resources/WeaponLoadoutCatalog.asset`; after adding a weapon prefab, skin or class run **Tools → Loadout → Rebuild Weapon Catalog**.

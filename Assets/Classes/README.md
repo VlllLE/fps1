@@ -62,3 +62,12 @@ applier.ApplyLoadout(myClassDefinition);   // also works mid-session
 `ClassLoadoutApplier` runs before `WeaponSwitcher.Start` (`DefaultExecutionOrder(-50)`),
 so the starting primary is equipped on first frame. It optionally sets
 `MovementController.ClassSpeedMultiplier` from the class asset.
+
+## Weapon selection menu
+
+The Esc / `L` menu (`Assets/Loadout/`) lets the player mix classes with any primary, secondary and skin.
+`WeaponLoadoutService` (added to the player at runtime by `LoadoutBootstrap`) composes a runtime
+`ClassDefinition` from the picks and hands it to `ClassLoadoutApplier.ApplyLoadout(definition, startSlot)`,
+then applies skins through `WeaponSkinApplier` and saves the selection in `PlayerPrefs` (`FPS.Loadout.v1`).
+The selectable weapons, skins and classes live in `Assets/Resources/WeaponLoadoutCatalog.asset`
+(**Tools > Loadout > Rebuild Weapon Catalog** regenerates it).
