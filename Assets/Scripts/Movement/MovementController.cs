@@ -54,6 +54,7 @@ public class MovementController : MonoBehaviour
     public MovementConfig Config => config;
     public Vector3 LastWallNormal => lastWallNormal;
     public int WallRunSide => wallRunSide;
+    public int BhopChainCount => bhopChainCount;
 
     /// <summary>Fired when <see cref="CurrentState"/> changes (after movement tick).</summary>
     public event Action<MovementState, MovementState> StateChanged;
@@ -88,18 +89,19 @@ public class MovementController : MonoBehaviour
     #region Internal Timers & Cooldowns
     
     // Jumping
-    private float lastGroundedTime;
-    private float lastJumpInputTime;
+    private float lastGroundedTime = -999f;
+    private float lastJumpInputTime = -999f;
     private bool hasJumpedThisAirtime;
     
     // Sliding
     private float slideStartTime;
-    private float lastSlideTime;
+    private float lastSlideTime = -999f;
     private Vector3 slideDirection;
     private bool isSlideQueued;
     
     // Bunny Hopping
-    private float lastLandTime;
+    private float lastLandTime = -999f;
+    private float lastLandHorizontalSpeed;
     private int bhopChainCount;
     
     // Diving
@@ -222,17 +224,28 @@ public class MovementController : MonoBehaviour
             feetY + groundCheckRadius + 0.01f,
             transform.position.z);
 
+        float castDist = currentState == MovementState.Airborne
+            ? Mathf.Min(groundCheckDistance, 0.15f)
+            : groundCheckDistance;
+
         bool sphereHit = Physics.SphereCast(
             origin,
             groundCheckRadius,
             Vector3.down,
             out groundHit,
-            groundCheckDistance + 0.01f,
+            castDist + 0.01f,
             groundLayers,
             QueryTriggerInteraction.Ignore
         );
         bool ccGrounded = controller != null && controller.isGrounded;
         isGrounded = sphereHit || ccGrounded;
+
+        // While ascending out of a jump/bhop, stay ungrounded so the spherecast cannot
+        // falsely trigger OnLand() on the frame right after leaving the floor.
+        if (currentState == MovementState.Airborne && velocity.y > 0.05f)
+        {
+            isGrounded = false;
+        }
 
         // Only trust sphere normal when the cast hit — otherwise an empty hit would read as a steep slope.
         if (isGrounded && sphereHit && config != null)
@@ -251,8 +264,9 @@ public class MovementController : MonoBehaviour
         {
             lastGroundedTime = Time.time;
             
-            // Landing detection for bhop
-            if (currentState == MovementState.Airborne || currentState == MovementState.Diving)
+            // Landing detection — only when descending/touching down, never during ascent.
+            if (velocity.y <= 0.05f &&
+                (currentState == MovementState.Airborne || currentState == MovementState.Diving))
             {
                 OnLand();
             }
@@ -261,17 +275,29 @@ public class MovementController : MonoBehaviour
     
     private void OnLand()
     {
+        float horizSpeed = new Vector3(velocity.x, 0f, velocity.z).magnitude;
         lastLandTime = Time.time;
+        lastLandHorizontalSpeed = horizSpeed;
         hasJumpedThisAirtime = false;
         Landed?.Invoke();
         
-        // Check for bhop chain
-        if (input.JumpHeld || input.JumpPressed)
+        // Auto-rejump / bhop chain on landing from Airborne (never hijack a dolphin dive landing).
+        if (currentState == MovementState.Airborne)
         {
-            float timeSinceJumpInput = Time.time - lastJumpInputTime;
-            if (timeSinceJumpInput < config.bhopWindow)
+            float bufferWindow = Mathf.Max(config.jumpBufferTime, config.bhopWindow);
+            bool bufferedJump = input.JumpPressed || (Time.time - lastJumpInputTime <= bufferWindow);
+            if (input.JumpHeld || bufferedJump)
             {
-                ExecuteBhop();
+                isSlideQueued = false;
+                if (horizSpeed > 0.5f || input.HasMoveInput)
+                {
+                    ExecuteBhop(horizSpeed, frameZeroBhop: true);
+                }
+                else
+                {
+                    ExecuteJump();
+                }
+                return;
             }
         }
         
@@ -340,7 +366,17 @@ public class MovementController : MonoBehaviour
         
         if (isGrounded || canCoyoteJump)
         {
-            ExecuteJump();
+            // Timed tap right after landing (within bhopWindow) also chains a bhop.
+            bool inPostLandBhopWindow = (Time.time - lastLandTime) <= config.bhopWindow
+                && (lastLandHorizontalSpeed > 0.5f || currentSpeed > 0.5f);
+            if (inPostLandBhopWindow)
+            {
+                ExecuteBhop(Mathf.Max(currentSpeed, lastLandHorizontalSpeed), frameZeroBhop: false);
+            }
+            else
+            {
+                ExecuteJump();
+            }
         }
         else if (currentState == MovementState.WallRunning)
         {
@@ -431,6 +467,11 @@ public class MovementController : MonoBehaviour
         {
             currentState = MovementState.Airborne;
             return;
+        }
+
+        if (bhopChainCount > 0 && (Time.time - lastLandTime) > config.bhopWindow)
+        {
+            bhopChainCount = 0;
         }
         
         // Determine walk vs sprint
@@ -644,6 +685,8 @@ public class MovementController : MonoBehaviour
         velocity.y = config.jumpForce;
         hasJumpedThisAirtime = true;
         currentState = MovementState.Airborne;
+        isGrounded = false;
+        lastJumpInputTime = -999f;
         input.ConsumeJump();
         
         // Reset bhop chain if too slow
@@ -655,22 +698,55 @@ public class MovementController : MonoBehaviour
         Jumped?.Invoke();
     }
     
-    private void ExecuteBhop()
+    private void ExecuteBhop(float incomingSpeed, bool frameZeroBhop)
     {
-        // Calculate bhop bonus
-        float bhopBoost = config.bhopBonus * Mathf.Min(bhopChainCount, 5);
-        float targetSpeed = Mathf.Min(currentSpeed * config.bhopSpeedRetention + bhopBoost, config.bhopMaxSpeed);
-        
-        // Preserve horizontal direction, add jump
         Vector3 horizontalVel = new Vector3(velocity.x, 0f, velocity.z);
-        if (horizontalVel.magnitude > 0.1f)
+        float entrySpeed = Mathf.Max(horizontalVel.magnitude, incomingSpeed);
+        float maxSpeed = config.bhopMaxSpeed * classSpeedMultiplier;
+        Vector3 wishDir = GetWishDirection();
+        bool hasInput = wishDir.sqrMagnitude > 0.01f;
+
+        Vector3 moveDir;
+        if (horizontalVel.sqrMagnitude > 0.01f)
         {
-            horizontalVel = horizontalVel.normalized * targetSpeed;
+            moveDir = horizontalVel.normalized;
+            if (hasInput)
+            {
+                // Subtle touchdown redirect so chaining hops while steering feels responsive.
+                moveDir = Vector3.Slerp(moveDir, wishDir, 0.2f).normalized;
+            }
         }
-        
-        velocity = new Vector3(horizontalVel.x, config.jumpForce, horizontalVel.z);
+        else
+        {
+            moveDir = hasInput ? wishDir : transform.forward;
+        }
+
+        float targetSpeed;
+        if (hasInput)
+        {
+            float baseSpeed = frameZeroBhop
+                ? entrySpeed * Mathf.Max(config.bhopSpeedRetention, 1f)
+                : entrySpeed * config.bhopSpeedRetention;
+            float walkFloor = config.walkSpeed * classSpeedMultiplier;
+            if (frameZeroBhop && baseSpeed < walkFloor)
+            {
+                baseSpeed = Mathf.MoveTowards(baseSpeed, walkFloor, walkFloor * 0.25f);
+            }
+            float hopGain = config.bhopBonus * Mathf.Clamp(config.bhopSpeedRetention, 0.5f, 1.1f)
+                * Mathf.Min(bhopChainCount + 1, 4);
+            targetSpeed = Mathf.Min(baseSpeed + hopGain, maxSpeed);
+        }
+        else
+        {
+            // Hands-off WASD coasting retains momentum gently without free acceleration.
+            targetSpeed = Mathf.Min(entrySpeed * config.bhopSpeedRetention, maxSpeed);
+        }
+
+        velocity = new Vector3(moveDir.x * targetSpeed, config.jumpForce, moveDir.z * targetSpeed);
         hasJumpedThisAirtime = true;
         currentState = MovementState.Airborne;
+        isGrounded = false;
+        lastJumpInputTime = -999f;
         bhopChainCount++;
         
         input.ConsumeJump();
@@ -733,15 +809,19 @@ public class MovementController : MonoBehaviour
         horizontalVel *= cancelMultiplier;
         
         // Cap to bhop max
-        if (horizontalVel.magnitude > config.bhopMaxSpeed)
+        float maxSpeed = config.bhopMaxSpeed * classSpeedMultiplier;
+        if (horizontalVel.magnitude > maxSpeed)
         {
-            horizontalVel = horizontalVel.normalized * config.bhopMaxSpeed;
+            horizontalVel = horizontalVel.normalized * maxSpeed;
         }
         
         velocity = new Vector3(horizontalVel.x, config.jumpForce, horizontalVel.z);
         hasJumpedThisAirtime = true;
         currentState = MovementState.Airborne;
+        isGrounded = false;
         lastSlideTime = Time.time;
+        lastJumpInputTime = -999f;
+        bhopChainCount = Mathf.Max(bhopChainCount, 1);
         
         input.ConsumeJump();
         SlideCancelled?.Invoke();
@@ -823,9 +903,11 @@ public class MovementController : MonoBehaviour
         
         velocity = new Vector3(reflected.x, config.wallBounceUpForce, reflected.z);
         lastWallBounceTime = Time.time;
+        lastJumpInputTime = -999f;
         
         // Chain momentum preservation
         bhopChainCount = Mathf.Max(bhopChainCount, 1);
+        input.ConsumeJump();
         WallBounced?.Invoke();
     }
     
@@ -900,6 +982,9 @@ public class MovementController : MonoBehaviour
         
         EndWallRun();
         hasJumpedThisAirtime = true;
+        isGrounded = false;
+        lastJumpInputTime = -999f;
+        input.ConsumeJump();
     }
     
     #endregion
@@ -967,44 +1052,65 @@ public class MovementController : MonoBehaviour
             return;
         }
         
-        // Source-style air acceleration
         Vector3 horizontalVel = new Vector3(velocity.x, 0f, velocity.z);
+        float prevSpeed = horizontalVel.magnitude;
+        float bhopCap = config.bhopMaxSpeed * classSpeedMultiplier;
+        
+        // Source-style air acceleration (strafe-friendly perpendicular speed gain)
         float currentSpeedInWishDir = Vector3.Dot(horizontalVel, wishDir);
         float addSpeed = config.maxAirSpeed - currentSpeedInWishDir;
         
-        if (addSpeed <= 0) return;
-        
-        float accelSpeed = config.airAcceleration * Time.deltaTime;
-        if (accelSpeed > addSpeed)
+        if (addSpeed > 0f)
         {
-            accelSpeed = addSpeed;
+            float accelSpeed = config.airAcceleration * 2.5f * Time.deltaTime;
+            if (accelSpeed > addSpeed)
+            {
+                accelSpeed = addSpeed;
+            }
+            
+            velocity.x += wishDir.x * accelSpeed;
+            velocity.z += wishDir.z * accelSpeed;
         }
         
-        velocity.x += wishDir.x * accelSpeed;
-        velocity.z += wishDir.z * accelSpeed;
-        
-        // Apply air control for sharper turns
-        if (input.IsStrafing)
+        // Apply air control for sharper turns & smooth air-strafe speed buildup
+        // (ApplyAirControl gates on velocity-vs-wish angle, so both A/D and W+A/W+D strafes work)
+        ApplyAirControl(wishDir, bhopCap);
+
+        // Respect bhopMaxSpeed cap on air-strafe gain without clipping faster techs (e.g. dive)
+        float maxAllowed = Mathf.Max(prevSpeed, bhopCap);
+        Vector3 newHoriz = new Vector3(velocity.x, 0f, velocity.z);
+        float newSpeed = newHoriz.magnitude;
+        if (newSpeed > maxAllowed && newSpeed > 0.001f)
         {
-            ApplyAirControl(wishDir);
+            float scale = maxAllowed / newSpeed;
+            velocity.x *= scale;
+            velocity.z *= scale;
         }
     }
     
-    private void ApplyAirControl(Vector3 wishDir)
+    private void ApplyAirControl(Vector3 wishDir, float bhopCap)
     {
         Vector3 horizontalVel = new Vector3(velocity.x, 0f, velocity.z);
         float speed = horizontalVel.magnitude;
         
         if (speed < 0.1f) return;
         
-        // Dot product between current velocity and wish direction
-        float dot = Vector3.Dot(horizontalVel.normalized, wishDir);
+        Vector3 currentDir = horizontalVel / speed;
+        float dot = Vector3.Dot(currentDir, wishDir);
         
         // Only apply air control when strafing (perpendicular movement)
         if (dot < 0.9f && dot > -0.9f)
         {
-            float controlAmount = config.airControl * Time.deltaTime * speed;
-            Vector3 newDir = Vector3.Lerp(horizontalVel.normalized, wishDir, controlAmount / speed);
+            float turnT = Mathf.Clamp01(config.airControl * 3.5f * Time.deltaTime);
+            Vector3 newDir = Vector3.Slerp(currentDir, wishDir, turnT).normalized;
+
+            // Reward clean air-strafing with gentle speed buildup up to bhopMaxSpeed
+            float strafeAlignment = 1f - Mathf.Abs(dot);
+            if (speed >= config.walkSpeed * 0.5f && speed < bhopCap)
+            {
+                float strafeGain = config.airControl * config.airAcceleration * 0.25f * strafeAlignment * Time.deltaTime;
+                speed = Mathf.Min(speed + strafeGain, bhopCap);
+            }
             
             velocity.x = newDir.x * speed;
             velocity.z = newDir.z * speed;
@@ -1309,6 +1415,9 @@ public class MovementController : MonoBehaviour
         velocity = Vector3.zero;
         currentState = MovementState.Walking;
         bhopChainCount = 0;
+        lastLandTime = -999f;
+        lastLandHorizontalSpeed = 0f;
+        lastJumpInputTime = -999f;
         isSlideQueued = false;
         isMantling = false;
         isWallRunning = false;
