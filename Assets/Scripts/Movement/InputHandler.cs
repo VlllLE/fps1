@@ -210,6 +210,8 @@ public class InputHandler : MonoBehaviour
         CrouchHeld = false;
     }
     
+    private bool joyAxesAvailable = true;
+
     private Vector2 ReadDigitalOrGamepadMove()
     {
         float x = 0f;
@@ -220,25 +222,34 @@ public class InputHandler : MonoBehaviour
         if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) y -= 1f;
         if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) y += 1f;
 
-        if (Mathf.Abs(x) < 0.01f && Mathf.Abs(y) < 0.01f)
+        if (Mathf.Abs(x) >= 0.01f || Mathf.Abs(y) >= 0.01f)
         {
-            // Legacy axes (keyboard only after InputManager joy rename) + explicit joy axes.
-            float ax = Input.GetAxisRaw(horizontalAxis);
-            float ay = Input.GetAxisRaw(verticalAxis);
-            float jx = Input.GetAxisRaw("Horizontal_Joy");
-            float jy = Input.GetAxisRaw("Vertical_Joy");
-            if (Mathf.Abs(jx) > Mathf.Abs(ax)) ax = jx;
-            if (Mathf.Abs(jy) > Mathf.Abs(ay)) ay = jy;
-
-            Vector2 stick = new Vector2(ax, ay);
-            // Hard deadzone: stick noise must not count as move input while idle.
-            if (stick.magnitude < Mathf.Max(moveDeadzone, 0.5f))
-                stick = Vector2.zero;
-            return stick.sqrMagnitude > 1f ? stick.normalized : stick;
+            Vector2 keys = new Vector2(x, y);
+            return keys.sqrMagnitude > 1f ? keys.normalized : keys;
         }
 
-        Vector2 keys = new Vector2(x, y);
-        return keys.sqrMagnitude > 1f ? keys.normalized : keys;
+        // Only poll dedicated joy axes (never shared "Horizontal"/"Vertical" which can bleed
+        // joystick noise if Unity hasn't reloaded InputManager.asset yet).
+        if (!joyAxesAvailable)
+            return Vector2.zero;
+
+        try
+        {
+            Vector2 stick = new Vector2(
+                Input.GetAxisRaw("Horizontal_Joy"),
+                Input.GetAxisRaw("Vertical_Joy"));
+
+            if (stick.magnitude < Mathf.Max(moveDeadzone, 0.5f))
+                return Vector2.zero;
+
+            return stick.sqrMagnitude > 1f ? stick.normalized : stick;
+        }
+        catch (System.ArgumentException)
+        {
+            // InputManager.asset not reloaded in running Editor yet — stick to keyboard safely.
+            joyAxesAvailable = false;
+            return Vector2.zero;
+        }
     }
 
     public Vector3 GetMoveDirection(Transform relativeTo)

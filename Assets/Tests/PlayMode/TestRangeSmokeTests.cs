@@ -574,6 +574,52 @@ public class TestRangeSmokeTests
         Assert.Less(awayDot, 0.2f, "Wall bounce jump should redirect away from the wall");
     }
 
+    [UnityTest]
+    public IEnumerator Player_WalkInput_MovesFromIdleWithoutMinMoveBlocking()
+    {
+        yield return SettlePlayerOnGround();
+        Assert.LessOrEqual(characterController.minMoveDistance, 0.005f,
+            "High minMoveDistance silently drops WASD moves at high FPS");
+
+        Vector3 start = player.transform.position;
+        inputHandler.SetTestInputLocked(true);
+        inputHandler.SetMoveInput(new Vector2(0f, 1f));
+        for (int i = 0; i < 20; i++)
+            yield return null;
+        inputHandler.SetMoveInput(Vector2.zero);
+        inputHandler.SetTestInputLocked(false);
+
+        float moved = Vector2.Distance(
+            new Vector2(start.x, start.z),
+            new Vector2(player.transform.position.x, player.transform.position.z));
+        Assert.Greater(moved, 0.3f, $"Forward move input should displace player from idle (moved={moved:F3})");
+    }
+
+    [UnityTest]
+    public IEnumerator Weapon_Reload_AnimatesPoseAndRefillsAmmo()
+    {
+        var weapon = player.GetComponentInChildren<WeaponController>();
+        Assert.IsNotNull(weapon, "Player should have an equipped WeaponController");
+
+        weapon.SetAmmo(1, 30);
+        Quaternion baseRot = weapon.transform.localRotation;
+
+        weapon.TryReload();
+        Assert.IsTrue(weapon.IsReloading, "TryReload should enter reloading state");
+
+        float maxAngleDelta = 0f;
+        for (int i = 0; i < 40; i++)
+        {
+            yield return null;
+            float delta = Quaternion.Angle(baseRot, weapon.transform.localRotation);
+            if (delta > maxAngleDelta)
+                maxAngleDelta = delta;
+        }
+
+        Assert.Greater(maxAngleDelta, 5f,
+            $"Weapon should visibly animate during reload (maxAngleDelta={maxAngleDelta:F2})");
+    }
+
     private IEnumerator SettlePlayerOnGround()
     {
         for (int i = 0; i < 45; i++)

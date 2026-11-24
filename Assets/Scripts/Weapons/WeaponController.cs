@@ -54,6 +54,19 @@ public class WeaponController : MonoBehaviour
     private float bobTimer;
     private Vector3 initialLocalPosition;
     private Quaternion initialLocalRotation;
+
+    private float reloadProgress;
+    private Transform magazineTransform;
+    private Vector3 magazineInitialLocalPos;
+    private Quaternion magazineInitialLocalRot;
+    private Vector3 magazineInitialLocalScale;
+    private Transform boltTransform;
+    private Vector3 boltInitialLocalPos;
+    private Quaternion boltInitialLocalRot;
+
+    private static AudioClip proceduralMagOutClip;
+    private static AudioClip proceduralMagInClip;
+    private static AudioClip proceduralBoltRackClip;
     
     private float adsProgress;
     private float defaultFOV;
@@ -77,6 +90,7 @@ public class WeaponController : MonoBehaviour
     public int CurrentAmmo => currentAmmo;
     public int ReserveAmmo => reserveAmmo;
     public bool IsReloading => isReloading;
+    public float ReloadProgress => reloadProgress;
     public bool IsAiming => isAiming;
     public bool IsEquipped => isEquipped;
     public FireMode CurrentFireMode => config.availableFireModes[currentFireModeIndex];
@@ -97,6 +111,12 @@ public class WeaponController : MonoBehaviour
             
         if (audioSource == null)
             audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+            audioSource.spatialBlend = 0f;
+        }
         
         if (hitDetection == null)
             hitDetection = FindAnyObjectByType<HitDetection>();
@@ -107,6 +127,8 @@ public class WeaponController : MonoBehaviour
             
         initialLocalPosition = transform.localPosition;
         initialLocalRotation = transform.localRotation;
+
+        CacheReloadParts();
         
         if (playerCamera != null)
             defaultFOV = playerCamera.fieldOfView;
@@ -116,12 +138,25 @@ public class WeaponController : MonoBehaviour
     {
         InitializeAmmo();
     }
+
+    private void OnDisable()
+    {
+        if (reloadCoroutine != null)
+        {
+            StopCoroutine(reloadCoroutine);
+            reloadCoroutine = null;
+        }
+        isReloading = false;
+        reloadProgress = 0f;
+        ResetReloadVisuals();
+    }
     
     private void Update()
     {
         if (!isEquipped) return;
         
         UpdateADS();
+        ApplyReloadAnimation();
         UpdateSway();
         UpdateBob();
         UpdateSpreadRecovery();
@@ -447,6 +482,8 @@ public class WeaponController : MonoBehaviour
         }
         
         isReloading = false;
+        reloadProgress = 0f;
+        ResetReloadVisuals();
         
         if (animator != null)
             animator.SetBool("IsReloading", false);
@@ -455,37 +492,255 @@ public class WeaponController : MonoBehaviour
     private IEnumerator ReloadRoutine()
     {
         isReloading = true;
+        reloadProgress = 0f;
+        if (isAiming)
+            StopAiming();
         OnReloadStarted?.Invoke();
         
         if (animator != null)
             animator.SetBool("IsReloading", true);
             
-        if (config.reloadSound != null && audioSource != null)
+        bool hasCustomReloadClip = config.reloadSound != null && audioSource != null;
+        if (hasCustomReloadClip)
             audioSource.PlayOneShot(config.reloadSound);
+        else
+            EnsureProceduralReloadClips();
         
         float reloadTime = currentAmmo > 0 ? config.tacticalReloadTime : config.reloadTime;
-        
-        yield return new WaitForSeconds(config.reloadAmmoTime);
-        
-        int ammoNeeded = config.magazineSize - currentAmmo;
-        int ammoToAdd = Mathf.Min(ammoNeeded, reserveAmmo);
-        
-        currentAmmo += ammoToAdd;
-        reserveAmmo -= ammoToAdd;
-        
-        OnAmmoChanged?.Invoke(currentAmmo, reserveAmmo);
-        
-        float remainingTime = reloadTime - config.reloadAmmoTime;
-        if (remainingTime > 0)
-            yield return new WaitForSeconds(remainingTime);
+        reloadTime = Mathf.Max(reloadTime, 0.25f);
+        float ammoInsertTime = Mathf.Clamp(config.reloadAmmoTime, 0.05f, reloadTime);
+
+        float elapsed = 0f;
+        bool ammoAdded = false;
+        bool playedMagOut = false;
+        bool playedMagIn = false;
+        bool playedBoltRack = false;
+
+        while (elapsed < reloadTime)
+        {
+            elapsed += Time.deltaTime;
+            reloadProgress = Mathf.Clamp01(elapsed / reloadTime);
+
+            if (!hasCustomReloadClip && audioSource != null)
+            {
+                if (!playedMagOut && reloadProgress >= 0.20f)
+                {
+                    playedMagOut = true;
+                    audioSource.PlayOneShot(proceduralMagOutClip, 0.55f);
+                }
+                if (!playedMagIn && elapsed >= ammoInsertTime)
+                {
+                    playedMagIn = true;
+                    audioSource.PlayOneShot(proceduralMagInClip, 0.65f);
+                }
+                if (!playedBoltRack && reloadProgress >= 0.78f)
+                {
+                    playedBoltRack = true;
+                    audioSource.PlayOneShot(proceduralBoltRackClip, 0.55f);
+                }
+            }
+
+            if (!ammoAdded && elapsed >= ammoInsertTime)
+            {
+                ammoAdded = true;
+                int ammoNeeded = config.magazineSize - currentAmmo;
+                int ammoToAdd = Mathf.Min(ammoNeeded, reserveAmmo);
+
+                currentAmmo += ammoToAdd;
+                reserveAmmo -= ammoToAdd;
+
+                OnAmmoChanged?.Invoke(currentAmmo, reserveAmmo);
+            }
+
+            yield return null;
+        }
+
+        if (!ammoAdded)
+        {
+            int ammoNeeded = config.magazineSize - currentAmmo;
+            int ammoToAdd = Mathf.Min(ammoNeeded, reserveAmmo);
+            currentAmmo += ammoToAdd;
+            reserveAmmo -= ammoToAdd;
+            OnAmmoChanged?.Invoke(currentAmmo, reserveAmmo);
+        }
         
         isReloading = false;
+        reloadProgress = 0f;
         reloadCoroutine = null;
+        ResetReloadVisuals();
         
         if (animator != null)
             animator.SetBool("IsReloading", false);
             
         OnReloadComplete?.Invoke();
+    }
+
+    private void CacheReloadParts()
+    {
+        magazineTransform = FindDescendantByName(transform, "Magazine");
+        if (magazineTransform != null)
+        {
+            magazineInitialLocalPos = magazineTransform.localPosition;
+            magazineInitialLocalRot = magazineTransform.localRotation;
+            magazineInitialLocalScale = magazineTransform.localScale;
+        }
+
+        boltTransform = FindDescendantByName(transform, "Bolt");
+        if (boltTransform != null)
+        {
+            boltInitialLocalPos = boltTransform.localPosition;
+            boltInitialLocalRot = boltTransform.localRotation;
+        }
+    }
+
+    private static Transform FindDescendantByName(Transform root, string targetName)
+    {
+        foreach (Transform child in root)
+        {
+            if (child.name == targetName)
+                return child;
+            Transform nested = FindDescendantByName(child, targetName);
+            if (nested != null)
+                return nested;
+        }
+        return null;
+    }
+
+    private void ResetReloadVisuals()
+    {
+        if (magazineTransform != null)
+        {
+            magazineTransform.localPosition = magazineInitialLocalPos;
+            magazineTransform.localRotation = magazineInitialLocalRot;
+            magazineTransform.localScale = magazineInitialLocalScale;
+        }
+
+        if (boltTransform != null)
+        {
+            boltTransform.localPosition = boltInitialLocalPos;
+            boltTransform.localRotation = boltInitialLocalRot;
+        }
+    }
+
+    /// <summary>
+    /// Procedural first-person reload motion (tilt, magazine drop/insert, bolt rack).
+    /// Runs whenever no Animator overrides the weapon so every gun has clear reload feedback.
+    /// </summary>
+    private void ApplyReloadAnimation()
+    {
+        if (!isReloading)
+            return;
+
+        float t = reloadProgress;
+
+        // Smooth raise into reload pose (0..0.18) and return to ready (0.82..1.0).
+        float enter = SmoothStep01(t / 0.18f);
+        float exit = 1f - SmoothStep01((t - 0.82f) / 0.18f);
+        float poseWeight = enter * exit;
+
+        // Subtle weapon reactions on mag out (~0.24), mag slap (~0.66), and rack (~0.82).
+        float magOutDip = Pulse01(t, 0.24f, 0.08f);
+        float magInKick = Pulse01(t, 0.66f, 0.09f);
+        float rackPull = Pulse01(t, 0.82f, 0.09f);
+
+        Vector3 posOffset = new Vector3(
+            -0.065f * poseWeight,
+            -0.055f * poseWeight - 0.028f * magOutDip + 0.035f * magInKick,
+            -0.04f * poseWeight - 0.03f * rackPull);
+
+        Vector3 rotOffset = new Vector3(
+            -14f * poseWeight + 6f * magOutDip - 9f * magInKick + 4f * rackPull,
+            15f * poseWeight,
+            34f * poseWeight - 6f * rackPull);
+
+        transform.localPosition += posOffset;
+        transform.localRotation *= Quaternion.Euler(rotOffset);
+
+        if (magazineTransform != null)
+        {
+            // 0.18..0.44 pull old mag out; 0.44..0.52 hidden below; 0.52..0.70 insert fresh mag.
+            float magDepth = 0f;
+            float magScale = 1f;
+            if (t >= 0.18f && t < 0.44f)
+            {
+                float u = SmoothStep01((t - 0.18f) / 0.26f);
+                magDepth = u;
+                magScale = Mathf.Lerp(1f, 0.01f, SmoothStep01((u - 0.75f) / 0.25f));
+            }
+            else if (t >= 0.44f && t < 0.52f)
+            {
+                magDepth = 1f;
+                magScale = 0.01f;
+            }
+            else if (t >= 0.52f && t <= 0.72f)
+            {
+                float u = SmoothStep01((t - 0.52f) / 0.20f);
+                magDepth = 1f - u;
+                magScale = Mathf.Lerp(0.01f, 1f, SmoothStep01(u / 0.25f));
+            }
+
+            magazineTransform.localPosition = magazineInitialLocalPos
+                + new Vector3(0f, -0.32f * magDepth, -0.02f * magDepth);
+            magazineTransform.localRotation = magazineInitialLocalRot
+                * Quaternion.Euler(18f * magDepth, 0f, 0f);
+            magazineTransform.localScale = magazineInitialLocalScale * magScale;
+        }
+
+        if (boltTransform != null)
+        {
+            float boltCycle = Pulse01(t, 0.82f, 0.10f);
+            boltTransform.localPosition = boltInitialLocalPos + new Vector3(0f, 0f, -0.085f * boltCycle);
+            boltTransform.localRotation = boltInitialLocalRot * Quaternion.Euler(0f, 0f, -50f * boltCycle);
+        }
+    }
+
+    private static float SmoothStep01(float x)
+    {
+        float c = Mathf.Clamp01(x);
+        return c * c * (3f - 2f * c);
+    }
+
+    private static float Pulse01(float t, float center, float halfWidth)
+    {
+        float d = Mathf.Abs(t - center) / Mathf.Max(halfWidth, 0.001f);
+        if (d >= 1f) return 0f;
+        float v = 1f - d;
+        return v * v * (3f - 2f * v);
+    }
+
+    private static void EnsureProceduralReloadClips()
+    {
+        if (proceduralMagOutClip == null)
+            proceduralMagOutClip = BuildClickClip("ReloadMagOut", 0.09f, 520f, 260f, 0.35f);
+        if (proceduralMagInClip == null)
+            proceduralMagInClip = BuildClickClip("ReloadMagIn", 0.11f, 220f, 780f, 0.55f);
+        if (proceduralBoltRackClip == null)
+            proceduralBoltRackClip = BuildClickClip("ReloadBoltRack", 0.14f, 640f, 1150f, 0.45f);
+    }
+
+    private static AudioClip BuildClickClip(string clipName, float duration, float freqA, float freqB, float noiseMix)
+    {
+        const int sampleRate = 22050;
+        int samples = Mathf.Max(1, Mathf.RoundToInt(sampleRate * duration));
+        float[] data = new float[samples];
+        uint seed = (uint)(clipName.GetHashCode() ^ 0x51a7c3);
+
+        for (int i = 0; i < samples; i++)
+        {
+            float u = (float)i / samples;
+            float env = Mathf.Pow(1f - u, 2.2f);
+            float freq = Mathf.Lerp(freqA, freqB, u);
+            float tone = Mathf.Sin(2f * Mathf.PI * freq * (i / (float)sampleRate));
+
+            seed = seed * 1664525u + 1013904223u;
+            float noise = ((seed & 0xffff) / 32768f) - 1f;
+
+            data[i] = (tone * (1f - noiseMix) + noise * noiseMix) * env * 0.45f;
+        }
+
+        var clip = AudioClip.Create(clipName, samples, 1, sampleRate, false);
+        clip.SetData(data, 0);
+        return clip;
     }
     
     #endregion
@@ -518,6 +773,12 @@ public class WeaponController : MonoBehaviour
         {
             transform.localPosition = Vector3.Lerp(hipPosition.localPosition, adsPosition.localPosition, adsProgress);
             transform.localRotation = Quaternion.Slerp(hipPosition.localRotation, adsPosition.localRotation, adsProgress);
+        }
+        else
+        {
+            // Reset to base pose each frame so sway, bob, and reload offsets compose without accumulating drift.
+            transform.localPosition = initialLocalPosition;
+            transform.localRotation = initialLocalRotation;
         }
         
         if (playerCamera != null)
@@ -669,7 +930,16 @@ public class WeaponController : MonoBehaviour
         isAiming = false;
         isFiring = false;
         
-        CancelReload();
+        if (reloadCoroutine != null)
+        {
+            StopCoroutine(reloadCoroutine);
+            reloadCoroutine = null;
+        }
+        isReloading = false;
+        reloadProgress = 0f;
+        ResetReloadVisuals();
+        if (animator != null)
+            animator.SetBool("IsReloading", false);
         
         if (animator != null)
             animator.SetTrigger("Holster");
@@ -721,13 +991,20 @@ public class WeaponController : MonoBehaviour
     
     public void ResetWeapon()
     {
+        if (reloadCoroutine != null)
+        {
+            StopCoroutine(reloadCoroutine);
+            reloadCoroutine = null;
+        }
         InitializeAmmo();
         currentSpread = 0f;
         currentFireModeIndex = 0;
         isReloading = false;
+        reloadProgress = 0f;
         isAiming = false;
         isFiring = false;
         adsProgress = 0f;
+        ResetReloadVisuals();
         
         if (recoilSystem != null)
             recoilSystem.ResetRecoil();
