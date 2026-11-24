@@ -74,6 +74,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc438ea0a4d54a64b05c3ed0f549cd47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  importedModelPrefab: {fileID: 100100000, guid: 6431e7b56c0d41e4831fbda9cec78640, type: 3}
+  visualRoot: {fileID: 460000011}
+  bladeMaterial: {fileID: 2100000, guid: 41ffb8e40df243ba91a7f631f8a319f9, type: 2}
+  handleMaterial: {fileID: 2100000, guid: 4292562a6302426e8908daab9608956b, type: 2}
+  accentMaterial: {fileID: 2100000, guid: cb59679328b94cc3901637ee3ac2694b, type: 2}
   bladeFilter: {fileID: 460000022}
   handleFilter: {fileID: 460000032}
   bolsterFilter: {fileID: 460000042}
@@ -116,8 +121,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 460000010}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.104528, y: 0, z: 0, w: 0.994522}
-  m_LocalPosition: {x: 0.0, y: 0.06, z: 0.1}
+  m_LocalRotation: {x: -0.130347, y: -0.051888, z: -0.006831, w: 0.990086}
+  m_LocalPosition: {x: 0, y: -0.3, z: 0.33}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

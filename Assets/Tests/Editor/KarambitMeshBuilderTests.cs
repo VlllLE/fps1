@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 public class KarambitMeshBuilderTests
@@ -97,6 +98,98 @@ public class KarambitMeshBuilderTests
         {
             Object.DestroyImmediate(root);
         }
+    }
+
+    [Test]
+    public void Model_UsesImportedModel_AndHidesProceduralParts()
+    {
+        var root = new GameObject("KarambitImportedTest");
+        GameObject imported = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        try
+        {
+            MeshFilter blade = AddPart(root, "Blade");
+            MeshFilter handle = AddPart(root, "Handle");
+            MeshFilter bolster = AddPart(root, "Bolster");
+            MeshFilter ring = AddPart(root, "Ring");
+            KarambitModel model = root.AddComponent<KarambitModel>();
+            model.SetFilters(blade, handle, bolster, ring);
+            model.SetImportedModel(imported, root.transform);
+
+            model.Build();
+
+            Assert.That(model.IsBuilt, Is.True);
+            Assert.That(model.UsesImportedModel, Is.True);
+            Assert.That(model.ImportedInstance.transform.parent, Is.SameAs(root.transform));
+            Assert.That(blade.gameObject.activeSelf, Is.False);
+            Assert.That(handle.gameObject.activeSelf, Is.False);
+            Assert.That(blade.sharedMesh, Is.Null, "Procedural meshes are not built when the import is used.");
+        }
+        finally
+        {
+            Object.DestroyImmediate(imported);
+            Object.DestroyImmediate(root);
+        }
+    }
+
+    [Test]
+    public void Model_FallsBackToProcedural_WhenImportedModelHasNoMesh()
+    {
+        var root = new GameObject("KarambitFallbackTest");
+        var emptyImport = new GameObject("EmptyImport");
+        try
+        {
+            MeshFilter blade = AddPart(root, "Blade");
+            MeshFilter handle = AddPart(root, "Handle");
+            MeshFilter bolster = AddPart(root, "Bolster");
+            MeshFilter ring = AddPart(root, "Ring");
+            KarambitModel model = root.AddComponent<KarambitModel>();
+            model.SetFilters(blade, handle, bolster, ring);
+            model.SetImportedModel(emptyImport, root.transform);
+
+            model.Build();
+
+            Assert.That(model.IsBuilt, Is.True);
+            Assert.That(model.UsesImportedModel, Is.False);
+            Assert.That(blade.gameObject.activeSelf, Is.True);
+            Assert.That(blade.sharedMesh.vertexCount, Is.GreaterThan(0));
+            Assert.That(handle.transform.localPosition.z, Is.EqualTo(KarambitMeshBuilder.HandleLength * 0.5f).Within(1e-5f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(emptyImport);
+            Object.DestroyImmediate(root);
+        }
+    }
+
+    [Test]
+    public void ImportedFbx_IsAboutTwentyCentimetresAndPointsAlongPositiveZ()
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Weapons/Models/Karambit/Karambit.fbx");
+        Assert.That(prefab, Is.Not.Null, "Karambit.fbx should be imported.");
+
+        MeshFilter filter = prefab.GetComponentInChildren<MeshFilter>();
+        Assert.That(filter, Is.Not.Null);
+        Bounds b = filter.sharedMesh.bounds;
+        Assert.That(b.size.z, Is.InRange(0.17f, 0.23f), "About 20 cm long in metres.");
+        Assert.That(b.max.z, Is.GreaterThan(0.08f), "Blade tip should point along +Z.");
+        Assert.That(b.min.z, Is.LessThan(-0.06f), "Ring should sit behind the grip (-Z).");
+        Assert.That(b.min.y, Is.LessThan(-0.03f), "Blade should hook downward.");
+        Assert.That(b.size.x, Is.LessThan(0.04f), "Knife is slim.");
+    }
+
+    [Test]
+    public void KarambitPrefab_GripSitsInTheRightHand()
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Weapons/Prefabs/Karambit.prefab");
+        Assert.That(prefab, Is.Not.Null);
+
+        Transform model = prefab.transform.Find("Model");
+        Assert.That(model, Is.Not.Null);
+        // FP_RightHand sits at (0.3, -0.5, 0.83) in camera space and the WeaponHolder at
+        // (0.3, -0.2, 0.5), i.e. (0, -0.30, 0.33) in holder space.
+        Assert.That(model.localPosition.x, Is.EqualTo(0f).Within(0.02f));
+        Assert.That(model.localPosition.y, Is.EqualTo(-0.30f).Within(0.03f));
+        Assert.That(model.localPosition.z, Is.EqualTo(0.33f).Within(0.03f));
     }
 
     private static MeshFilter AddPart(GameObject root, string name)
