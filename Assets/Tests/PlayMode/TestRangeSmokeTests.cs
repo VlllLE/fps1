@@ -586,6 +586,7 @@ public class TestRangeSmokeTests
         inputHandler.SetMoveInput(new Vector2(0f, 1f));
         for (int i = 0; i < 20; i++)
             yield return null;
+        float walkSpeed = movement.CurrentSpeed;
         inputHandler.SetMoveInput(Vector2.zero);
         inputHandler.SetTestInputLocked(false);
 
@@ -593,6 +594,34 @@ public class TestRangeSmokeTests
             new Vector2(start.x, start.z),
             new Vector2(player.transform.position.x, player.transform.position.z));
         Assert.Greater(moved, 0.3f, $"Forward move input should displace player from idle (moved={moved:F3})");
+        Assert.GreaterOrEqual(walkSpeed, 4.5f,
+            $"Walking forward should reach near config walkSpeed, not cap at accel/friction (speed={walkSpeed:F2})");
+    }
+
+    [UnityTest]
+    public IEnumerator Player_IdleJump_LeavesGroundWithoutBeingCancelled()
+    {
+        yield return SettlePlayerOnGround();
+        Assert.IsTrue(movement.IsGrounded, "Player must be grounded before standing jump");
+
+        movement.SetVelocity(Vector3.zero);
+        yield return null;
+
+        float startY = player.transform.position.y;
+        inputHandler.SetTestInputLocked(true);
+        inputHandler.SetMoveInput(Vector2.zero);
+        inputHandler.SimulateJumpPress();
+        float peakY = startY;
+        for (int i = 0; i < 15; i++)
+        {
+            yield return null;
+            if (player.transform.position.y > peakY)
+                peakY = player.transform.position.y;
+        }
+        inputHandler.SetTestInputLocked(false);
+
+        Assert.Greater(peakY - startY, 0.25f,
+            $"Standing jump from idle should lift player off ground (startY={startY:F2}, peakY={peakY:F2})");
     }
 
     [UnityTest]

@@ -131,14 +131,6 @@ public class MovementController : MonoBehaviour
     
     private RaycastHit groundHit;
     private float groundAngle;
-
-    // Pin standing XZ so CharacterController settle/collider tweaks can't invent slides.
-    private bool hasIdleAnchor;
-    private float idleAnchorX;
-    private float idleAnchorZ;
-    private float idleAnchorY;
-    private bool overlapRecoveryDefault = true;
-    private float lastFirmGroundedTime;
     
     #endregion
 
@@ -155,7 +147,9 @@ public class MovementController : MonoBehaviour
         
         if (input == null)
         {
-            input = GetComponent<InputHandler>();
+            input = GetComponent<InputHandler>()
+                ?? GetComponentInChildren<InputHandler>()
+                ?? GetComponentInParent<InputHandler>();
             if (input == null)
             {
                 Debug.LogError("[MovementController] No InputHandler found!");
@@ -185,11 +179,9 @@ public class MovementController : MonoBehaviour
         defaultHeight = controller.height;
         defaultCenter = controller.center;
 
-        // Keep minMoveDistance at 0 so high-FPS frames never drop WASD moves;
-        // standing drift is blocked by the idle anchor instead.
+        // Keep minMoveDistance at 0 so high-FPS frames never drop WASD moves.
         controller.minMoveDistance = 0f;
-
-        overlapRecoveryDefault = controller.enableOverlapRecovery;
+        controller.enabled = true;
     }
     
     private void Update()
@@ -203,18 +195,9 @@ public class MovementController : MonoBehaviour
         DampenHorizontalVelocityWhenIdle();
         ApplyMovement();
         UpdateColliderHeight();
-        EnforceIdleAnchor();
         
         currentSpeed = new Vector3(velocity.x, 0f, velocity.z).magnitude;
         NotifyStateChangeIfNeeded();
-    }
-
-    private void LateUpdate()
-    {
-        // FirstPersonCamera yaws the body after our Update — re-pin so look-around
-        // overlap recovery cannot shove XZ between frames.
-        if (config == null || input == null) return;
-        EnforceIdleAnchor();
     }
     
     private void OnDrawGizmos()
@@ -262,9 +245,6 @@ public class MovementController : MonoBehaviour
         {
             groundAngle = 0f;
         }
-
-        if (isGrounded)
-            lastFirmGroundedTime = Time.time;
         
         // Track grounded time for coyote time
         if (isGrounded)
@@ -1055,101 +1035,25 @@ public class MovementController : MonoBehaviour
     {
         if (currentState == MovementState.Mantling) return;
 
-        bool idleLock = ShouldLockIdleHorizontal();
-        float horizSqr = velocity.x * velocity.x + velocity.z * velocity.z;
-        bool fullyStopped = horizSqr < 0.0001f;
-
-        // Standing still: zero velocity and do NOT call Move at all.
-        // Any downward Move projects into XZ on seams; overlap recovery then shoves on look-turn.
-        if (idleLock && fullyStopped && IsIdleGrounded())
-        {
-            velocity = Vector3.zero;
-            controller.enableOverlapRecovery = false;
-            CaptureIdleAnchorIfNeeded();
-            SnapToIdleAnchor();
-            return;
-        }
-
-        hasIdleAnchor = false;
-        controller.enableOverlapRecovery = overlapRecoveryDefault;
-        controller.Move(velocity * Time.deltaTime);
-    }
-
-    private bool IsIdleGrounded()
-    {
-        if (isGrounded)
-            return true;
-        // Sticky grounded: brief CC/sphere flicker must not re-enable sliding Moves.
-        return velocity.y <= 0.1f && (Time.time - lastFirmGroundedTime) < 0.25f;
-    }
-
-    private bool ShouldLockIdleHorizontal()
-    {
-        if (input == null || input.HasMoveInput)
-            return false;
-
-        return currentState != MovementState.Sliding
+        bool idleGrounded = !input.HasMoveInput
+            && isGrounded
+            && currentState != MovementState.Airborne
+            && currentState != MovementState.Sliding
             && currentState != MovementState.Diving
             && currentState != MovementState.DiveRecovery
-            && currentState != MovementState.Mantling
-            && currentState != MovementState.WallRunning;
-    }
+            && currentState != MovementState.WallRunning
+            && velocity.y <= 0.1f
+            && (velocity.x * velocity.x + velocity.z * velocity.z) < 0.0001f;
 
-    private void CaptureIdleAnchorIfNeeded()
-    {
-        if (hasIdleAnchor)
-            return;
-
-        Vector3 pos = transform.position;
-        idleAnchorX = pos.x;
-        idleAnchorY = pos.y;
-        idleAnchorZ = pos.z;
-        hasIdleAnchor = true;
-    }
-
-    private void SnapToIdleAnchor()
-    {
-        if (!hasIdleAnchor)
-            return;
-
-        Vector3 pos = transform.position;
-        if (Mathf.Abs(pos.x - idleAnchorX) < 1e-5f &&
-            Mathf.Abs(pos.z - idleAnchorZ) < 1e-5f &&
-            Mathf.Abs(pos.y - idleAnchorY) < 1e-5f)
-            return;
-
-        // Hard lock full pose while idle — no Y settle that can reintroduce XZ via recovery.
-        bool wasEnabled = controller.enabled;
-        controller.enabled = false;
-        transform.SetPositionAndRotation(
-            new Vector3(idleAnchorX, idleAnchorY, idleAnchorZ),
-            transform.rotation);
-        controller.enabled = wasEnabled;
-        Physics.SyncTransforms();
-    }
-
-    private void EnforceIdleAnchor()
-    {
-        if (!ShouldLockIdleHorizontal() || !IsIdleGrounded())
+        // Standing still: zero velocity and skip Move so CharacterController cannot
+        // project downward stick into floor-seam slides. Never block jumps or WASD.
+        if (idleGrounded)
         {
-            float horizSqr = velocity.x * velocity.x + velocity.z * velocity.z;
-            if (!ShouldLockIdleHorizontal() || !IsIdleGrounded() || horizSqr > 0.25f)
-            {
-                hasIdleAnchor = false;
-                if (controller != null)
-                    controller.enableOverlapRecovery = overlapRecoveryDefault;
-            }
+            velocity = Vector3.zero;
             return;
         }
 
-        float speedSqr = velocity.x * velocity.x + velocity.z * velocity.z;
-        if (speedSqr > 0.0001f)
-            return;
-
-        velocity = Vector3.zero;
-        controller.enableOverlapRecovery = false;
-        CaptureIdleAnchorIfNeeded();
-        SnapToIdleAnchor();
+        controller.Move(velocity * Time.deltaTime);
     }
     
     private void DampenHorizontalVelocityWhenIdle()
@@ -1194,8 +1098,26 @@ public class MovementController : MonoBehaviour
     {
         Vector3 horizontalCurrent = new Vector3(currentVel.x, 0f, currentVel.z);
         Vector3 horizontalTarget = new Vector3(targetVel.x, 0f, targetVel.z);
-        
-        // Apply friction
+        float targetSpeed = horizontalTarget.magnitude;
+
+        if (targetSpeed < 0.01f)
+        {
+            float stopSpeed = horizontalCurrent.magnitude;
+            if (stopSpeed > 0.05f)
+            {
+                float drop = stopSpeed * friction * Time.deltaTime;
+                horizontalCurrent *= Mathf.Max(stopSpeed - drop, 0f) / stopSpeed;
+            }
+            else
+            {
+                horizontalCurrent = Vector3.zero;
+            }
+
+            return new Vector3(horizontalCurrent.x, currentVel.y, horizontalCurrent.z);
+        }
+
+        // Apply friction first, then scale acceleration by targetSpeed so walk/sprint
+        // actually reach config.walkSpeed / sprintSpeed instead of capping at accel/friction.
         float speed = horizontalCurrent.magnitude;
         if (speed > 0.1f)
         {
@@ -1203,14 +1125,14 @@ public class MovementController : MonoBehaviour
             horizontalCurrent *= Mathf.Max(speed - drop, 0f) / speed;
         }
         
-        // Accelerate towards target
         Vector3 diff = horizontalTarget - horizontalCurrent;
         float diffMag = diff.magnitude;
         
-        if (diffMag > 0.01f)
+        if (diffMag > 0.001f)
         {
-            float addSpeed = Mathf.Min(accel * Time.deltaTime, diffMag);
-            horizontalCurrent += diff.normalized * addSpeed;
+            float maxAccel = (accel + friction) * targetSpeed * Time.deltaTime;
+            float addSpeed = Mathf.Min(maxAccel, diffMag);
+            horizontalCurrent += (diff / diffMag) * addSpeed;
         }
         
         return new Vector3(horizontalCurrent.x, currentVel.y, horizontalCurrent.z);
@@ -1249,25 +1171,34 @@ public class MovementController : MonoBehaviour
             targetCameraHeight = Mathf.Max(0.7f, defaultCameraHeight * (config.crouchHeight / Mathf.Max(defaultHeight, 0.01f)));
         }
         
-        // Smooth height transitions, then snap — eternal Lerp micro-deltas shove CharacterController.
+        // Smooth height transitions, then snap — skip native CC setters when already settled.
         float t = Time.deltaTime * 15f;
         const float snapEps = 0.001f;
 
-        float nextHeight = Mathf.Lerp(controller.height, targetHeight, t);
-        controller.height = Mathf.Abs(nextHeight - targetHeight) < snapEps ? targetHeight : nextHeight;
+        if (Mathf.Abs(controller.height - targetHeight) > 1e-5f)
+        {
+            float nextHeight = Mathf.Lerp(controller.height, targetHeight, t);
+            controller.height = Mathf.Abs(nextHeight - targetHeight) < snapEps ? targetHeight : nextHeight;
+        }
 
-        Vector3 nextCenter = Vector3.Lerp(controller.center, targetCenter, t);
-        controller.center = (nextCenter - targetCenter).sqrMagnitude < snapEps * snapEps
-            ? targetCenter
-            : nextCenter;
+        if ((controller.center - targetCenter).sqrMagnitude > 1e-10f)
+        {
+            Vector3 nextCenter = Vector3.Lerp(controller.center, targetCenter, t);
+            controller.center = (nextCenter - targetCenter).sqrMagnitude < snapEps * snapEps
+                ? targetCenter
+                : nextCenter;
+        }
 
         // Eye height must move with stance — otherwise crouch/slide feel broken in first person.
         if (cameraHolder != null)
         {
             Vector3 camPos = cameraHolder.localPosition;
-            float nextCamY = Mathf.Lerp(camPos.y, targetCameraHeight, t);
-            camPos.y = Mathf.Abs(nextCamY - targetCameraHeight) < snapEps ? targetCameraHeight : nextCamY;
-            cameraHolder.localPosition = camPos;
+            if (Mathf.Abs(camPos.y - targetCameraHeight) > 1e-5f)
+            {
+                float nextCamY = Mathf.Lerp(camPos.y, targetCameraHeight, t);
+                camPos.y = Mathf.Abs(nextCamY - targetCameraHeight) < snapEps ? targetCameraHeight : nextCamY;
+                cameraHolder.localPosition = camPos;
+            }
         }
     }
     
@@ -1381,9 +1312,6 @@ public class MovementController : MonoBehaviour
         isSlideQueued = false;
         isMantling = false;
         isWallRunning = false;
-        hasIdleAnchor = false;
-        if (controller != null)
-            controller.enableOverlapRecovery = overlapRecoveryDefault;
         
         controller.height = defaultHeight;
         controller.center = defaultCenter;

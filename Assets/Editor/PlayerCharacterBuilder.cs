@@ -120,7 +120,7 @@ public static class PlayerCharacterBuilder
         cc.slopeLimit = 45f;
         cc.stepOffset = 0.3f;
         cc.skinWidth = 0.08f;
-        cc.minMoveDistance = 0.001f;
+        cc.minMoveDistance = 0f;
 
         var inputHandler = player.AddComponent<InputHandler>();
         var movement = player.AddComponent<MovementController>();

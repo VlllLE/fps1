@@ -217,10 +217,10 @@ public class InputHandler : MonoBehaviour
         float x = 0f;
         float y = 0f;
 
-        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) x -= 1f;
-        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) x += 1f;
-        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) y -= 1f;
-        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) y += 1f;
+        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow) || Input.GetKey("a")) x -= 1f;
+        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow) || Input.GetKey("d")) x += 1f;
+        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow) || Input.GetKey("s")) y -= 1f;
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow) || Input.GetKey("w")) y += 1f;
 
         if (Mathf.Abs(x) >= 0.01f || Mathf.Abs(y) >= 0.01f)
         {
@@ -228,8 +228,24 @@ public class InputHandler : MonoBehaviour
             return keys.sqrMagnitude > 1f ? keys.normalized : keys;
         }
 
-        // Only poll dedicated joy axes (never shared "Horizontal"/"Vertical" which can bleed
-        // joystick noise if Unity hasn't reloaded InputManager.asset yet).
+        // Fallback to Horizontal/Vertical axes with a strict threshold (>= 0.75):
+        // digital keys report exact +/-1 while resting gamepad stick noise stays well below.
+        float ax = 0f;
+        float ay = 0f;
+        if (!string.IsNullOrEmpty(horizontalAxis))
+            ax = Input.GetAxisRaw(horizontalAxis);
+        if (!string.IsNullOrEmpty(verticalAxis))
+            ay = Input.GetAxisRaw(verticalAxis);
+
+        if (Mathf.Abs(ax) >= 0.75f || Mathf.Abs(ay) >= 0.75f)
+        {
+            Vector2 axisMove = new Vector2(
+                Mathf.Abs(ax) >= 0.75f ? ax : 0f,
+                Mathf.Abs(ay) >= 0.75f ? ay : 0f);
+            return axisMove.sqrMagnitude > 1f ? axisMove.normalized : axisMove;
+        }
+
+        // Only poll dedicated *_Joy axes once InputManager.asset has reloaded.
         if (!joyAxesAvailable)
             return Vector2.zero;
 
