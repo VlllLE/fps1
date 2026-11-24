@@ -98,34 +98,45 @@ public class KarambitModel : MonoBehaviour
             return false;
 
         Transform parent = visualRoot != null ? visualRoot : transform;
-        GameObject instance = Instantiate(importedModelPrefab, parent);
-        instance.name = "KarambitImported";
-        Transform t = instance.transform;
-        t.localPosition = Vector3.zero;
-        t.localRotation = Quaternion.identity;
-        t.localScale = Vector3.one;
-
-        MeshFilter[] filters = instance.GetComponentsInChildren<MeshFilter>(true);
-        bool hasMesh = false;
-        for (int i = 0; i < filters.Length; i++)
+        GameObject instance = null;
+        try
         {
-            if (filters[i].sharedMesh != null)
+            instance = Instantiate(importedModelPrefab, parent);
+            instance.name = "KarambitImported";
+            Transform t = instance.transform;
+            t.localPosition = Vector3.zero;
+            t.localRotation = Quaternion.identity;
+            t.localScale = Vector3.one;
+
+            MeshFilter[] filters = instance.GetComponentsInChildren<MeshFilter>(true);
+            bool hasMesh = false;
+            for (int i = 0; i < filters.Length; i++)
             {
-                hasMesh = true;
-                break;
+                if (filters[i].sharedMesh != null)
+                {
+                    hasMesh = true;
+                    break;
+                }
             }
-        }
 
-        if (!hasMesh)
+            if (!hasMesh)
+            {
+                DestroyObject(instance);
+                return false;
+            }
+
+            ApplyMaterials(instance);
+            SetProceduralVisible(false);
+            importedInstance = instance;
+            return true;
+        }
+        catch (System.Exception e)
         {
-            DestroyObject(instance);
+            Debug.LogWarning($"KarambitModel: imported model failed ({e.GetType().Name}: {e.Message}); using procedural meshes.", this);
+            if (instance != null)
+                DestroyObject(instance);
             return false;
         }
-
-        ApplyMaterials(instance);
-        SetProceduralVisible(false);
-        importedInstance = instance;
-        return true;
     }
 
     private void ApplyMaterials(GameObject instance)

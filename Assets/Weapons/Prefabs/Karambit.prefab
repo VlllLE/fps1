@@ -74,7 +74,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc438ea0a4d54a64b05c3ed0f549cd47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  importedModelPrefab: {fileID: 100100000, guid: 6431e7b56c0d41e4831fbda9cec78640, type: 3}
+  importedModelPrefab: {fileID: 919132149155446097, guid: 6431e7b56c0d41e4831fbda9cec78640, type: 3}
   visualRoot: {fileID: 460000011}
   bladeMaterial: {fileID: 2100000, guid: 41ffb8e40df243ba91a7f631f8a319f9, type: 2}
   handleMaterial: {fileID: 2100000, guid: 4292562a6302426e8908daab9608956b, type: 2}
@@ -97,6 +97,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weapon: {fileID: 460000003}
   model: {fileID: 460000011}
+  duration: 0.32
+  windupPosition: {x: 0.06, y: 0.04, z: -0.04}
+  windupEuler: {x: -15, y: 30, z: -40}
+  strikePosition: {x: -0.14, y: -0.06, z: 0.15}
+  strikeEuler: {x: 25, y: -55, z: 50}
+  windupEnd: 0.2
+  strikeEnd: 0.5
 --- !u!1 &460000010
 GameObject:
   m_ObjectHideFlags: 0
