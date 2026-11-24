@@ -26,6 +26,8 @@ Shader "Skins/Holographic"
         #pragma surface surf Standard fullforwardshadows vertex:vert
         #pragma target 3.0
 
+        #define SKIN_TILES_PER_METER 5.0
+
         sampler2D _NoiseTex;
         half _Glossiness;
         half _Metallic;
@@ -51,7 +53,11 @@ Shader "Skins/Holographic"
         void vert(inout appdata_full v, out Input o)
         {
             UNITY_INITIALIZE_OUTPUT(Input, o);
-            o.objPos = v.vertex.xyz;
+            float3 axisScale = float3(
+                length(float3(unity_ObjectToWorld[0].x, unity_ObjectToWorld[1].x, unity_ObjectToWorld[2].x)),
+                length(float3(unity_ObjectToWorld[0].y, unity_ObjectToWorld[1].y, unity_ObjectToWorld[2].y)),
+                length(float3(unity_ObjectToWorld[0].z, unity_ObjectToWorld[1].z, unity_ObjectToWorld[2].z)));
+            o.objPos = v.vertex.xyz * axisScale * SKIN_TILES_PER_METER;
             o.objNormal = v.normal;
             o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
             o.worldNormal = UnityObjectToWorldNormal(v.normal);
@@ -87,14 +93,14 @@ Shader "Skins/Holographic"
             iridescence = lerp(iridescence, _EmissionColor.rgb, fresnel * 0.5);
 
             // Subtle scan lines in object space so the mesh carries the holo look.
-            float scan = 0.65 + 0.35 * sin((IN.objPos.y + t * 0.4) * 40.0);
+            float scan = 0.65 + 0.35 * sin((IN.objPos.y + t * 0.4) * 8.0);
 
             fixed3 baseCol = _Color.rgb * _SkinColor.rgb;
             fixed3 holo = iridescence * (0.35 + fresnel) * scan * _Intensity;
 
             o.Albedo = baseCol + holo * 0.25;
             o.Emission = holo;
-            o.Metallic = _Metallic;
+            o.Metallic = min(_Metallic, 0.5);
             o.Smoothness = _Glossiness;
             o.Alpha = 1.0;
         }

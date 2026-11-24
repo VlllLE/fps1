@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Class_Sniper
   m_EditorClassIdentifier: Scripts::ClassDefinition
   className: Sniper
-  description: Long-range class. Bolt-action primary with UMP backup.
+  description: Long-range class. Bolt-action primary with Karambit knife secondary.
   primaryWeaponPrefab: {fileID: 440000017, guid: 7f85a43c3cd6431ba5d3b3c69f4d36e6, type: 3}
   primaryWeaponConfig: {fileID: 11400000, guid: 0b96b699b4ace27439855f4c5b369564, type: 2}
-  secondaryWeaponPrefab: {fileID: 430000017, guid: 475bfb7dc087434ea682ff192c2580e0, type: 3}
-  secondaryWeaponConfig: {fileID: 11400000, guid: df8486a523b29e94fa96ac9196b3c005, type: 2}
+  secondaryWeaponPrefab: {fileID: 460000001, guid: 6699551ebfa5498b8cab5606e70c0be9, type: 3}
+  secondaryWeaponConfig: {fileID: 11400000, guid: 926e9754f3534e8abea82ceacf91450d, type: 2}
   meleeWeaponPrefab: {fileID: 0}
   meleeWeaponConfig: {fileID: 0}
   moveSpeedMultiplier: 0.94

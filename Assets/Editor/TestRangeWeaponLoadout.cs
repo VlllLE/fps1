@@ -41,7 +41,7 @@ public static class TestRangeWeaponLoadout
             slotName = "M4A1",
             prefabPath = "Assets/Weapons/Prefabs/M4A1.prefab",
             configPath = ConfigFolder + "/M4A1Config.asset",
-            skinPath = "Assets/Skins/Definitions/Skin_CarbonFiber.asset",
+            skinPath = "Assets/Skins/Definitions/Skin_WoodlandCamo.asset",
             weaponType = WeaponType.AssaultRifle,
             displayName = "M4A1",
             damage = 28f, fireRate = 750f, fireMode = FireMode.Auto,

@@ -14,6 +14,8 @@ public static class ClassLoadoutMenu
     private const string DefinitionsFolder = "Assets/Classes/Definitions";
     private const string ScenePath = "Assets/Scenes/TestRange.unity";
     private const string PlayerPrefabPath = "Assets/Prefabs/Player.prefab";
+    private const string KarambitPrefab = "Assets/Weapons/Prefabs/Karambit.prefab";
+    private const string KarambitConfig = "Assets/Configs/Weapons/KarambitConfig.asset";
 
     private struct ClassSpec
     {
@@ -33,44 +35,44 @@ public static class ClassLoadoutMenu
         {
             assetName = "Class_Assault",
             className = "Assault",
-            description = "Balanced rifle class. M4A1 primary with UMP backup.",
+            description = "Balanced rifle class. M4A1 primary with Karambit knife secondary.",
             primaryPrefab = "Assets/Weapons/Prefabs/M4A1.prefab",
             primaryConfig = "Assets/Configs/Weapons/M4A1Config.asset",
-            secondaryPrefab = "Assets/Weapons/Prefabs/UMP.prefab",
-            secondaryConfig = "Assets/Configs/Weapons/UMPConfig.asset",
+            secondaryPrefab = KarambitPrefab,
+            secondaryConfig = KarambitConfig,
             moveSpeedMultiplier = 1f,
         },
         new ClassSpec
         {
             assetName = "Class_SMG",
             className = "SMG",
-            description = "Close-quarters class. UMP primary with SCAR backup.",
+            description = "Close-quarters class. UMP primary with Karambit knife secondary.",
             primaryPrefab = "Assets/Weapons/Prefabs/UMP.prefab",
             primaryConfig = "Assets/Configs/Weapons/UMPConfig.asset",
-            secondaryPrefab = "Assets/Weapons/Prefabs/SCAR.prefab",
-            secondaryConfig = "Assets/Configs/Weapons/SCARConfig.asset",
+            secondaryPrefab = KarambitPrefab,
+            secondaryConfig = KarambitConfig,
             moveSpeedMultiplier = 1.08f,
         },
         new ClassSpec
         {
             assetName = "Class_Sniper",
             className = "Sniper",
-            description = "Long-range class. Bolt-action primary with UMP backup.",
+            description = "Long-range class. Bolt-action primary with Karambit knife secondary.",
             primaryPrefab = "Assets/Weapons/Prefabs/BoltActionSniper.prefab",
             primaryConfig = "Assets/Configs/Weapons/BoltActionSniperConfig.asset",
-            secondaryPrefab = "Assets/Weapons/Prefabs/UMP.prefab",
-            secondaryConfig = "Assets/Configs/Weapons/UMPConfig.asset",
+            secondaryPrefab = KarambitPrefab,
+            secondaryConfig = KarambitConfig,
             moveSpeedMultiplier = 0.94f,
         },
         new ClassSpec
         {
             assetName = "Class_Hybrid",
             className = "Hybrid",
-            description = "Marksman hybrid. DMR primary with M4A1 backup.",
+            description = "Marksman hybrid. DMR primary with Karambit knife secondary.",
             primaryPrefab = "Assets/Weapons/Prefabs/DMRSniper.prefab",
             primaryConfig = "Assets/Configs/Weapons/DMRSniperConfig.asset",
-            secondaryPrefab = "Assets/Weapons/Prefabs/M4A1.prefab",
-            secondaryConfig = "Assets/Configs/Weapons/M4A1Config.asset",
+            secondaryPrefab = KarambitPrefab,
+            secondaryConfig = KarambitConfig,
             moveSpeedMultiplier = 1f,
         },
     };

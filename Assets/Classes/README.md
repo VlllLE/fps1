@@ -7,12 +7,15 @@ and apply them through `WeaponSwitcher` via `ClassLoadoutApplier`.
 
 | Asset | Class | Primary | Secondary | Move speed × |
 | --- | --- | --- | --- | --- |
-| `Definitions/Class_Assault` | Assault | M4A1 | UMP | 1.00 |
-| `Definitions/Class_SMG` | SMG | UMP | SCAR | 1.08 |
-| `Definitions/Class_Sniper` | Sniper | BoltActionSniper | UMP | 0.94 |
-| `Definitions/Class_Hybrid` | Hybrid | DMRSniper | M4A1 | 1.00 |
+| `Definitions/Class_Assault` | Assault | M4A1 | Karambit | 1.00 |
+| `Definitions/Class_SMG` | SMG | UMP | Karambit | 1.08 |
+| `Definitions/Class_Sniper` | Sniper | BoltActionSniper | Karambit | 0.94 |
+| `Definitions/Class_Hybrid` | Hybrid | DMRSniper | Karambit | 1.00 |
 
-Melee slots are reserved on `ClassDefinition` but unused until a melee prefab exists.
+Every class carries the **Karambit** knife (`Assets/Weapons/Prefabs/Karambit.prefab`,
+`Assets/Configs/Weapons/KarambitConfig.asset`) in the secondary slot, so the secondary key
+(`2`) draws the knife. Left click slashes; the HUD shows no ammo for it.
+The separate melee slot on `ClassDefinition` is still reserved and unused.
 
 ## Add a new class
 

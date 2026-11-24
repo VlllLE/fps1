@@ -29,6 +29,21 @@ applier.ClearSkin();                 // restore original materials
 The applier replaces materials on Mesh/SkinnedMesh renderers under the
 target root and skips particle/trail/line renderers.
 
+The default skin is applied in `Awake` and re-applied in `OnEnable`, so weapons that
+are holstered/equipped by `WeaponSwitcher` or spawned by `ClassLoadoutApplier` always
+show their skin. If a skin shader is unsupported on the current GPU/pipeline the applier
+falls back to a Standard-shader material with the skin texture and tint
+(`ResolveRenderableMaterial`).
+
+Skin shaders tile in **world-scale** object space (`SKIN_TILES_PER_METER`), so the same
+`_Scale` looks the same on a pistol and a sniper regardless of mesh import scale, and
+metallic is capped at 0.5 to avoid near-black results in Built-in RP without reflection probes.
+
+`TestRangeSkinCycler` no longer overrides per-weapon skins on start: each weapon keeps its
+prefab default until `[` or `]` is pressed.
+
+`Scripts/Skins.asmdef` makes the skin code testable from `Assets/Tests`.
+
 ## Add a static skin
 
 1. Create a seamless tileable albedo PNG (512² or 1024², wrap mode Repeat).

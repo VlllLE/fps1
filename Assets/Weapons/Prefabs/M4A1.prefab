@@ -84,7 +84,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e72ded460720468694079be126375251, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  defaultSkin: {fileID: 11400000, guid: 40004db994d741298e468f393526aee5, type: 2}
+  defaultSkin: {fileID: 11400000, guid: 048d579b08534a40a78e0d5cd4f2b792, type: 2}
   applyDefaultOnAwake: 1
   rendererRoot: {fileID: 0}
   includeInactiveRenderers: 1

@@ -75,6 +75,7 @@ public class WeaponController : MonoBehaviour
     
     private Coroutine reloadCoroutine;
     private Coroutine burstCoroutine;
+    private Coroutine meleeCoroutine;
     
     public event Action<int, int> OnAmmoChanged;
     public event Action<FireMode> OnFireModeChanged;
@@ -85,10 +86,17 @@ public class WeaponController : MonoBehaviour
     public event Action OnReloadComplete;
     public event Action OnWeaponEquipped;
     public event Action OnWeaponHolstered;
+    /// <summary>Raised when a melee slash starts (drives the slash animation).</summary>
+    public event Action OnMeleeSwing;
+
+    /// <summary>Value broadcast through <see cref="OnAmmoChanged"/> by weapons that do not use ammo.</summary>
+    public const int NoAmmoDisplay = -1;
     
     public WeaponConfig Config => config;
-    public int CurrentAmmo => currentAmmo;
-    public int ReserveAmmo => reserveAmmo;
+    public bool IsMelee => config != null && config.IsMelee;
+    public bool UsesAmmo => !IsMelee;
+    public int CurrentAmmo => IsMelee ? NoAmmoDisplay : currentAmmo;
+    public int ReserveAmmo => IsMelee ? NoAmmoDisplay : reserveAmmo;
     public bool IsReloading => isReloading;
     public float ReloadProgress => reloadProgress;
     public bool IsAiming => isAiming;
@@ -148,6 +156,7 @@ public class WeaponController : MonoBehaviour
         }
         isReloading = false;
         reloadProgress = 0f;
+        meleeCoroutine = null;
         ResetReloadVisuals();
     }
     
@@ -171,13 +180,21 @@ public class WeaponController : MonoBehaviour
             recoilSystem.SetWeaponConfig(config);
     }
     
+    private void NotifyAmmoChanged()
+    {
+        if (IsMelee)
+            OnAmmoChanged?.Invoke(NoAmmoDisplay, NoAmmoDisplay);
+        else
+            OnAmmoChanged?.Invoke(currentAmmo, reserveAmmo);
+    }
+
     private void InitializeAmmo()
     {
         if (config == null) return;
         
         currentAmmo = config.magazineSize;
         reserveAmmo = config.startingReserveAmmo;
-        OnAmmoChanged?.Invoke(currentAmmo, reserveAmmo);
+        NotifyAmmoChanged();
     }
     
     #region Shooting
@@ -220,6 +237,12 @@ public class WeaponController : MonoBehaviour
     private void TryFire()
     {
         if (Time.time < lastFireTime + config.FireInterval) return;
+
+        if (IsMelee)
+        {
+            MeleeAttack();
+            return;
+        }
         
         if (currentAmmo <= 0)
         {
@@ -262,7 +285,7 @@ public class WeaponController : MonoBehaviour
         if (animator != null)
             animator.SetTrigger("Fire");
         
-        OnAmmoChanged?.Invoke(currentAmmo, reserveAmmo);
+        NotifyAmmoChanged();
         OnWeaponFired?.Invoke();
     }
     
@@ -459,10 +482,65 @@ public class WeaponController : MonoBehaviour
     
     #endregion
     
+    #region Melee
+
+    private void MeleeAttack()
+    {
+        lastFireTime = Time.time;
+
+        if (animator != null)
+            animator.SetTrigger("Fire");
+
+        if (config.fireSound != null && audioSource != null)
+            audioSource.PlayOneShot(config.fireSound, config.fireSoundVolume);
+
+        OnMeleeSwing?.Invoke();
+        OnWeaponFired?.Invoke();
+
+        if (meleeCoroutine != null)
+            StopCoroutine(meleeCoroutine);
+        meleeCoroutine = StartCoroutine(MeleeHitRoutine());
+    }
+
+    private IEnumerator MeleeHitRoutine()
+    {
+        float delay = Mathf.Max(0f, config.meleeHitDelay);
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
+
+        meleeCoroutine = null;
+        if (!isEquipped)
+            yield break;
+
+        if (hitDetection == null)
+            hitDetection = FindAnyObjectByType<HitDetection>();
+        if (hitDetection == null)
+            yield break;
+
+        Transform view = playerCamera != null ? playerCamera.transform : transform;
+        shotIdCounter++;
+        HitResult result = MeleeAttackResolver.Resolve(
+            hitDetection,
+            config,
+            view.position,
+            view.forward,
+            view.up,
+            cachedIgnoreRoot,
+            gameObject.GetHashCode(),
+            shotIdCounter,
+            isAuthoritative);
+
+        if (result != null)
+            OnHitResolved?.Invoke(result);
+    }
+
+    #endregion
+
     #region Reloading
     
     public void TryReload()
     {
+        if (IsMelee) return;
         if (isReloading || currentAmmo >= config.magazineSize || reserveAmmo <= 0) return;
         
         if (reloadCoroutine != null)
@@ -549,7 +627,7 @@ public class WeaponController : MonoBehaviour
                 currentAmmo += ammoToAdd;
                 reserveAmmo -= ammoToAdd;
 
-                OnAmmoChanged?.Invoke(currentAmmo, reserveAmmo);
+                NotifyAmmoChanged();
             }
 
             yield return null;
@@ -561,7 +639,7 @@ public class WeaponController : MonoBehaviour
             int ammoToAdd = Mathf.Min(ammoNeeded, reserveAmmo);
             currentAmmo += ammoToAdd;
             reserveAmmo -= ammoToAdd;
-            OnAmmoChanged?.Invoke(currentAmmo, reserveAmmo);
+            NotifyAmmoChanged();
         }
         
         isReloading = false;
@@ -749,7 +827,7 @@ public class WeaponController : MonoBehaviour
     
     public void StartAiming()
     {
-        if (isReloading) return;
+        if (isReloading || IsMelee) return;
         isAiming = true;
         
         if (animator != null)
@@ -937,6 +1015,11 @@ public class WeaponController : MonoBehaviour
         }
         isReloading = false;
         reloadProgress = 0f;
+        if (meleeCoroutine != null)
+        {
+            StopCoroutine(meleeCoroutine);
+            meleeCoroutine = null;
+        }
         ResetReloadVisuals();
         if (animator != null)
             animator.SetBool("IsReloading", false);
@@ -962,24 +1045,24 @@ public class WeaponController : MonoBehaviour
     public void AddAmmo(int amount)
     {
         reserveAmmo = Mathf.Min(reserveAmmo + amount, config.maxReserveAmmo);
-        OnAmmoChanged?.Invoke(currentAmmo, reserveAmmo);
+        NotifyAmmoChanged();
     }
     
     public void SetAmmo(int magazine, int reserve)
     {
         currentAmmo = Mathf.Clamp(magazine, 0, config.magazineSize);
         reserveAmmo = Mathf.Clamp(reserve, 0, config.maxReserveAmmo);
-        OnAmmoChanged?.Invoke(currentAmmo, reserveAmmo);
+        NotifyAmmoChanged();
     }
     
     public bool HasAmmo()
     {
-        return currentAmmo > 0 || reserveAmmo > 0;
+        return IsMelee || currentAmmo > 0 || reserveAmmo > 0;
     }
     
     public bool NeedsReload()
     {
-        return currentAmmo < config.magazineSize && reserveAmmo > 0;
+        return !IsMelee && currentAmmo < config.magazineSize && reserveAmmo > 0;
     }
     
     #endregion

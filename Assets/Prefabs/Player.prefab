@@ -2786,7 +2786,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a369bb072568fcf44bb4180c40f1291a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TestRangeSkinCycler
+  m_EditorClassIdentifier: Skins::TestRangeSkinCycler
   weaponSwitcher: {fileID: 8834836375136179749}
   skins:
   - {fileID: 11400000, guid: 40004db994d741298e468f393526aee5, type: 2}

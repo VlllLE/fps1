@@ -152,6 +152,16 @@ public class WeaponConfig : ScriptableObject
     [Range(0f, 1f)]
     public float penetrationDamageRetention = 0.5f;
     
+    [Header("Melee (WeaponType.Melee only)")]
+    [Tooltip("Reach of a melee swing in metres, measured from the camera.")]
+    public float meleeRange = 1.8f;
+    [Tooltip("Lateral/vertical forgiveness in metres at full range. Extra rays are fanned out by this amount.")]
+    public float meleeRadius = 0.3f;
+    [Tooltip("Seconds between pressing attack and the damage check (matches the slash animation).")]
+    public float meleeHitDelay = 0.1f;
+    [Tooltip("Duration of the slash animation in seconds.")]
+    public float meleeSwingDuration = 0.32f;
+
     [Header("Audio")]
     public AudioClip fireSound;
     public AudioClip reloadSound;
@@ -166,6 +176,8 @@ public class WeaponConfig : ScriptableObject
     public float shellEjectForce = 2f;
     
     public float FireInterval => 60f / fireRate;
+
+    public bool IsMelee => weaponType == WeaponType.Melee;
 }
 
 public enum WeaponType

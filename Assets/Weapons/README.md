@@ -12,6 +12,23 @@ from Unity built-in Cube / Cylinder meshes so they work out of the box.
 | `UMP` | SMG | ~0.30 m muzzle | Compact; angled mag |
 | `BoltActionSniper` | Bolt sniper | ~0.66 m muzzle | Scope + bipod + bolt handle |
 | `DMRSniper` | Semi DMR | ~0.58 m muzzle | Rail optic, shorter than bolt |
+| `Karambit` | Melee knife | ~0.1 m blade reach | Procedural curved blade + ring handle, secondary on every class |
+
+## Karambit (melee)
+
+`Karambit.prefab` has no imported model: `KarambitModel` builds the blade, handle, bolster
+and pommel ring meshes in code (`KarambitMeshBuilder`, `Assets/Scripts/Weapons`) in `Awake`.
+Materials: `Mat_KarambitBlade` (steel), `Mat_KarambitHandle` (G10), `Mat_KarambitAccent`
+(anodised orange ring and bolster).
+
+- Config: `Assets/Configs/Weapons/KarambitConfig.asset` (`weaponType = Melee`; `meleeRange`,
+  `meleeRadius`, `meleeHitDelay`, `meleeSwingDuration`). Attack rate comes from `fireRate`.
+- A press fires `WeaponController.OnMeleeSwing`, then after `meleeHitDelay` sends five short
+  rays (centre + left/right/up/down fan) through `HitDetection` via `MeleeAttackResolver`;
+  the first ray that applies damage wins, so one swing never hits a target twice.
+- `MeleeSlashAnimator` plays an alternating forehand/backhand slash on the `Model` child.
+- Melee weapons broadcast `-1` for magazine/reserve through `OnAmmoChanged`; the HUD ammo
+  readout (`AmmoCounterView`) shows nothing for them. Reload and ADS are ignored.
 
 ## Scale & pivot
 
