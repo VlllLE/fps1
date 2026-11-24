@@ -7,6 +7,8 @@ using UnityEngine;
 /// materials and do not depend on weapon UVs.
 ///
 /// Attach beside a WeaponController, or call <see cref="ApplySkin"/> from UI / loadout code.
+/// The skin is re-applied whenever the weapon is enabled, so holster/equip cycles and
+/// loadout swaps never fall back to the default grey materials.
 /// </summary>
 [DisallowMultipleComponent]
 public class WeaponSkinApplier : MonoBehaviour
@@ -20,21 +22,46 @@ public class WeaponSkinApplier : MonoBehaviour
 
     private readonly List<Renderer> cachedRenderers = new List<Renderer>(8);
     private readonly Dictionary<Renderer, Material[]> originalMaterials = new Dictionary<Renderer, Material[]>();
+    private readonly Dictionary<Material, Material> fallbackMaterials = new Dictionary<Material, Material>();
     private MaterialPropertyBlock propertyBlock;
     private MaterialPropertyBlock PropertyBlock => propertyBlock ??= new MaterialPropertyBlock();
 
     private WeaponSkinDefinition currentSkin;
+    private bool initialized;
 
     public WeaponSkinDefinition CurrentSkin => currentSkin;
     public WeaponSkinDefinition DefaultSkin => defaultSkin;
 
     private void Awake()
     {
-        CacheRenderers();
-        CaptureOriginalMaterials();
+        Initialize();
+    }
 
-        if (applyDefaultOnAwake && defaultSkin != null)
-            ApplySkin(defaultSkin);
+    private void OnEnable()
+    {
+        Initialize();
+        if (currentSkin != null)
+            ApplySkin(currentSkin);
+    }
+
+    private void OnDestroy()
+    {
+        foreach (KeyValuePair<Material, Material> pair in fallbackMaterials)
+        {
+            if (pair.Value != null)
+                Destroy(pair.Value);
+        }
+        fallbackMaterials.Clear();
+    }
+
+    /// <summary>
+    /// Assigns the default skin used on Awake. Intended for loadout code and tests.
+    /// </summary>
+    public void SetDefaultSkin(WeaponSkinDefinition skin, bool applyNow)
+    {
+        defaultSkin = skin;
+        if (applyNow)
+            ApplySkin(skin);
     }
 
     /// <summary>
@@ -42,6 +69,9 @@ public class WeaponSkinApplier : MonoBehaviour
     /// </summary>
     public void ApplySkin(WeaponSkinDefinition skin)
     {
+        if (!initialized)
+            Initialize(applyDefault: false);
+
         if (cachedRenderers.Count == 0)
             CacheRenderers();
 
@@ -53,6 +83,8 @@ public class WeaponSkinApplier : MonoBehaviour
         }
 
         currentSkin = skin;
+        Material material = ResolveRenderableMaterial(skin);
+
         var block = PropertyBlock;
         block.Clear();
         if (skin.applyParameterOverrides)
@@ -70,7 +102,7 @@ public class WeaponSkinApplier : MonoBehaviour
 
             Material[] materials = new Material[slotCount];
             for (int slot = 0; slot < slotCount; slot++)
-                materials[slot] = skin.material;
+                materials[slot] = material;
 
             renderer.sharedMaterials = materials;
 
@@ -102,6 +134,81 @@ public class WeaponSkinApplier : MonoBehaviour
             ApplySkin(currentSkin);
     }
 
+    /// <summary>
+    /// Number of renderers this applier currently skins (for diagnostics and tests).
+    /// </summary>
+    public int RendererCount
+    {
+        get
+        {
+            if (!initialized)
+                Initialize(applyDefault: false);
+            return cachedRenderers.Count;
+        }
+    }
+
+    /// <summary>
+    /// Returns the skin material, or a Standard-shader stand-in carrying the skin texture
+    /// and tint when the skin's custom shader cannot render on this machine / pipeline.
+    /// </summary>
+    public Material ResolveRenderableMaterial(WeaponSkinDefinition skin)
+    {
+        if (skin == null || skin.material == null)
+            return null;
+
+        Material source = skin.material;
+        if (IsShaderUsable(source))
+            return source;
+
+        if (fallbackMaterials.TryGetValue(source, out Material cached) && cached != null)
+            return cached;
+
+        Shader standard = Shader.Find("Standard");
+        if (standard == null)
+            return source;
+
+        var fallback = new Material(standard) { name = source.name + "_Fallback" };
+        Color tint = Color.white;
+        if (source.HasProperty("_SkinColor"))
+            tint = source.GetColor("_SkinColor");
+        else if (source.HasProperty("_Color"))
+            tint = source.GetColor("_Color");
+        fallback.color = tint;
+
+        Texture albedo = null;
+        if (source.HasProperty("_MainTex"))
+            albedo = source.GetTexture("_MainTex");
+        if (albedo == null && source.HasProperty("_NoiseTex"))
+            albedo = source.GetTexture("_NoiseTex");
+        if (albedo != null)
+            fallback.mainTexture = albedo;
+
+        fallback.SetFloat("_Metallic", source.HasProperty("_Metallic") ? Mathf.Min(source.GetFloat("_Metallic"), 0.5f) : 0.2f);
+        fallback.SetFloat("_Glossiness", source.HasProperty("_Glossiness") ? source.GetFloat("_Glossiness") : 0.4f);
+
+        fallbackMaterials[source] = fallback;
+        return fallback;
+    }
+
+    private static bool IsShaderUsable(Material material)
+    {
+        Shader shader = material.shader;
+        return shader != null && shader.isSupported;
+    }
+
+    private void Initialize(bool applyDefault = true)
+    {
+        if (initialized)
+            return;
+
+        initialized = true;
+        CacheRenderers();
+        CaptureOriginalMaterials();
+
+        if (applyDefault && applyDefaultOnAwake && defaultSkin != null)
+            ApplySkin(defaultSkin);
+    }
+
     private void CacheRenderers()
     {
         cachedRenderers.Clear();
@@ -118,11 +225,10 @@ public class WeaponSkinApplier : MonoBehaviour
 
     private void CaptureOriginalMaterials()
     {
-        originalMaterials.Clear();
         for (int i = 0; i < cachedRenderers.Count; i++)
         {
             Renderer renderer = cachedRenderers[i];
-            if (renderer == null)
+            if (renderer == null || originalMaterials.ContainsKey(renderer))
                 continue;
             Material[] shared = renderer.sharedMaterials;
             Material[] copy = new Material[shared.Length];

@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Class_Hybrid
   m_EditorClassIdentifier: Scripts::ClassDefinition
   className: Hybrid
-  description: Marksman hybrid. DMR primary with M4A1 backup.
+  description: Marksman hybrid. DMR primary with Karambit knife secondary.
   primaryWeaponPrefab: {fileID: 450000017, guid: e4b8dde66e484f53a3b6ba5e2588d97d, type: 3}
   primaryWeaponConfig: {fileID: 11400000, guid: 6c9de9d063025b242bc308e01a73d3a7, type: 2}
-  secondaryWeaponPrefab: {fileID: 410000017, guid: eabc44e128d54d26a4a7af49269f1c9c, type: 3}
-  secondaryWeaponConfig: {fileID: 11400000, guid: 5d6dd39ba47344847b6a6b662092fd77, type: 2}
+  secondaryWeaponPrefab: {fileID: 460000001, guid: 6699551ebfa5498b8cab5606e70c0be9, type: 3}
+  secondaryWeaponConfig: {fileID: 11400000, guid: 926e9754f3534e8abea82ceacf91450d, type: 2}
   meleeWeaponPrefab: {fileID: 0}
   meleeWeaponConfig: {fileID: 0}
   moveSpeedMultiplier: 1

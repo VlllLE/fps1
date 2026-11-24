@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Class_Assault
   m_EditorClassIdentifier: Scripts::ClassDefinition
   className: Assault
-  description: Balanced rifle class. M4A1 primary with UMP backup.
+  description: Balanced rifle class. M4A1 primary with Karambit knife secondary.
   primaryWeaponPrefab: {fileID: 410000017, guid: eabc44e128d54d26a4a7af49269f1c9c, type: 3}
   primaryWeaponConfig: {fileID: 11400000, guid: 5d6dd39ba47344847b6a6b662092fd77, type: 2}
-  secondaryWeaponPrefab: {fileID: 430000017, guid: 475bfb7dc087434ea682ff192c2580e0, type: 3}
-  secondaryWeaponConfig: {fileID: 11400000, guid: df8486a523b29e94fa96ac9196b3c005, type: 2}
+  secondaryWeaponPrefab: {fileID: 460000001, guid: 6699551ebfa5498b8cab5606e70c0be9, type: 3}
+  secondaryWeaponConfig: {fileID: 11400000, guid: 926e9754f3534e8abea82ceacf91450d, type: 2}
   meleeWeaponPrefab: {fileID: 0}
   meleeWeaponConfig: {fileID: 0}
   moveSpeedMultiplier: 1

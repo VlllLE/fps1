@@ -63,7 +63,7 @@ Material:
     m_Floats:
     - _BlendSharpness: 4.0
     - _Glossiness: 0.65
-    - _Metallic: 0.7
+    - _Metallic: 0.35
     - _Scale: 1.5
     - _Speed: 0.0
     - _Intensity: 1.0

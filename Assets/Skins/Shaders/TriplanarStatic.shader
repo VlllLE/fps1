@@ -25,6 +25,8 @@ Shader "Skins/TriplanarStatic"
         #pragma surface surf Standard fullforwardshadows vertex:vert
         #pragma target 3.0
 
+        #define SKIN_TILES_PER_METER 5.0
+
         sampler2D _MainTex;
         half _Glossiness;
         half _Metallic;
@@ -42,7 +44,11 @@ Shader "Skins/TriplanarStatic"
         void vert(inout appdata_full v, out Input o)
         {
             UNITY_INITIALIZE_OUTPUT(Input, o);
-            o.objPos = v.vertex.xyz;
+            float3 axisScale = float3(
+                length(float3(unity_ObjectToWorld[0].x, unity_ObjectToWorld[1].x, unity_ObjectToWorld[2].x)),
+                length(float3(unity_ObjectToWorld[0].y, unity_ObjectToWorld[1].y, unity_ObjectToWorld[2].y)),
+                length(float3(unity_ObjectToWorld[0].z, unity_ObjectToWorld[1].z, unity_ObjectToWorld[2].z)));
+            o.objPos = v.vertex.xyz * axisScale * SKIN_TILES_PER_METER;
             o.objNormal = v.normal;
         }
 
@@ -66,7 +72,7 @@ Shader "Skins/TriplanarStatic"
             float3 pos = IN.objPos * _Scale;
             fixed4 albedo = TriplanarSample(_MainTex, pos, weights) * _Color * _SkinColor;
             o.Albedo = albedo.rgb;
-            o.Metallic = _Metallic;
+            o.Metallic = min(_Metallic, 0.5);
             o.Smoothness = _Glossiness;
             o.Alpha = albedo.a;
         }

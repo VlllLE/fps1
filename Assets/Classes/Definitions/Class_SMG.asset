@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Class_SMG
   m_EditorClassIdentifier: Scripts::ClassDefinition
   className: SMG
-  description: Close-quarters class. UMP primary with SCAR backup.
+  description: Close-quarters class. UMP primary with Karambit knife secondary.
   primaryWeaponPrefab: {fileID: 430000017, guid: 475bfb7dc087434ea682ff192c2580e0, type: 3}
   primaryWeaponConfig: {fileID: 11400000, guid: df8486a523b29e94fa96ac9196b3c005, type: 2}
-  secondaryWeaponPrefab: {fileID: 420000017, guid: e3a553387eb74606b410bdcbee6efd99, type: 3}
-  secondaryWeaponConfig: {fileID: 11400000, guid: a2a0f52bcdb367f44ae16cbba68521f2, type: 2}
+  secondaryWeaponPrefab: {fileID: 460000001, guid: 6699551ebfa5498b8cab5606e70c0be9, type: 3}
+  secondaryWeaponConfig: {fileID: 11400000, guid: 926e9754f3534e8abea82ceacf91450d, type: 2}
   meleeWeaponPrefab: {fileID: 0}
   meleeWeaponConfig: {fileID: 0}
   moveSpeedMultiplier: 1.08
