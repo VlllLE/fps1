@@ -185,9 +185,9 @@ public class MovementController : MonoBehaviour
         defaultHeight = controller.height;
         defaultCenter = controller.center;
 
-        // Ignore sub-centimeter CC resolutions that read as standing drift.
-        if (controller.minMoveDistance < 0.02f)
-            controller.minMoveDistance = 0.02f;
+        // Keep minMoveDistance at 0 so high-FPS frames never drop WASD moves;
+        // standing drift is blocked by the idle anchor instead.
+        controller.minMoveDistance = 0f;
 
         overlapRecoveryDefault = controller.enableOverlapRecovery;
     }
