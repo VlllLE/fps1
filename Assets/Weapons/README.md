@@ -1,7 +1,9 @@
 # Weapon models
 
-Primitive-composed gun prefabs for first-person use. Built without DCC tools
-from Unity built-in Cube / Cylinder meshes so they work out of the box.
+Gun prefabs for first-person use. Every gun shows a detailed imported FBX model generated headless in Blender
+(`Models/<Gun>/`, see the sections below). Each prefab also keeps its original primitive-composed parts, built
+without DCC tools from Unity built-in Cube / Cylinder meshes, as a procedural fallback that is shown automatically
+if the FBX is missing or fails validation, so the project works out of the box.
 
 ## Prefabs (`Prefabs/`)
 
