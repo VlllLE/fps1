@@ -2,8 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// First-person arms for the local player, generated from the same humanoid part recipes as the
-/// third-person body. Two analytic two-bone IK arms reach from shoulder anchors (just behind the
+/// First-person arms for the local player. The visible mesh is the Blender-built SoldierArmsFP model
+/// (one skinned mesh on six arm bones, see <see cref="SoldierModelBinder"/>); when it is missing or fails
+/// validation the arms fall back to the procedural humanoid part recipes. Two analytic two-bone IK arms reach from shoulder anchors (just behind the
 /// camera) to grip points on the weapon holder, so the hands stay on the weapon through recoil and
 /// weapon-holder animation. Works with any weapon placed under <c>WeaponHolder</c>; the camera and
 /// weapon attachment points are never modified.
@@ -27,6 +28,8 @@ public sealed class ProceduralFirstPersonArms : MonoBehaviour
     [Tooltip("Arm size relative to the third-person body; first-person arms read better slightly larger.")]
     [SerializeField, Min(0.1f)] private float armScale = 1.3f;
     [SerializeField] private bool buildOnAwake = true;
+    [Tooltip("Always use the primitive procedural arms, even when the imported model is available.")]
+    [SerializeField] private bool forceProcedural;
 
     [Header("Anchors (camera space)")]
     [SerializeField] private Vector3 rightShoulder = new Vector3(0.24f, -0.52f, -0.10f);
@@ -50,12 +53,20 @@ public sealed class ProceduralFirstPersonArms : MonoBehaviour
     private readonly Arm rightArm = new Arm { side = 1f };
     private readonly Arm leftArm = new Arm { side = -1f };
     private readonly List<Object> ownedObjects = new List<Object>();
+    private SoldierBuildResult soldierBuild;
+    private string importFallbackReason;
     private Transform armsRoot;
     private float upperLength;
     private float lowerLength;
     private float idleTime;
 
     public bool IsBuilt => armsRoot != null;
+    /// <summary>True when the imported Blender arm model (one skinned mesh) is displayed.</summary>
+    public bool UsesImportedModel => soldierBuild != null;
+    public string ImportFallbackReason => importFallbackReason;
+    public bool ForceProcedural { get => forceProcedural; set => forceProcedural = value; }
+    public IReadOnlyList<SkinnedMeshRenderer> SoldierRenderers
+        => soldierBuild != null ? (IReadOnlyList<SkinnedMeshRenderer>)soldierBuild.renderers : System.Array.Empty<SkinnedMeshRenderer>();
     public Transform ArmsRoot => armsRoot;
     public Transform RightHand => rightArm.hand;
     public Transform LeftHand => leftArm.hand;
@@ -111,15 +122,15 @@ public sealed class ProceduralFirstPersonArms : MonoBehaviour
         armsRoot.localPosition = Vector3.zero;
         armsRoot.localRotation = Quaternion.identity;
 
-        Material[] materials = HumanoidMaterials.Create(palette);
-        for (int i = 0; i < materials.Length; i++)
-            ownedObjects.Add(materials[i]);
-
         upperLength = HumanoidProportions.UpperArmLength * armScale;
         lowerLength = HumanoidProportions.ForearmLength * armScale;
 
-        BuildArm(rightArm, HumanoidBone.UpperArmR, HumanoidBone.ForearmR, HumanoidBone.HandR, materials);
-        BuildArm(leftArm, HumanoidBone.UpperArmL, HumanoidBone.ForearmL, HumanoidBone.HandL, materials);
+        BuildArm(rightArm);
+        BuildArm(leftArm);
+
+        if (!TryAttachImportedModel())
+            AttachProceduralParts();
+
         Solve();
     }
 
@@ -138,6 +149,12 @@ public sealed class ProceduralFirstPersonArms : MonoBehaviour
         armsRoot = null;
         rightArm.upper = rightArm.lower = rightArm.hand = null;
         leftArm.upper = leftArm.lower = leftArm.hand = null;
+        if (soldierBuild != null)
+        {
+            soldierBuild.Destroy();
+            soldierBuild = null;
+        }
+
         DestroyOwnedObjects();
     }
 
@@ -152,32 +169,95 @@ public sealed class ProceduralFirstPersonArms : MonoBehaviour
         SolveArm(leftArm, leftShoulder + new Vector3(0f, breathe, 0f), GetGripTargetLocal(false));
     }
 
-    private void BuildArm(Arm arm, HumanoidBone upper, HumanoidBone lower, HumanoidBone hand, Material[] materials)
+    private void BuildArm(Arm arm)
     {
-        arm.upper = CreatePart("FP_" + (arm.side > 0f ? "Right" : "Left") + "UpperArm", armsRoot, upper, materials);
-        arm.lower = CreatePart("FP_" + (arm.side > 0f ? "Right" : "Left") + "Forearm", armsRoot, lower, materials);
-        arm.hand = CreatePart("FP_" + (arm.side > 0f ? "Right" : "Left") + "Hand", armsRoot, hand, materials);
+        string side = arm.side > 0f ? "Right" : "Left";
+        arm.upper = CreateBoneObject("FP_" + side + "UpperArm");
+        arm.lower = CreateBoneObject("FP_" + side + "Forearm");
+        arm.hand = CreateBoneObject("FP_" + side + "Hand");
     }
 
-    private Transform CreatePart(string partName, Transform parent, HumanoidBone bone, Material[] materials)
+    private Transform CreateBoneObject(string partName)
     {
         var go = new GameObject(partName);
         go.layer = gameObject.layer;
-        go.transform.SetParent(parent, false);
+        go.transform.SetParent(armsRoot, false);
+        return go.transform;
+    }
 
+    private bool TryAttachImportedModel()
+    {
+        importFallbackReason = null;
+        if (forceProcedural)
+        {
+            importFallbackReason = "procedural arms requested";
+            return false;
+        }
+
+        try
+        {
+            var bones = new Transform[HumanoidParts.BoneCount];
+            bones[(int)HumanoidBone.UpperArmR] = rightArm.upper;
+            bones[(int)HumanoidBone.ForearmR] = rightArm.lower;
+            bones[(int)HumanoidBone.HandR] = rightArm.hand;
+            bones[(int)HumanoidBone.UpperArmL] = leftArm.upper;
+            bones[(int)HumanoidBone.ForearmL] = leftArm.lower;
+            bones[(int)HumanoidBone.HandL] = leftArm.hand;
+
+            SoldierModelSet set = HumanoidBody.ModelSetOverride != null ? HumanoidBody.ModelSetOverride : SoldierModelSet.Load();
+            if (!SoldierModelBinder.TryBuildArms(set, bones, armsRoot, armScale, palette, gameObject.layer,
+                    out SoldierBuildResult build, out string error))
+            {
+                importFallbackReason = error ?? "unknown error";
+                Debug.LogWarning("[ProceduralFirstPersonArms] Imported arm model unavailable, using procedural arms: " + importFallbackReason, this);
+                return false;
+            }
+
+            soldierBuild = build;
+            return true;
+        }
+        catch (System.Exception exception)
+        {
+            importFallbackReason = exception.GetType().Name + ": " + exception.Message;
+            Debug.LogWarning("[ProceduralFirstPersonArms] Imported arm model failed, using procedural arms: " + importFallbackReason, this);
+            if (soldierBuild != null)
+            {
+                soldierBuild.Destroy();
+                soldierBuild = null;
+            }
+
+            return false;
+        }
+    }
+
+    private void AttachProceduralParts()
+    {
+        Material[] materials = HumanoidMaterials.Create(palette);
+        for (int i = 0; i < materials.Length; i++)
+            ownedObjects.Add(materials[i]);
+
+        AttachProceduralMesh(rightArm.upper, HumanoidBone.UpperArmR, materials);
+        AttachProceduralMesh(rightArm.lower, HumanoidBone.ForearmR, materials);
+        AttachProceduralMesh(rightArm.hand, HumanoidBone.HandR, materials);
+        AttachProceduralMesh(leftArm.upper, HumanoidBone.UpperArmL, materials);
+        AttachProceduralMesh(leftArm.lower, HumanoidBone.ForearmL, materials);
+        AttachProceduralMesh(leftArm.hand, HumanoidBone.HandL, materials);
+    }
+
+    private void AttachProceduralMesh(Transform part, HumanoidBone bone, Material[] materials)
+    {
         HumanoidMeshBuilder geometry = HumanoidParts.Build(bone, armScale);
-        Mesh mesh = geometry.ToMesh(partName, out HumanoidSlot[] usedSlots);
+        Mesh mesh = geometry.ToMesh(part.name, out HumanoidSlot[] usedSlots);
         ownedObjects.Add(mesh);
 
-        go.AddComponent<MeshFilter>().sharedMesh = mesh;
-        var renderer = go.AddComponent<MeshRenderer>();
+        part.gameObject.AddComponent<MeshFilter>().sharedMesh = mesh;
+        var renderer = part.gameObject.AddComponent<MeshRenderer>();
         var slotMaterials = new Material[usedSlots.Length];
         for (int i = 0; i < usedSlots.Length; i++)
             slotMaterials[i] = materials[(int)usedSlots[i]];
         renderer.sharedMaterials = slotMaterials;
         renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         renderer.receiveShadows = false;
-        return go.transform;
     }
 
     private void SolveArm(Arm arm, Vector3 shoulderLocal, Vector3 targetLocal)

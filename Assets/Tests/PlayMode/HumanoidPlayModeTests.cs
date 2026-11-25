@@ -35,7 +35,7 @@ public class HumanoidPlayModeTests
         var body = player.GetComponent<HumanoidBody>();
         Assert.IsNotNull(body, "Player body should be upgraded to the humanoid");
         Assert.IsTrue(body.IsBuilt);
-        Assert.AreEqual(HumanoidParts.BoneCount, body.BodyRoot.GetComponentsInChildren<MeshRenderer>().Length);
+        Assert.AreEqual(body.UsesImportedModel ? 4 : HumanoidParts.BoneCount, body.BodyRoot.GetComponentsInChildren<Renderer>().Length);
         Assert.AreEqual(0, body.BodyRoot.GetComponentsInChildren<Collider>().Length, "body must not add colliders to the CharacterController player");
 
         var arms = player.GetComponentInChildren<ProceduralFirstPersonArms>();
@@ -72,7 +72,7 @@ public class HumanoidPlayModeTests
         Assert.IsNotNull(targetObject, "Target_Near should exist");
         var body = targetObject.GetComponent<HumanoidBody>();
         Assert.IsNotNull(body, "Target_Near should have a humanoid body");
-        Assert.GreaterOrEqual(body.BodyRoot.GetComponentsInChildren<MeshRenderer>().Length, HumanoidParts.BoneCount);
+        Assert.GreaterOrEqual(body.BodyRoot.GetComponentsInChildren<Renderer>().Length, body.UsesImportedModel ? 4 : HumanoidParts.BoneCount);
 
         Transform head = targetObject.transform.Find("Head");
         Assert.IsNotNull(head);
@@ -95,7 +95,7 @@ public class HumanoidPlayModeTests
     {
         var target = Object.FindAnyObjectByType<Target>();
         Assert.IsNotNull(target);
-        var renderer = target.GetComponentInChildren<MeshRenderer>();
+        var renderer = target.GetComponentInChildren<Renderer>();
         Assert.IsNotNull(renderer);
         int materialCountBefore = renderer.sharedMaterials.Length;
 

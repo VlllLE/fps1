@@ -323,7 +323,7 @@ public class HumanoidBodyTests
     public void Build_CreatesFullBodySizedToTheControllerWithoutColliders()
     {
         GameObject player = CreatePlayerObject(2f);
-        HumanoidBody body = HumanoidBody.AddTo(player, HumanoidBodySettings.Player());
+        HumanoidBody body = HumanoidBody.AddTo(player, ProceduralSettings());
         body.Build();
 
         Assert.That(body.IsBuilt, Is.True);
@@ -359,7 +359,7 @@ public class HumanoidBodyTests
     public void Build_ScalesWithControllerHeight()
     {
         GameObject player = CreatePlayerObject(1.6f);
-        HumanoidBody body = HumanoidBody.AddTo(player, HumanoidBodySettings.Player());
+        HumanoidBody body = HumanoidBody.AddTo(player, ProceduralSettings());
         body.Build();
 
         Assert.That(body.BuiltScale, Is.EqualTo(0.8f).Within(1e-4f));
@@ -373,7 +373,7 @@ public class HumanoidBodyTests
     public void Build_IsRepeatableWithoutDuplicatingTheBody()
     {
         GameObject player = CreatePlayerObject(2f);
-        HumanoidBody body = HumanoidBody.AddTo(player, HumanoidBodySettings.Player());
+        HumanoidBody body = HumanoidBody.AddTo(player, ProceduralSettings());
         body.Build();
         body.Build();
 
@@ -518,7 +518,7 @@ public class HumanoidBodyTests
         Assert.That(head.GetComponent<SphereCollider>(), Is.Not.Null);
         Assert.That(head.GetComponent<HitZone>().ZoneType, Is.EqualTo(HitZoneType.Head));
         Assert.That(root.transform.Find("Body").GetComponent<MeshFilter>(), Is.Null, "legacy cylinder body was replaced");
-        Assert.That(body.BodyRoot.GetComponentsInChildren<MeshRenderer>().Length, Is.EqualTo(HumanoidParts.BoneCount));
+        Assert.That(body.BodyRoot.GetComponentsInChildren<Renderer>().Length, Is.EqualTo(body.UsesImportedModel ? 4 : HumanoidParts.BoneCount));
 
         Color.RGBToHSV(Color.green, out float legacyHue, out _, out _);
         Color.RGBToHSV(body.Materials[(int)HumanoidSlot.Suit].color, out float suitHue, out _, out _);
@@ -598,12 +598,19 @@ public class HumanoidBodyTests
     {
         ProceduralFirstPersonArms arms = CreateFirstPersonArms(out _);
         Assert.That(arms.ArmsRoot.GetComponentsInChildren<Collider>().Length, Is.Zero);
-        foreach (MeshRenderer renderer in arms.ArmsRoot.GetComponentsInChildren<MeshRenderer>())
+        foreach (Renderer renderer in arms.ArmsRoot.GetComponentsInChildren<Renderer>())
             Assert.That(renderer.shadowCastingMode, Is.EqualTo(UnityEngine.Rendering.ShadowCastingMode.Off));
-        Assert.That(arms.ArmsRoot.GetComponentsInChildren<MeshRenderer>().Length, Is.EqualTo(6));
+        Assert.That(arms.ArmsRoot.GetComponentsInChildren<Renderer>().Length, Is.EqualTo(arms.UsesImportedModel ? 1 : 6));
     }
 
     // --- Helpers ----------------------------------------------------------------------------
+
+    private static HumanoidBodySettings ProceduralSettings()
+    {
+        HumanoidBodySettings settings = HumanoidBodySettings.Player();
+        settings.forceProcedural = true;
+        return settings;
+    }
 
     private ProceduralFirstPersonArms CreateFirstPersonArms(out Transform holder)
     {
