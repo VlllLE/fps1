@@ -393,26 +393,25 @@ namespace CodMovementShooter.UI
 
         private object ResolveWeapon()
         {
-            object fromField = ResolveByTypeName(weaponSource, "WeaponController");
-            if (fromField != null)
-                return fromField;
+            if (weaponSource != null
+                && string.Equals(weaponSource.GetType().Name, "WeaponController", StringComparison.Ordinal))
+                return weaponSource;
+
+            // The switcher's current weapon wins over the first WeaponController found in the hierarchy,
+            // otherwise the rebind loop would keep snapping the HUD back to the first weapon.
+            object switcher = weaponSource != null
+                ? FindComponentByTypeName(weaponSource.gameObject, "WeaponSwitcher", true)
+                : null;
+            object current = ReadCurrentWeapon(switcher ?? FindByTypeName("WeaponSwitcher"));
+            if (current != null)
+                return current;
 
             if (weaponSource != null)
             {
                 object nested = FindComponentByTypeName(weaponSource.gameObject, "WeaponController", true);
                 if (nested != null)
                     return nested;
-
-                object switcher = FindComponentByTypeName(weaponSource.gameObject, "WeaponSwitcher", true);
-                object current = ReadCurrentWeapon(switcher);
-                if (current != null)
-                    return current;
             }
-
-            object sceneSwitcher = FindByTypeName("WeaponSwitcher");
-            object fromSwitcher = ReadCurrentWeapon(sceneSwitcher);
-            if (fromSwitcher != null)
-                return fromSwitcher;
 
             return FindByTypeName("WeaponController");
         }
