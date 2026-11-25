@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 450000034}
   - component: {fileID: 450000051}
   - component: {fileID: 450000068}
+  - component: {fileID: 450009005}
   m_Layer: 0
   m_Name: DMRSniper
   m_TagString: Untagged
@@ -31,18 +32,11 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 450000102}
-  - {fileID: 450000170}
-  - {fileID: 450000238}
-  - {fileID: 450000306}
-  - {fileID: 450000374}
-  - {fileID: 450000442}
-  - {fileID: 450000510}
-  - {fileID: 450000714}
+  - {fileID: 450009004}
+  - {fileID: 450009002}
   - {fileID: 450000782}
   - {fileID: 450000816}
   - {fileID: 450000850}
-  - {fileID: 450001034}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &450000051
@@ -119,7 +113,7 @@ Transform:
   m_LocalScale: {x: 0.055, y: 0.09, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 450000034}
+  m_Father: {fileID: 450009002}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &450000119
 MeshFilter:
@@ -209,7 +203,7 @@ Transform:
   m_LocalScale: {x: 0.026, y: 0.026, z: 0.38}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 450000034}
+  m_Father: {fileID: 450009002}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &450000187
 MeshFilter:
@@ -299,7 +293,7 @@ Transform:
   m_LocalScale: {x: 0.05, y: 0.05, z: 0.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 450000034}
+  m_Father: {fileID: 450009002}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &450000255
 MeshFilter:
@@ -389,7 +383,7 @@ Transform:
   m_LocalScale: {x: 0.035, y: 0.12, z: 0.055}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 450000034}
+  m_Father: {fileID: 450009002}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &450000323
 MeshFilter:
@@ -479,7 +473,7 @@ Transform:
   m_LocalScale: {x: 0.035, y: 0.1, z: 0.05}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 450000034}
+  m_Father: {fileID: 450009002}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &450000391
 MeshFilter:
@@ -569,7 +563,7 @@ Transform:
   m_LocalScale: {x: 0.045, y: 0.075, z: 0.22}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 450000034}
+  m_Father: {fileID: 450009002}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &450000459
 MeshFilter:
@@ -659,7 +653,7 @@ Transform:
   m_LocalScale: {x: 0.03, y: 0.018, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 450000034}
+  m_Father: {fileID: 450009002}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &450000527
 MeshFilter:
@@ -929,7 +923,7 @@ Transform:
   m_LocalScale: {x: 0.02, y: 0.02, z: 0.02}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 450000034}
+  m_Father: {fileID: 450009002}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &450000731
 MeshFilter:
@@ -1114,7 +1108,7 @@ Transform:
   - {fileID: 450000646}
   - {fileID: 450001068}
   - {fileID: 450001136}
-  m_Father: {fileID: 450000034}
+  m_Father: {fileID: 450009002}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &450001051
 GameObject:
@@ -1296,3 +1290,94 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &450009001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 450009002}
+  m_Layer: 0
+  m_Name: ProceduralFallback
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &450009002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 450009001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 450000102}
+  - {fileID: 450000170}
+  - {fileID: 450000238}
+  - {fileID: 450000306}
+  - {fileID: 450000374}
+  - {fileID: 450000442}
+  - {fileID: 450000510}
+  - {fileID: 450000714}
+  - {fileID: 450001034}
+  m_Father: {fileID: 450000034}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &450009003
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 450009004}
+  m_Layer: 0
+  m_Name: Model
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &450009004
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 450009003}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 450000034}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &450009005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 450000017}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0c2f15b41d54878987f0b4a5132ba77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::ImportedGunModel
+  importedModelPrefab: {fileID: 919132149155446097, guid: dd42fadab8894c25a79b8ca738035b2e, type: 3}
+  editorAssetPath: Assets/Weapons/Models/DMRSniper/DMRSniper.fbx
+  visualRoot: {fileID: 450009004}
+  metalMaterial: {fileID: 2100000, guid: 9c56cd1a248e4ea8bd9cd090ebfe1b88, type: 2}
+  polymerMaterial: {fileID: 2100000, guid: 57976278de9a418096150c9efa43832c, type: 2}
+  glassMaterial: {fileID: 2100000, guid: 5b0c1b7a9e4d4f2c8a3d6e1f7c2b9a40, type: 2}
+  accentMaterial: {fileID: 2100000, guid: a17c3e5d2b9f4086b4d1c8e7f6a30b52, type: 2}
+  proceduralFallback: {fileID: 450009001}
