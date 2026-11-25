@@ -87,6 +87,51 @@ later, aim it along `Scope` local +Z. `Assets/Tests/Editor/SniperMountingTests.c
 parts touch. These two prefabs were edited by `Tools/Weapons/mount_sniper_parts.py` (the older
 flat generator in `Assets/Skins/Tools~/write_batch2_assets.py` no longer matches them).
 
+## Blender models: Bolt-Action Sniper and DMR
+
+Both rifles have a detailed imported model next to the original primitive build:
+
+| Gun | Model | Triangles | Parts (one renderer each) |
+| --- | --- | --- | --- |
+| `BoltActionSniper` | `Models/BoltActionSniper/BoltActionSniper.fbx` (+ `.glb`) | ~27k | `Body` (receiver, bolt-handle slot, ejection port, fluted heavy barrel, muzzle brake, fore-end with M-LOK slots and rail, trigger guard, thumbhole stock, grip), `Scope`, `Bolt`, `Magazine`, `CheekRiser`, `BipodLegLeft`, `BipodLegRight` |
+| `DMRSniper` | `Models/DMRSniper/DMRSniper.fbx` (+ `.glb`) | ~22k | `Body` (upper/lower receiver, ejection port with open dust cover, flat-top rail, hollow quad-rail handguard with M-LOK slots, gas block + front sight, slotted flash hider, buffer tube, pistol grip), `Scope`, `Magazine`, `Stock`, `CheekRiser`, `ChargingHandle` |
+
+Everything is generated headless by Blender 4.2 (`bpy`), no downloaded models or textures, and is UV unwrapped
+(smart project per object). Material slots are `GunMetal`, `GunPolymer`, `SniperGlass`, `SniperAccent`; the
+`.fbx.meta` remaps them to `Mat_GunMetal`, `Mat_GunPolymer`, `Mat_SniperGlass` (transparent) and `Mat_SniperAccent`
+(`ImportedGunModel` also remaps by name at runtime).
+
+```
+blender -b --factory-startup --python Tools/Blender/build_bolt_sniper.py -- \
+    --out Assets/Weapons/Models/BoltActionSniper [--renders <dir>] [--samples 48] [--res 100]
+blender -b --factory-startup --python Tools/Blender/build_dmr.py -- \
+    --out Assets/Weapons/Models/DMRSniper [--renders <dir>]
+python3 Tools/Blender/write_gun_meta.py Assets/Weapons/Models/BoltActionSniper BoltActionSniper   # .meta files
+blender -b --factory-startup --python Tools/Blender/preview_gun_held.py -- --gun bolt|dmr --renders <dir>
+```
+
+The generators build in the prefab's weapon space (+Z muzzle, +Y up, metres, bore at y 0.035 / 0.040, muzzle
+at z 0.66 / 0.58), run connectivity / mount checks (scope rings touch the rail and the tube, scope axis above the
+bore and centred, bipod hinges touch the fore-end, no detached part) and print the triangle budget. The shared code
+is `Tools/Blender/gunlib.py` (builder, export, render) and `gunparts.py` (scope, Picatinny rail, screws).
+
+Prefab layout (edited by `Tools/Weapons/wire_imported_gun_models.py`, idempotent): the original primitives were moved
+unchanged under a `ProceduralFallback` child, an empty `Model` child receives the instantiated FBX, and the
+`ImportedGunModel` component on the root (execution order -200, try/catch) swaps them in `Awake`. If the FBX reference
+is missing, has no mesh, or throws, the primitives stay visible and nothing else changes. `MuzzlePoint`, `FirePoint`,
+`ShellEjectPoint`, `WeaponController` and `WeaponSkinApplier` wiring are untouched. `WeaponController` finds the
+reload parts by name (`Magazine`, and `Bolt` on the bolt sniper), so the model keeps those group names, with their pivots
+at the magazine top / bore axis, and the hidden fallback parts of the same name get a `_Fallback` suffix.
+
+The prefabs reference the FBX root with a pinned fileID (`internalIDToNameTable` in the `.fbx.meta`). If Unity ever
+regenerates that id, **Tools > Weapons > Relink Imported Gun Models** reassigns the reference, and in the editor the
+component also falls back to loading by `editorAssetPath`.
+
+`WeaponSkinApplier` assigns the skin material to every slot of every renderer, so the scope lens takes the skin too
+(it does not know about `Mat_SniperGlass`); a glass opt-out belongs in the applier, which this change does not touch.
+`Assets/Tests/Editor/ImportedGunModelTests.cs` checks part names, triangle budget, UVs, muzzle position, scope-on-rail,
+bipod, material remap and the fallback; `SniperMountingTests` still covers the fallback primitives.
+
 ## Scale & pivot
 
 - Units are **meters**. Pivot is at the **receiver / grip** (local origin),
@@ -115,6 +160,11 @@ Default body materials live in `Materials/` (Built-in Standard).
 
 Prefabs were authored as YAML outside the Unity editor. Open the project
 locally to confirm mesh pivots, materials, and component wiring.
+
+The Bolt-Action Sniper / DMR models were checked only in Blender (renders, mesh checks) and the C# was compile-checked
+against UnityEngine 2021.3 reference assemblies. Unverified in the Unity 6 editor: FBX axis and scale on import (the
+export assumes an identity import), the pinned FBX fileIDs and material remap, the look under the skin shaders, the
+held pose against the hand IK (only a Blender mock of `ProceduralFirstPersonArms`), and all new EditMode tests.
 
 The Shotgun / LMG prefabs, configs and tests were additionally only compile-checked (C# against
 UnityEngine 2021.3 reference assemblies) and their layout previewed as a 2D side silhouette. Nothing

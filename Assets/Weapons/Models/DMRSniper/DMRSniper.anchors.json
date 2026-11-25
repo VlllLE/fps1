@@ -1,0 +1,52 @@
+{
+  "anchors": {
+    "MuzzlePoint": [
+      0.0,
+      0.04,
+      0.58
+    ],
+    "FirePoint": [
+      0.0,
+      0.04,
+      0.58
+    ],
+    "ShellEjectPoint": [
+      0.024,
+      0.042,
+      0.025
+    ]
+  },
+  "scope": {
+    "axis_y": 0.10690000000000002,
+    "rail_top": 0.07750000000000001,
+    "ring_z": [
+      -0.03,
+      0.05600000000000001
+    ],
+    "z_rear": -0.114,
+    "front_z": 0.186
+  },
+  "triangles": 22388,
+  "bounds_min": [
+    -0.03920000046491623,
+    -0.15800000727176666,
+    -0.2930000126361847
+  ],
+  "bounds_max": [
+    0.03920000046491623,
+    0.15790000557899475,
+    0.5799999833106995
+  ],
+  "checks": {
+    "rail_receiver_gap": 0.0,
+    "ScopeRingRear_rail": 0.0,
+    "ScopeRingRear_tube": 0.0,
+    "ScopeRingFront_rail": 0.0,
+    "ScopeRingFront_tube": 0.0,
+    "handguard_receiver": 0.0,
+    "gasblock_barrel": 0.0,
+    "magazine_lower": 0.0,
+    "scope_tube_above_rail": 0.004099994897842407,
+    "scope_axis_over_bore": 0.06690000000000002
+  }
+}
