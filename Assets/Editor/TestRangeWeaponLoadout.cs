@@ -98,20 +98,6 @@ public static class TestRangeWeaponLoadout
         },
     };
 
-    private static readonly string[] SkinCyclePaths =
-    {
-        "Assets/Skins/Definitions/Skin_CarbonFiber.asset",
-        "Assets/Skins/Definitions/Skin_CopperPatina.asset",
-        "Assets/Skins/Definitions/Skin_DesertTiger.asset",
-        "Assets/Skins/Definitions/Skin_KryptekFracture.asset",
-        "Assets/Skins/Definitions/Skin_NightViper.asset",
-        "Assets/Skins/Definitions/Skin_UrbanHex.asset",
-        "Assets/Skins/Definitions/Animated/Skin_ChromaticShift.asset",
-        "Assets/Skins/Definitions/Animated/Skin_EmberAsh.asset",
-        "Assets/Skins/Definitions/Animated/Skin_NeonRain.asset",
-        "Assets/Skins/Definitions/Animated/Skin_StormArc.asset",
-    };
-
     [MenuItem("Tools/Sync Test Range Weapon Loadout")]
     public static void SyncFromMenu()
     {
@@ -369,25 +355,14 @@ public static class TestRangeWeaponLoadout
         if (cycler == null)
             cycler = player.AddComponent<TestRangeSkinCycler>();
 
-        var skins = new List<WeaponSkinDefinition>();
-        foreach (var path in SkinCyclePaths)
-        {
-            var skin = AssetDatabase.LoadAssetAtPath<WeaponSkinDefinition>(path);
-            if (skin != null)
-                skins.Add(skin);
-        }
-
         var so = new SerializedObject(cycler);
         var switcherProp = so.FindProperty("weaponSwitcher");
         if (switcherProp != null)
             switcherProp.objectReferenceValue = switcher;
+        // The cycler reads every skin from Resources/WeaponSkinCatalog at runtime; no per-scene list to maintain.
         var skinsProp = so.FindProperty("skins");
         if (skinsProp != null)
-        {
-            skinsProp.arraySize = skins.Count;
-            for (int i = 0; i < skins.Count; i++)
-                skinsProp.GetArrayElementAtIndex(i).objectReferenceValue = skins[i];
-        }
+            skinsProp.arraySize = 0;
         so.ApplyModifiedPropertiesWithoutUndo();
     }
 

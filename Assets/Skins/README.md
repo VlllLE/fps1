@@ -40,7 +40,13 @@ Skin shaders tile in **world-scale** object space (`SKIN_TILES_PER_METER`), so t
 metallic is capped at 0.5 to avoid near-black results in Built-in RP without reflection probes.
 
 `TestRangeSkinCycler` no longer overrides per-weapon skins on start: each weapon keeps its
-prefab default until `[` or `]` is pressed.
+prefab default until `[` or `]` is pressed. It cycles through `Resources/WeaponSkinCatalog`
+(all skins; no per-scene list). After adding a skin run **Tools > Skins > Rebuild Weapon Skin
+Catalog** (an EditMode test fails if the catalog is stale).
+
+Every weapon prefab carries its own `WeaponSkinApplier` (M4A1, SCAR, UMP, sniper, DMR, Karambit and
+the `TestPistol` inside `Player.prefab`). `WeaponLoadoutService.ApplySkinToWeapon` reuses it and only
+adds one if a prefab has none, and skips the call when that skin is already current.
 
 `Scripts/Skins.asmdef` makes the skin code testable from `Assets/Tests`.
 
@@ -74,6 +80,12 @@ prefab default until `[` or `]` is pressed.
 3. Create a `WeaponSkinDefinition` under `Definitions/Animated/`.
    Enable `applyParameterOverrides` if loadouts should drive speed/colour/intensity
    through the ScriptableObject fields (`speed`, `skinColor`, `accentColor`, `intensity`, `scale`).
+
+**Palette shaders** (`StormArc`, `ChromaticShift`, `Holographic`, `EmberAsh`, `FlowingLava`) use several
+colour slots (`_EnergyColor`, `_AccentColor`, `_MidColor`, `_EmissionColor`). `WritePropertyBlock` writes the
+single `accentColor` into all of them, which flattens the palette to one colour, so these skins keep
+`applyParameterOverrides` off and are tuned on their materials instead. Their `Definitions` fields
+just mirror the material values.
 
 Shared property names (`_SkinColor`, `_EnergyColor` / `_EmissionColor` /
 `_AccentColor`, `_Speed`, `_Intensity`, `_Scale`) are written by

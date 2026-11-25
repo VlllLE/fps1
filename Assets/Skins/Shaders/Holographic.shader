@@ -2,14 +2,15 @@ Shader "Skins/Holographic"
 {
     Properties
     {
-        _Color ("Base Tint", Color) = (0.05, 0.12, 0.18, 1)
-        _SkinColor ("Skin Color", Color) = (0.05, 0.12, 0.18, 1)
+        _Color ("Base Tint", Color) = (1, 1, 1, 1)
+        _SkinColor ("Skin Color", Color) = (0.06, 0.12, 0.2, 1)
         _AccentColor ("Iridescent A", Color) = (0.2, 0.95, 1.0, 1)
         _EnergyColor ("Iridescent B", Color) = (1.0, 0.25, 0.85, 1)
+        _MidColor ("Iridescent Mid", Color) = (0.55, 0.4, 1.0, 1)
         _EmissionColor ("Emission Color", Color) = (0.4, 0.9, 1.0, 1)
         _NoiseTex ("Noise (RGB)", 2D) = "gray" {}
         _Speed ("Shift Speed", Range(0,8)) = 1.0
-        _Intensity ("Holo Intensity", Range(0,8)) = 1.75
+        _Intensity ("Holo Intensity", Range(0,8)) = 1.4
         _FresnelPower ("Fresnel Power", Range(0.5,8)) = 3.0
         _Scale ("Triplanar Scale", Float) = 1.5
         _BlendSharpness ("Blend Sharpness", Range(1,8)) = 4
@@ -36,6 +37,7 @@ Shader "Skins/Holographic"
         fixed4 _AccentColor;
         fixed4 _EnergyColor;
         fixed4 _EmissionColor;
+        fixed4 _MidColor;
         float _Speed;
         float _Intensity;
         float _FresnelPower;
@@ -77,6 +79,14 @@ Shader "Skins/Holographic"
             return x * weights.x + y * weights.y + z * weights.z;
         }
 
+        float3 Palette3(float3 a, float3 m, float3 b, float x)
+        {
+            x = frac(x) * 3.0;
+            float3 c = lerp(a, m, saturate(x));
+            c = lerp(c, b, saturate(x - 1.0));
+            return lerp(c, a, saturate(x - 2.0));
+        }
+
         void surf(Input IN, inout SurfaceOutputStandard o)
         {
             float3 weights = TriplanarWeights(IN.objNormal, _BlendSharpness);
@@ -88,18 +98,17 @@ Shader "Skins/Holographic"
             float ndotv = saturate(dot(normalize(IN.worldNormal), viewDir));
             float fresnel = pow(1.0 - ndotv, _FresnelPower);
 
-            float shift = frac(noise.r * 0.65 + noise.g * 0.35 + t * 0.12 + fresnel);
-            fixed3 iridescence = lerp(_AccentColor.rgb, _EnergyColor.rgb, shift);
-            iridescence = lerp(iridescence, _EmissionColor.rgb, fresnel * 0.5);
+            // Iridescent ramp driven by object-space position, noise and view angle, so it varies when static.
+            float shift = pos.y * 0.35 + pos.x * 0.2 + noise.r * 0.55 + noise.g * 0.25 + t * 0.12 + fresnel * 0.6;
+            float3 iridescence = Palette3(_AccentColor.rgb, _MidColor.rgb, _EnergyColor.rgb, shift);
+            iridescence = lerp(iridescence, _EmissionColor.rgb, fresnel * 0.35);
 
-            // Subtle scan lines in object space so the mesh carries the holo look.
-            float scan = 0.65 + 0.35 * sin((IN.objPos.y + t * 0.4) * 8.0);
+            // Scan lines are a clearly visible modulation (about 45% to 100%) on top of the iridescence.
+            float scan = 0.72 + 0.28 * sin((IN.objPos.y + t * 0.4) * 8.0);
 
             fixed3 baseCol = _Color.rgb * _SkinColor.rgb;
-            fixed3 holo = iridescence * (0.35 + fresnel) * scan * _Intensity;
-
-            o.Albedo = baseCol + holo * 0.25;
-            o.Emission = holo;
+            o.Albedo = lerp(baseCol, iridescence, 0.55) * scan;
+            o.Emission = iridescence * (0.12 + fresnel * 0.7) * scan * _Intensity * 0.35;
             o.Metallic = min(_Metallic, 0.5);
             o.Smoothness = _Glossiness;
             o.Alpha = 1.0;

@@ -307,6 +307,14 @@ public class TestRangeBuilder : MonoBehaviour
             muzzleProp.objectReferenceValue = muzzle.transform;
         }
         weaponSO.ApplyModifiedPropertiesWithoutUndo();
+
+        var skinApplier = gun.AddComponent<WeaponSkinApplier>();
+        var applierSO = new SerializedObject(skinApplier);
+        var defaultSkinProp = applierSO.FindProperty("defaultSkin");
+        if (defaultSkinProp != null)
+            defaultSkinProp.objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<WeaponSkinDefinition>("Assets/Skins/Definitions/Skin_CarbonFiber.asset");
+        applierSO.ApplyModifiedPropertiesWithoutUndo();
         return weapon;
     }
     

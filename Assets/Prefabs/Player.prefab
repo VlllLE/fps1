@@ -581,7 +581,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 0}
+  - {fileID: 2100000, guid: bc656cd18d464adcb510e4bd229f0793, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -671,7 +671,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 0}
+  - {fileID: 2100000, guid: bc656cd18d464adcb510e4bd229f0793, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -761,7 +761,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 0}
+  - {fileID: 2100000, guid: bc656cd18d464adcb510e4bd229f0793, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1367,6 +1367,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3526691408910269358}
   - component: {fileID: 2165437819922971028}
+  - component: {fileID: 2165437819922971099}
   m_Layer: 0
   m_Name: TestPistol
   m_TagString: Untagged
@@ -1420,6 +1421,22 @@ MonoBehaviour:
   customSwayAmount: 0.02
   customMaxSway: 0.06
   isAuthoritative: 1
+--- !u!114 &2165437819922971099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4206951561515189352}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e72ded460720468694079be126375251, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defaultSkin: {fileID: 11400000, guid: 40004db994d741298e468f393526aee5, type: 2}
+  applyDefaultOnAwake: 1
+  rendererRoot: {fileID: 0}
+  includeInactiveRenderers: 1
 --- !u!1 &5287461474322602679
 GameObject:
   m_ObjectHideFlags: 0
@@ -2788,17 +2805,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Skins::TestRangeSkinCycler
   weaponSwitcher: {fileID: 8834836375136179749}
-  skins:
-  - {fileID: 11400000, guid: 40004db994d741298e468f393526aee5, type: 2}
-  - {fileID: 11400000, guid: e37ec62055564acca64a2098f869dde0, type: 2}
-  - {fileID: 11400000, guid: 25ece70f919d4ad78599b88db4eba6a2, type: 2}
-  - {fileID: 11400000, guid: f8ff666595f84e1eb66cfd719752e8c1, type: 2}
-  - {fileID: 11400000, guid: 697a6589dea646509016ef6459d266b0, type: 2}
-  - {fileID: 11400000, guid: e3e398d383e84eff8519853f0ca03561, type: 2}
-  - {fileID: 11400000, guid: 45a68f581fdc4b89a7523f43386dbe31, type: 2}
-  - {fileID: 11400000, guid: 466f059384294303bbc050f72324a898, type: 2}
-  - {fileID: 11400000, guid: f6c9f54ae93e463f9d6bafe226fb7bda, type: 2}
-  - {fileID: 11400000, guid: d8bd663c5317466fa14f370e0f30f7ad, type: 2}
+  skins: []
   startingSkinIndex: 0
 --- !u!1 &7968835924680841081
 GameObject:

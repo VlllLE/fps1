@@ -2,14 +2,15 @@ Shader "Skins/FlowingLava"
 {
     Properties
     {
-        _Color ("Cool Crust", Color) = (0.08, 0.04, 0.03, 1)
-        _SkinColor ("Skin Color", Color) = (0.08, 0.04, 0.03, 1)
-        _AccentColor ("Hot Rock", Color) = (0.45, 0.12, 0.04, 1)
-        _EnergyColor ("Lava Color", Color) = (1.0, 0.35, 0.05, 1)
-        _EmissionColor ("Emission Color", Color) = (1.0, 0.55, 0.1, 1)
+        _Color ("Cool Crust", Color) = (1, 1, 1, 1)
+        _SkinColor ("Skin Color", Color) = (0.05, 0.03, 0.025, 1)
+        _AccentColor ("Hot Rock", Color) = (0.7, 0.08, 0.02, 1)
+        _EnergyColor ("Lava Color", Color) = (1.0, 0.4, 0.05, 1)
+        _MidColor ("Molten Core", Color) = (1.0, 0.85, 0.3, 1)
+        _EmissionColor ("Emission Color", Color) = (1.0, 0.7, 0.4, 1)
         _NoiseTex ("Noise (RGB)", 2D) = "gray" {}
         _Speed ("Flow Speed", Range(0,8)) = 0.85
-        _Intensity ("Glow Intensity", Range(0,8)) = 3.0
+        _Intensity ("Glow Intensity", Range(0,8)) = 1.5
         _Scale ("Triplanar Scale", Float) = 0.85
         _BlendSharpness ("Blend Sharpness", Range(1,8)) = 4
         _Glossiness ("Smoothness", Range(0,1)) = 0.25
@@ -35,6 +36,7 @@ Shader "Skins/FlowingLava"
         fixed4 _AccentColor;
         fixed4 _EnergyColor;
         fixed4 _EmissionColor;
+        fixed4 _MidColor;
         float _Speed;
         float _Intensity;
         float _Scale;
@@ -77,22 +79,20 @@ Shader "Skins/FlowingLava"
             float t = _Time.y * _Speed;
             float3 flowA = IN.objPos * _Scale + float3(t * 0.12, -t * 0.22, t * 0.05);
             float3 flowB = IN.objPos * (_Scale * 1.7) + float3(-t * 0.08, t * 0.05, t * 0.14);
-
             fixed4 a = TriplanarSample(_NoiseTex, flowA, weights);
             fixed4 b = TriplanarSample(_NoiseTex, flowB, weights);
 
+            // Dark crust plates broken up by bright molten channels that ramp red -> orange -> yellow-white.
             float magma = saturate(a.r * 0.65 + b.g * 0.35);
-            float cracks = saturate(1.0 - a.b * 1.1);
-            float heat = saturate(pow(magma, 1.6) + cracks * 0.35);
-            float flicker = 0.85 + 0.15 * sin(t * 5.0 + magma * 10.0);
+            float heat = smoothstep(0.38, 0.72, magma);
+            float flicker = 0.88 + 0.12 * sin(t * 5.0 + magma * 10.0);
 
-            fixed3 cool = _Color.rgb * _SkinColor.rgb;
-            fixed3 warm = lerp(_AccentColor.rgb, _EnergyColor.rgb, heat);
-            fixed3 albedo = lerp(cool, warm, heat);
-            fixed3 emit = _EmissionColor.rgb * _EnergyColor.rgb * pow(heat, 2.0) * _Intensity * flicker;
+            float3 molten = lerp(_AccentColor.rgb, _EnergyColor.rgb, saturate(heat * 1.6));
+            molten = lerp(molten, _MidColor.rgb, saturate((heat - 0.85) * 6.0));
+            fixed3 crust = _Color.rgb * _SkinColor.rgb * (0.7 + 0.8 * a.b);
 
-            o.Albedo = albedo;
-            o.Emission = emit;
+            o.Albedo = lerp(crust, molten * 0.45, heat);
+            o.Emission = molten * _EmissionColor.rgb * heat * heat * _Intensity * flicker;
             o.Metallic = min(_Metallic, 0.5);
             o.Smoothness = lerp(_Glossiness, 0.55, heat);
             o.Alpha = 1.0;

@@ -39,12 +39,13 @@ Material:
     - _Metallic: 0.2
     - _Scale: 1.5
     - _Speed: 1.0
-    - _Intensity: 1.75
+    - _Intensity: 1.4
     m_Colors:
-    - _Color: {r: 0.05, g: 0.12, b: 0.18, a: 1}
-    - _SkinColor: {r: 0.05, g: 0.12, b: 0.18, a: 1}
+    - _Color: {r: 1.0, g: 1.0, b: 1.0, a: 1}
+    - _SkinColor: {r: 0.06, g: 0.12, b: 0.2, a: 1}
     - _EnergyColor: {r: 1.0, g: 0.25, b: 0.85, a: 1}
     - _AccentColor: {r: 0.2, g: 0.95, b: 1.0, a: 1}
     - _EmissionColor: {r: 0.4, g: 0.9, b: 1.0, a: 1}
+    - _MidColor: {r: 0.55, g: 0.4, b: 1.0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

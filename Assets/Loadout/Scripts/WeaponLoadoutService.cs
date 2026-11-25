@@ -452,12 +452,31 @@ public class WeaponLoadoutService : MonoBehaviour
         if (weapon == null)
             return;
 
+        WeaponSkinApplier skinApplier = GetOrAddSkinApplier(weapon);
+        if (skinApplier == null)
+            return;
+
+        WeaponSkinDefinition target = skin != null ? skin : skinApplier.DefaultSkin;
+        if (target != null && skinApplier.CurrentSkin == target)
+            return;
+
+        skinApplier.ApplySkin(target);
+    }
+
+    /// <summary>
+    /// Returns the weapon's own <see cref="WeaponSkinApplier"/> (authored on the prefab for every weapon),
+    /// adding one only when the prefab has none, so a weapon never ends up with two appliers.
+    /// </summary>
+    public static WeaponSkinApplier GetOrAddSkinApplier(WeaponController weapon)
+    {
+        if (weapon == null)
+            return null;
+
         WeaponSkinApplier skinApplier = weapon.GetComponent<WeaponSkinApplier>();
         if (skinApplier == null)
             skinApplier = weapon.GetComponentInChildren<WeaponSkinApplier>(true);
         if (skinApplier == null)
             skinApplier = weapon.gameObject.AddComponent<WeaponSkinApplier>();
-
-        skinApplier.ApplySkin(skin != null ? skin : skinApplier.DefaultSkin);
+        return skinApplier;
     }
 }
