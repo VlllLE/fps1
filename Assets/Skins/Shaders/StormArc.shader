@@ -2,15 +2,15 @@ Shader "Skins/StormArc"
 {
     Properties
     {
-        _Color ("Base Tint", Color) = (0.05, 0.06, 0.1, 1)
-        _SkinColor ("Skin Color", Color) = (0.05, 0.06, 0.1, 1)
-        _EnergyColor ("Arc Color", Color) = (0.55, 0.8, 1.0, 1)
-        _AccentColor ("Flash Color", Color) = (0.9, 0.95, 1.0, 1)
-        _EmissionColor ("Emission Color", Color) = (0.65, 0.85, 1.0, 1)
+        _Color ("Base Tint", Color) = (0.6, 0.7, 1.0, 1)
+        _SkinColor ("Skin Color", Color) = (0.16, 0.2, 0.3, 1)
+        _EnergyColor ("Arc Color", Color) = (0.25, 0.55, 1.0, 1)
+        _AccentColor ("Flash Color", Color) = (0.85, 0.92, 1.0, 1)
+        _EmissionColor ("Emission Tint", Color) = (0.8, 0.9, 1.0, 1)
         _NoiseTex ("Noise (RGB)", 2D) = "gray" {}
         _CircuitTex ("Circuit Mask (optional)", 2D) = "white" {}
         _Speed ("Arc Speed", Range(0,8)) = 2.0
-        _Intensity ("Arc Intensity", Range(0,8)) = 2.6
+        _Intensity ("Arc Intensity", Range(0,8)) = 1.4
         _Scale ("Triplanar Scale", Float) = 1.15
         _BlendSharpness ("Blend Sharpness", Range(1,8)) = 4
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
@@ -79,19 +79,24 @@ Shader "Skins/StormArc"
             float t = _Time.y * _Speed;
             float3 pos = IN.objPos * _Scale;
 
-            fixed4 noise = TriplanarSample(_NoiseTex, pos + float3(t * 0.08, -t * 0.12, t * 0.05), weights);
-            fixed4 circuit = TriplanarSample(_CircuitTex, pos * 0.85 + float3(0.0, t * 0.15, 0.0), weights);
+            fixed4 noise = TriplanarSample(_NoiseTex, pos + float3(t * 0.04, -t * 0.06, t * 0.03), weights);
+            fixed4 circuit = TriplanarSample(_CircuitTex, pos * 0.85 + float3(0.0, t * 0.05, 0.0), weights);
 
-            float branch = saturate(circuit.r * 1.2);
-            float flicker = 0.55 + 0.45 * sin(t * 17.0 + noise.r * 30.0);
-            float bolt = pow(saturate(branch * (0.35 + noise.g)), 1.8) * flicker;
-            float flash = pow(saturate(noise.b * circuit.g), 4.0) * flicker;
+            // Static look: dark mottled storm cloud body with thin bright arcs along the circuit traces.
+            float cloud = noise.r * 0.6 + noise.g * 0.4;
+            float trace = saturate(circuit.r * 1.2 + circuit.g * 0.25);
+            float arcBranch = trace * (0.45 + noise.g * 0.9);
+            float arc = smoothstep(0.30, 0.85, arcBranch);
+            float flicker = 0.7 + 0.3 * sin(t * 13.0 + noise.r * 30.0);
+            float core = smoothstep(0.78, 1.0, arcBranch) * flicker;
 
-            fixed3 baseCol = _Color.rgb * _SkinColor.rgb;
-            fixed3 arc = lerp(_EnergyColor.rgb, _AccentColor.rgb, flash);
-            fixed3 emit = arc * _EmissionColor.rgb * (bolt + flash * 1.5) * _Intensity;
+            fixed3 baseCol = _Color.rgb * _SkinColor.rgb * (0.6 + 0.9 * cloud);
+            float3 emit = _EnergyColor.rgb * (arc * flicker) * _Intensity
+                        + _AccentColor.rgb * core * _Intensity * 0.6;
+            // Soft clamp so a high intensity never blows the whole mesh out to white.
+            emit = _EmissionColor.rgb * (1.0 - exp(-emit)) * 1.25;
 
-            o.Albedo = baseCol + emit * 0.08;
+            o.Albedo = baseCol;
             o.Emission = emit;
             o.Metallic = min(_Metallic, 0.5);
             o.Smoothness = _Glossiness;

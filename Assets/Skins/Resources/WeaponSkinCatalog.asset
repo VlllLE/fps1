@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b841a46717a244db8fa091f845ee97ac, type: 3}
+  m_Name: WeaponSkinCatalog
+  m_EditorClassIdentifier: Skins::WeaponSkinCatalog
+  skins:
+  - {fileID: 11400000, guid: b98855beb6754a51a8f0635105698e79, type: 2}
+  - {fileID: 11400000, guid: 40004db994d741298e468f393526aee5, type: 2}
+  - {fileID: 11400000, guid: 45a68f581fdc4b89a7523f43386dbe31, type: 2}
+  - {fileID: 11400000, guid: e37ec62055564acca64a2098f869dde0, type: 2}
+  - {fileID: 11400000, guid: 11c23a9489c9491a86f044323ba8efee, type: 2}
+  - {fileID: 11400000, guid: 25ece70f919d4ad78599b88db4eba6a2, type: 2}
+  - {fileID: 11400000, guid: 466f059384294303bbc050f72324a898, type: 2}
+  - {fileID: 11400000, guid: 54a2a129e08a4f28a6f83b13f0615cc8, type: 2}
+  - {fileID: 11400000, guid: 7ca7c19fa5f24a69ac2a4332e5aea811, type: 2}
+  - {fileID: 11400000, guid: 35c677469db64db18435035a8379bd99, type: 2}
+  - {fileID: 11400000, guid: 948a340e10fd4580a82dc7fd2fce563f, type: 2}
+  - {fileID: 11400000, guid: f8ff666595f84e1eb66cfd719752e8c1, type: 2}
+  - {fileID: 11400000, guid: f6c9f54ae93e463f9d6bafe226fb7bda, type: 2}
+  - {fileID: 11400000, guid: 697a6589dea646509016ef6459d266b0, type: 2}
+  - {fileID: 11400000, guid: f79c9f2a9fb04729b55724d422f90d39, type: 2}
+  - {fileID: 11400000, guid: 103493a425f24d2d8fa13214210bcc72, type: 2}
+  - {fileID: 11400000, guid: a7e6e189750f4d6eb33f4d4b55120d0e, type: 2}
+  - {fileID: 11400000, guid: d8bd663c5317466fa14f370e0f30f7ad, type: 2}
+  - {fileID: 11400000, guid: e3e398d383e84eff8519853f0ca03561, type: 2}
+  - {fileID: 11400000, guid: 048d579b08534a40a78e0d5cd4f2b792, type: 2}

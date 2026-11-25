@@ -2,14 +2,15 @@ Shader "Skins/ChromaticShift"
 {
     Properties
     {
-        _Color ("Base Tint", Color) = (0.08, 0.08, 0.1, 1)
-        _SkinColor ("Skin Color", Color) = (0.08, 0.08, 0.1, 1)
+        _Color ("Base Tint", Color) = (1, 1, 1, 1)
+        _SkinColor ("Skin Color", Color) = (0.1, 0.1, 0.12, 1)
         _EnergyColor ("Shift A", Color) = (1.0, 0.2, 0.45, 1)
         _AccentColor ("Shift B", Color) = (0.2, 0.85, 1.0, 1)
+        _MidColor ("Shift Mid", Color) = (1.0, 0.8, 0.2, 1)
         _EmissionColor ("Emission Color", Color) = (0.9, 0.9, 1.0, 1)
         _NoiseTex ("Noise (RGB)", 2D) = "gray" {}
         _Speed ("Shift Speed", Range(0,8)) = 1.1
-        _Intensity ("Chrome Intensity", Range(0,8)) = 1.85
+        _Intensity ("Chrome Intensity", Range(0,8)) = 1.25
         _Scale ("Triplanar Scale", Float) = 1.2
         _BlendSharpness ("Blend Sharpness", Range(1,8)) = 4
         _Glossiness ("Smoothness", Range(0,1)) = 0.9
@@ -35,6 +36,7 @@ Shader "Skins/ChromaticShift"
         fixed4 _EnergyColor;
         fixed4 _AccentColor;
         fixed4 _EmissionColor;
+        fixed4 _MidColor;
         float _Speed;
         float _Intensity;
         float _Scale;
@@ -75,6 +77,14 @@ Shader "Skins/ChromaticShift"
             return x * weights.x + y * weights.y + z * weights.z;
         }
 
+        float3 Palette3(float3 a, float3 m, float3 b, float x)
+        {
+            x = frac(x) * 3.0;
+            float3 c = lerp(a, m, saturate(x));
+            c = lerp(c, b, saturate(x - 1.0));
+            return lerp(c, a, saturate(x - 2.0));
+        }
+
         void surf(Input IN, inout SurfaceOutputStandard o)
         {
             float3 weights = TriplanarWeights(IN.objNormal, _BlendSharpness);
@@ -86,15 +96,14 @@ Shader "Skins/ChromaticShift"
             float ndotv = saturate(dot(normalize(IN.worldNormal), viewDir));
             float fresnel = pow(1.0 - ndotv, 2.5);
 
-            float band = frac(pos.x * 0.75 + pos.y * 0.35 + noise.r + t * 0.2);
-            fixed3 shift = lerp(_EnergyColor.rgb, _AccentColor.rgb, band);
-            shift = lerp(shift, _EmissionColor.rgb, fresnel * 0.4 + noise.g * 0.2);
+            // Three-stop colour ramp laid out in object space so the bands are visible without animation.
+            float band = pos.x * 0.55 + pos.y * 0.45 + pos.z * 0.35 + noise.r * 0.8 + t * 0.2;
+            float3 shift = Palette3(_EnergyColor.rgb, _MidColor.rgb, _AccentColor.rgb, band);
+            shift = lerp(shift, _EmissionColor.rgb, fresnel * 0.35);
 
             fixed3 baseCol = _Color.rgb * _SkinColor.rgb;
-            fixed3 emit = shift * (0.25 + fresnel) * _Intensity;
-
-            o.Albedo = baseCol + shift * 0.2;
-            o.Emission = emit;
+            o.Albedo = lerp(baseCol, shift, 0.7);
+            o.Emission = shift * (0.08 + fresnel * 0.6) * _Intensity * 0.3;
             o.Metallic = min(_Metallic, 0.5);
             o.Smoothness = _Glossiness;
             o.Alpha = 1.0;

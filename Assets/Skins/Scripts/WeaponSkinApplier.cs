@@ -72,8 +72,10 @@ public class WeaponSkinApplier : MonoBehaviour
         if (!initialized)
             Initialize(applyDefault: false);
 
-        if (cachedRenderers.Count == 0)
-            CacheRenderers();
+        // Weapons such as the Karambit build their meshes in Awake, after this component may have cached
+        // its renderers, so pick up any renderers added since the last call.
+        CacheRenderers();
+        CaptureOriginalMaterials();
 
         if (skin == null || skin.material == null)
         {

@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 460000003}
   - component: {fileID: 460000004}
   - component: {fileID: 460000005}
+  - component: {fileID: 460000006}
   m_Layer: 0
   m_Name: Karambit
   m_TagString: Untagged
@@ -104,6 +105,22 @@ MonoBehaviour:
   strikeEuler: {x: 25, y: -55, z: 50}
   windupEnd: 0.2
   strikeEnd: 0.5
+--- !u!114 &460000006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 460000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e72ded460720468694079be126375251, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defaultSkin: {fileID: 0}
+  applyDefaultOnAwake: 1
+  rendererRoot: {fileID: 0}
+  includeInactiveRenderers: 1
 --- !u!1 &460000010
 GameObject:
   m_ObjectHideFlags: 0

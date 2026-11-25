@@ -207,6 +207,8 @@ public static class PlayerCharacterBuilder
         return go;
     }
 
+    private const string PistolDefaultSkinPath = "Assets/Skins/Definitions/Skin_CarbonFiber.asset";
+
     private static WeaponController CreatePrimitiveGun(Transform parent)
     {
         var gun = new GameObject("TestPistol");
@@ -229,6 +231,10 @@ public static class PlayerCharacterBuilder
         SetObjectRef(weapon, "config",
             AssetDatabase.LoadAssetAtPath<WeaponConfig>("Assets/Configs/TestPistolConfig.asset"));
         SetObjectRef(weapon, "muzzlePoint", muzzle.transform);
+
+        var skinApplier = gun.AddComponent<WeaponSkinApplier>();
+        SetObjectRef(skinApplier, "defaultSkin",
+            AssetDatabase.LoadAssetAtPath<WeaponSkinDefinition>(PistolDefaultSkinPath));
         return weapon;
     }
 

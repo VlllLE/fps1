@@ -17,9 +17,9 @@ MonoBehaviour:
   rarity: 4
   icon: {fileID: 0}
   material: {fileID: 2100000, guid: 99febc05ce494cc58764f8df702b1b9e, type: 2}
-  applyParameterOverrides: 1
-  skinColor: {r: 0.05, g: 0.06, b: 0.1, a: 1}
-  accentColor: {r: 0.55, g: 0.8, b: 1.0, a: 1}
+  applyParameterOverrides: 0
+  skinColor: {r: 0.16, g: 0.2, b: 0.3, a: 1}
+  accentColor: {r: 0.25, g: 0.55, b: 1.0, a: 1}
   speed: 2.0
-  intensity: 2.6
+  intensity: 1.4
   scale: 1.15
