@@ -7,9 +7,9 @@ from Unity built-in Cube / Cylinder meshes so they work out of the box.
 
 | Prefab | Class | Approx. length (local Z) | Notes |
 | --- | --- | --- | --- |
-| `M4A1` | Assault rifle | ~0.54 m muzzle | Carry handle + handguard silhouette |
-| `SCAR` | Assault rifle | ~0.48 m muzzle | Bulkier receiver, stock pad |
-| `UMP` | SMG | ~0.30 m muzzle | Compact; angled mag |
+| `M4A1` | Assault rifle | ~0.54 m muzzle | Imported Blender model (procedural fallback); see "Assault rifle and SMG models" |
+| `SCAR` | Assault rifle (SCAR-H) | ~0.60 m muzzle | Imported Blender model (procedural fallback) |
+| `UMP` | SMG (UMP45) | ~0.41 m muzzle | Imported Blender model (procedural fallback) |
 | `BoltActionSniper` | Bolt sniper | ~0.66 m muzzle | Scope + bipod + bolt handle |
 | `DMRSniper` | Semi DMR | ~0.58 m muzzle | Rail optic, shorter than bolt |
 | `Shotgun` | Pump shotgun | ~0.57 m muzzle | Ribbed pump forend, shell tube, side-saddle shell carrier |
@@ -73,6 +73,31 @@ handle lies across the fist and the blade points away from the player toward scr
 - `MeleeSlashAnimator` plays an alternating forehand/backhand slash on the `Model` child.
 - Melee weapons broadcast `-1` for magazine/reserve through `OnAmmoChanged`; the HUD ammo
   readout (`AmmoCounterView`) shows nothing for them. Reload and ADS are ignored.
+
+## Assault rifle and SMG models (M4A1, SCAR-H, UMP45)
+
+Detailed models (about 17k / 19k / 15k triangles) generated headless in Blender by
+`Tools/Blender/build_m4a1.py`, `build_scar.py` and `build_ump.py` (shared kit: `assault_kit.py`):
+
+```
+blender -b --factory-startup --python Tools/Blender/build_m4a1.py -- \
+    --out Assets/Weapons/Models/M4A1 [--renders <dir>] [--samples 48]
+blender -b --factory-startup --python Tools/Blender/preview_assault_held.py -- --gun m4a1 --renders <dir>
+```
+
+Each FBX (a `.glb` copy sits next to it) has three objects: `Body`, `Magazine` (pivot at the top of the
+magazine, which is what the reload animation drops and rotates) and `Bolt` (charging handle). Three
+material slots (`<Gun>Metal`, `<Gun>Polymer`, `<Gun>Accent`) are remapped in the `.fbx.meta` to
+`Mat_GunMetal`, `Mat_GunPolymer` and `Mat_AssaultAccent`. Skins are object-space triplanar, so the UVs
+only matter for the default materials; `WeaponSkinApplier` replaces every slot.
+
+`AssaultWeaponModel` (on the prefab root, execution order -200) instantiates the FBX under the `Model`
+child, which is the first child so `WeaponController` finds the imported `Magazine` and `Bolt` first.
+The old primitive parts live under `Procedural`; on success they are hidden and their `Magazine` / `Bolt`
+are renamed `*_Procedural`. If the reference is missing, has no mesh, or throws, `Procedural` stays
+visible and the muzzle / fire / eject points return to their old positions. The prefabs were rewired by
+`Tools/Weapons/wire_assault_models.py` (re-runnable; skips prefabs that already have the component).
+`Assets/Tests/Editor/AssaultWeaponModelTests.cs` covers import, wiring, fallback and skin coverage.
 
 ## Sniper scope and bipod mounting
 
@@ -235,3 +260,9 @@ approximation), skins on the new UVs, the new EditMode tests (not run), and tria
 import. Blender renders are not Unity renders. `PlayerCharacterBuilder`, `TestRangeBuilder` and
 `Tools/WeaponGen/build_shotgun_lmg.py` regenerate the primitive versions and drop the loader wiring;
 re-run `Tools/Blender/wire_weapon_models.py` afterwards.
+The M4A1 / SCAR / UMP Blender models were checked only in Blender (manifold meshes, FBX re-import,
+renders, a mock of the held pose against the arm IK) and the C# was compile-checked against UnityEngine
+2021.3 reference assemblies plus stubs. Unverified in the Unity 6 editor: FBX import and the
+`importedModelPrefab` reference (the FBX root GameObject fileID `919132149155446097` is copied from the
+Karambit prefab), material remap, skin rendering on the new meshes, the real held pose and reload
+animation against the hand IK, and the new EditMode tests.
