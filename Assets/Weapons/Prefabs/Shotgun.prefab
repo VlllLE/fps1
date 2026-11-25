@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 470000002}
   - component: {fileID: 470000003}
   - component: {fileID: 470000004}
+  - component: {fileID: 1580316154844935247}
+  - component: {fileID: 1263348767616920267}
   m_Layer: 0
   m_Name: Shotgun
   m_TagString: Untagged
@@ -1173,3 +1175,57 @@ Transform:
   m_Children: []
   m_Father: {fileID: 470000002}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1580316154844935247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 470000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 080aafebec364137af2d212e569fe61b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::WeaponModelLoader
+  modelPrefab: {fileID: 919132149155446097, guid: 836bf42b762e5778af78a5159eb5236d, type: 3}
+  visualRoot: {fileID: 0}
+  instanceName: DetailedModel
+  requiredParts:
+  - ShotgunBody
+  - Pump
+  metalMaterial: {fileID: 2100000, guid: 9c56cd1a248e4ea8bd9cd090ebfe1b88, type: 2}
+  polymerMaterial: {fileID: 2100000, guid: 57976278de9a418096150c9efa43832c, type: 2}
+  accentMaterial: {fileID: 2100000, guid: d1fdfe6b7a5f51369a3b697de841adb0, type: 2}
+  fallbackChildren:
+  - GunBody
+  - Barrel
+  - ShellTube
+  - Pump
+  - PumpGrooves
+  - ShellCarrier
+  - Grip
+  - Stock
+  - StockPad
+  - FrontSight
+  - MuzzleRing
+--- !u!114 &1263348767616920267
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 470000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c093d6d080704e259d34e3ca646d86ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::WeaponPartAnimator
+  partName: Pump
+  travel: {x: 0, y: 0, z: -0.05}
+  animateOnFire: 1
+  animateOnReloadComplete: 1
+  delay: 0.12
+  backTime: 0.12
+  returnTime: 0.14
+  holdOpenWhenEmpty: 0
+  holdOpenFraction: 0.75

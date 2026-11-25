@@ -87,6 +87,60 @@ later, aim it along `Scope` local +Z. `Assets/Tests/Editor/SniperMountingTests.c
 parts touch. These two prefabs were edited by `Tools/Weapons/mount_sniper_parts.py` (the older
 flat generator in `Assets/Skins/Tools~/write_batch2_assets.py` no longer matches them).
 
+## Detailed Blender models: Pump Shotgun, LMG, sidearm Pistol
+
+The primitive-built shotgun, LMG and pistol (`TestPistol` in `Player.prefab` / `PlayerCharacter.prefab`) are
+replaced at runtime by hard-surface models generated headless with Blender 4.2 (`bpy`/`bmesh`, no downloaded
+assets). Each is 15 to 40 thousand triangles, UV unwrapped (smart project) and uses three material slots
+(`<Gun>_Metal`, `<Gun>_Polymer`, `<Gun>_Accent`, remapped in the `.fbx.meta` to `Mat_GunMetal`, `Mat_GunPolymer`
+and the new `Mat_GunAccent`). `WeaponSkinApplier` still replaces every slot with the triplanar skin material
+(object space, so the UVs do not matter for skins).
+
+| Gun | Generator | FBX / GLB | Mesh objects (animatable transforms) | Tris |
+| --- | --- | --- | --- | --- |
+| Shotgun | `Tools/Blender/build_shotgun.py` | `Models/Shotgun/Shotgun.fbx` | `ShotgunBody`, `Pump` | ~21.9k |
+| LMG | `Tools/Blender/build_lmg.py` | `Models/LMG/LMG.fbx` | `LMGBody`, `Magazine` (ammo box + belt), `Bolt`, `Bipod` | ~20.5k |
+| Pistol | `Tools/Blender/build_pistol.py` | `Models/Pistol/Pistol.fbx` | `PistolBody`, `Slide`, `Magazine` | ~19.4k |
+
+```
+blender -b --factory-startup --python Tools/Blender/build_lmg.py -- \
+    --out Assets/Weapons/Models/LMG [--renders <dir>] [--samples 48] [--res 100]
+python3 Tools/Blender/wire_weapon_models.py     # .meta files, Mat_GunAccent, prefab wiring (idempotent)
+```
+
+`Tools/Blender/weapon_lib.py` holds the shared geometry (lofts, extrusions, exact booleans, stipple, UVs),
+FBX/GLB export, studio renders and the held-pose mock. Coordinates are authored in Unity weapon space, so
+the FBX has identity rotation and scale 1 and the muzzle / eject empties of the prefabs line up unchanged
+(muzzle `(0, 0.045, 0.57)` shotgun, `(0, 0.04, 0.74)` LMG, `(0, 0, 0.30)` pistol).
+
+- Shotgun: receiver with ejection port and action-bar slots, ventilated rib, bead sight, twin-bar
+  ribbed pump forend (own `Pump` object), magazine tube with cap, side saddle of six shells, stippled
+  stock with butt pad. `WeaponPartAnimator` cycles the pump after every shot and at the end of a reload
+  (`WeaponController` still plays its per-shell reload and bolt-rack click).
+- LMG: receiver with ejection port, feed slot and cooling slots, feed cover with Picatinny rail and flip-up
+  sight, finned heavy barrel with gas system and slotted flash hider, vented handguard, carry handle, folded
+  bipod, skeletal stock, stippled raked grip, ammo box with a visible cartridge belt running to the feed
+  slot. Box and belt are one `Magazine` object, so the existing reload animation drops them together;
+  `Bolt` is the charging handle `WeaponController` racks at the end of the reload.
+- Pistol: slide with front/rear serrations, top cocking grooves, ejection port with a chambered round,
+  lightening slots and dovetailed three-dot sights; polymer frame with accessory rail, trigger guard, slide
+  stop, takedown lever, magazine catch, stippled grip with finger grooves and a flared magwell; ported
+  compensator on the fixed barrel. The `Magazine` object gives the pistol a reload drop it did not have.
+  `WeaponPartAnimator` kicks the `Slide` back on every shot and holds it open on an empty magazine.
+
+Runtime: `WeaponModelLoader` (execution order -300, so before `WeaponController` and `WeaponSkinApplier`)
+instantiates the FBX under a `DetailedModel` child, applies the materials by slot name, and then hides the
+primitive children listed in `fallbackChildren` (renamed `<name>_Fallback` so name lookups such as
+`Magazine` / `Bolt` hit the model). The loader is try/catch guarded: a missing or empty FBX, a missing
+required part or any exception leaves the primitives visible and logs a warning. The primitives stay in the
+prefabs on purpose. `Tools/WeaponGen/build_shotgun_lmg.py` regenerates `Shotgun.prefab` and `LMG.prefab`
+without the loader, so run `wire_weapon_models.py` again after using it. `PlayerCharacterBuilder` /
+`TestRangeBuilder` likewise rebuild `TestPistol` from primitives; re-run the wiring script after them.
+
+Tests: `Assets/Tests/Editor/WeaponModelTests.cs` (parts, triangle budget, UVs, material slots, muzzle
+end, loader wiring and fallback behaviour, animators). Renders and the held first-person mocks were rendered
+with Blender Cycles (`--renders`), not with Unity.
+
 ## Scale & pivot
 
 - Units are **meters**. Pivot is at the **receiver / grip** (local origin),
@@ -121,3 +175,14 @@ UnityEngine 2021.3 reference assemblies) and their layout previewed as a 2D side
 about them has been imported or run in the Unity 6 editor: import success, in-engine look and feel,
 reload animation on the `Magazine`/belt, shotgun spread and recoil tuning, skin shaders on the new
 meshes, and all EditMode/PlayMode tests are unverified.
+
+### Detailed Blender models (Shotgun, LMG, Pistol)
+
+Generated and rendered headlessly in Blender 4.2.3 only; the C# was compile-checked against hand-written
+UnityEngine/UnityEditor stubs. Unverified in-engine: FBX import and the `.fbx.meta` material remap, the
+`WeaponModelLoader` instantiate/fallback path, `WeaponPartAnimator` feel (pump, slide, bolt), the reload
+animation on the new `Magazine`/belt, the held pose in the real hand IK (the Blender held mock is an
+approximation), skins on the new UVs, the new EditMode tests (not run), and triangle counts after Unity
+import. Blender renders are not Unity renders. `PlayerCharacterBuilder`, `TestRangeBuilder` and
+`Tools/WeaponGen/build_shotgun_lmg.py` regenerate the primitive versions and drop the loader wiring;
+re-run `Tools/Blender/wire_weapon_models.py` afterwards.
