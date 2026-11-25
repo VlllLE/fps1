@@ -132,6 +132,13 @@ public class WeaponConfig : ScriptableObject
     [Header("Shotgun")]
     [Tooltip("Number of pellets per shot (shotguns)")]
     public int pelletCount = 1;
+    [Tooltip("Load one round at a time (tube magazine). Uses reloadAmmoTime as the lead-in before the first round, " +
+             "shellReloadTime per round and shellReloadFinishTime after the last one. Firing interrupts the reload when canCancelReload is set.")]
+    public bool perShellReload = false;
+    [Tooltip("Seconds to insert one round when perShellReload is enabled")]
+    public float shellReloadTime = 0.45f;
+    [Tooltip("Seconds of recovery after the last round when perShellReload is enabled")]
+    public float shellReloadFinishTime = 0.3f;
     
     [Header("Projectile (Optional)")]
     [Tooltip("Use projectile instead of hitscan")]

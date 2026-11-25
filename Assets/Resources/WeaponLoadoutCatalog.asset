@@ -38,6 +38,16 @@ MonoBehaviour:
     config: {fileID: 11400000, guid: 6c9de9d063025b242bc308e01a73d3a7, type: 2}
     allowPrimary: 1
     allowSecondary: 1
+  - displayName: Pump Shotgun
+    prefab: {fileID: 470000001, guid: 5c0a1f3e7b2d4a6c9e81d4f7a3b65c21, type: 3}
+    config: {fileID: 11400000, guid: a3d7e91c4b5f48e2b6c0198d7e2f4a53, type: 2}
+    allowPrimary: 1
+    allowSecondary: 1
+  - displayName: LMG
+    prefab: {fileID: 480000001, guid: 8e4b2d6f1a9c47d3b5e7f0c2a1d89b64, type: 3}
+    config: {fileID: 11400000, guid: c1f95a3d7e2b4c8890a6d4e3b7f1c258, type: 2}
+    allowPrimary: 1
+    allowSecondary: 1
   - displayName: Karambit
     prefab: {fileID: 460000001, guid: 6699551ebfa5498b8cab5606e70c0be9, type: 3}
     config: {fileID: 11400000, guid: 926e9754f3534e8abea82ceacf91450d, type: 2}

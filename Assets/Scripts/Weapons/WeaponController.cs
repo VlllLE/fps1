@@ -201,7 +201,13 @@ public class WeaponController : MonoBehaviour
     
     public void StartFiring()
     {
-        if (!canFire || isReloading || !isEquipped) return;
+        if (!canFire || !isEquipped) return;
+
+        if (isReloading)
+        {
+            if (!CanInterruptReloadToFire()) return;
+            CancelReload();
+        }
         
         isFiring = true;
         
@@ -222,6 +228,12 @@ public class WeaponController : MonoBehaviour
     public void StopFiring()
     {
         isFiring = false;
+    }
+
+    /// <summary>Tube-fed weapons may fire mid-reload as long as a round is already chambered.</summary>
+    private bool CanInterruptReloadToFire()
+    {
+        return config.perShellReload && config.canCancelReload && currentAmmo > 0;
     }
     
     public void UpdateFiring()
@@ -546,7 +558,7 @@ public class WeaponController : MonoBehaviour
         if (reloadCoroutine != null)
             StopCoroutine(reloadCoroutine);
             
-        reloadCoroutine = StartCoroutine(ReloadRoutine());
+        reloadCoroutine = StartCoroutine(config.perShellReload ? ReloadShellsRoutine() : ReloadRoutine());
     }
     
     public void CancelReload()
@@ -650,6 +662,74 @@ public class WeaponController : MonoBehaviour
         if (animator != null)
             animator.SetBool("IsReloading", false);
             
+        OnReloadComplete?.Invoke();
+    }
+
+    private IEnumerator ReloadShellsRoutine()
+    {
+        isReloading = true;
+        reloadProgress = 0f;
+        if (isAiming)
+            StopAiming();
+        OnReloadStarted?.Invoke();
+
+        if (animator != null)
+            animator.SetBool("IsReloading", true);
+
+        bool hasCustomReloadClip = config.reloadSound != null && audioSource != null;
+        if (hasCustomReloadClip)
+            audioSource.PlayOneShot(config.reloadSound);
+        else
+            EnsureProceduralReloadClips();
+
+        float leadIn = Mathf.Max(0f, config.reloadAmmoTime);
+        float perShell = Mathf.Max(0.05f, config.shellReloadTime);
+        float finish = Mathf.Max(0f, config.shellReloadFinishTime);
+        int shellsNeeded = Mathf.Min(config.magazineSize - currentAmmo, reserveAmmo);
+        float totalTime = Mathf.Max(0.01f, leadIn + shellsNeeded * perShell + finish);
+        float done = 0f;
+
+        for (float t = 0f; t < leadIn; t += Time.deltaTime)
+        {
+            reloadProgress = Mathf.Clamp01((done + t) / totalTime);
+            yield return null;
+        }
+        done += leadIn;
+
+        while (currentAmmo < config.magazineSize && reserveAmmo > 0)
+        {
+            for (float t = 0f; t < perShell; t += Time.deltaTime)
+            {
+                reloadProgress = Mathf.Clamp01((done + t) / totalTime);
+                yield return null;
+            }
+            done += perShell;
+
+            currentAmmo++;
+            reserveAmmo--;
+            NotifyAmmoChanged();
+
+            if (!hasCustomReloadClip && audioSource != null)
+                audioSource.PlayOneShot(proceduralMagInClip, 0.5f);
+        }
+
+        for (float t = 0f; t < finish; t += Time.deltaTime)
+        {
+            reloadProgress = Mathf.Clamp01((done + t) / totalTime);
+            yield return null;
+        }
+
+        if (!hasCustomReloadClip && audioSource != null)
+            audioSource.PlayOneShot(proceduralBoltRackClip, 0.55f);
+
+        isReloading = false;
+        reloadProgress = 0f;
+        reloadCoroutine = null;
+        ResetReloadVisuals();
+
+        if (animator != null)
+            animator.SetBool("IsReloading", false);
+
         OnReloadComplete?.Invoke();
     }
 

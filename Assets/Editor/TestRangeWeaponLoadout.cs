@@ -32,6 +32,8 @@ public static class TestRangeWeaponLoadout
         public float adsSpread;
         public float range;
         public float reloadTime;
+        /// <summary>Config asset is authored by hand (pellets, per-shell reload, recoil); only link the prefab and name.</summary>
+        public bool keepAuthoredStats;
     }
 
     private static readonly WeaponEntry[] Loadout =
@@ -95,6 +97,26 @@ public static class TestRangeWeaponLoadout
             damage = 55f, fireRate = 200f, fireMode = FireMode.Semi,
             magazineSize = 10, reserveAmmo = 50,
             baseSpread = 0.25f, adsSpread = 0.08f, range = 190f, reloadTime = 2.6f,
+        },
+        new WeaponEntry
+        {
+            slotName = "Shotgun",
+            prefabPath = "Assets/Weapons/Prefabs/Shotgun.prefab",
+            configPath = ConfigFolder + "/ShotgunConfig.asset",
+            skinPath = "Assets/Skins/Definitions/Skin_Damascus.asset",
+            weaponType = WeaponType.Shotgun,
+            displayName = "Pump Shotgun",
+            keepAuthoredStats = true,
+        },
+        new WeaponEntry
+        {
+            slotName = "LMG",
+            prefabPath = "Assets/Weapons/Prefabs/LMG.prefab",
+            configPath = ConfigFolder + "/LMGConfig.asset",
+            skinPath = "Assets/Skins/Definitions/Skin_NightViper.asset",
+            weaponType = WeaponType.LMG,
+            displayName = "LMG",
+            keepAuthoredStats = true,
         },
     };
 
@@ -248,6 +270,12 @@ public static class TestRangeWeaponLoadout
                 var prefabProp = so.FindProperty("weaponPrefab");
                 if (prefabProp != null)
                     prefabProp.objectReferenceValue = prefab;
+            }
+            if (entry.keepAuthoredStats)
+            {
+                so.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(config);
+                continue;
             }
             SetField(so, "damage", entry.damage);
             SetField(so, "fireRate", entry.fireRate);
