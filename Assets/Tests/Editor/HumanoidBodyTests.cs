@@ -479,7 +479,8 @@ public class HumanoidBodyTests
 
         Assert.That(body.BuiltScale, Is.EqualTo(1.5f).Within(1e-4f));
         Assert.That(bounds.min.y, Is.EqualTo(0f).Within(0.03f), "feet should touch the ground the legacy pivot implied");
-        Assert.That(bounds.max.y, Is.EqualTo(HumanoidProportions.TopOfHeadY * 1.5f).Within(0.05f));
+        float topY = body.UsesImportedModel ? SoldierModelSet.Load().bodyHeight : HumanoidProportions.TopOfHeadY;
+        Assert.That(bounds.max.y, Is.EqualTo(topY * 1.5f).Within(0.05f));
     }
 
     [Test]
@@ -706,9 +707,26 @@ public class HumanoidBodyTests
     private static Bounds CombinedRendererBounds(Transform root)
     {
         Renderer[] renderers = root.GetComponentsInChildren<Renderer>();
-        Bounds bounds = renderers[0].bounds;
+        Bounds bounds = TightBounds(renderers[0]);
         for (int i = 1; i < renderers.Length; i++)
-            bounds.Encapsulate(renderers[i].bounds);
+            bounds.Encapsulate(TightBounds(renderers[i]));
+        return bounds;
+    }
+
+    // SkinnedMeshRenderer.bounds is the padded culling volume, so measure the baked vertices instead.
+    private static Bounds TightBounds(Renderer renderer)
+    {
+        if (!(renderer is SkinnedMeshRenderer skinned) || skinned.sharedMesh == null)
+            return renderer.bounds;
+
+        var baked = new Mesh();
+        skinned.BakeMesh(baked, true);
+        Matrix4x4 toWorld = Matrix4x4.TRS(skinned.transform.position, skinned.transform.rotation, Vector3.one);
+        Vector3[] vertices = baked.vertices;
+        Bounds bounds = new Bounds(toWorld.MultiplyPoint3x4(vertices[0]), Vector3.zero);
+        for (int i = 1; i < vertices.Length; i++)
+            bounds.Encapsulate(toWorld.MultiplyPoint3x4(vertices[i]));
+        Object.DestroyImmediate(baked);
         return bounds;
     }
 

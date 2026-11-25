@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c0b0607fd5145d4acba5756889f951b, type: 3}
   m_Name: SoldierModelSet
   m_EditorClassIdentifier: Scripts::SoldierModelSet
-  bodyModel: {fileID: 100100000, guid: d918591548374785bcebd9fe43e11c78, type: 3}
-  armsModel: {fileID: 100100000, guid: c1433c7d455b4a46afcd7b9359a6a654, type: 3}
+  bodyModel: {fileID: 919132149155446097, guid: d918591548374785bcebd9fe43e11c78, type: 3}
+  armsModel: {fileID: 919132149155446097, guid: c1433c7d455b4a46afcd7b9359a6a654, type: 3}
   materials:
   - {fileID: 2100000, guid: b127f6c1031844f490cad912987225e7, type: 2}
   - {fileID: 2100000, guid: 4185a618920c48d1830c89b4a80755c1, type: 2}

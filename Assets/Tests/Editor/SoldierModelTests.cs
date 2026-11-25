@@ -276,7 +276,14 @@ public class SoldierModelTests
         body.Build();
 
         Assert.That(player.GetComponentsInChildren<SkinnedMeshRenderer>().Length, Is.EqualTo(body.UsesImportedModel ? 4 : 0));
-        Assert.That(player.GetComponentsInChildren<Collider>().Length, Is.Zero, "a CharacterController body adds no colliders");
+        int extraColliders = 0;
+        foreach (Collider collider in player.GetComponentsInChildren<Collider>())
+        {
+            if (!(collider is CharacterController))
+                extraColliders++;
+        }
+
+        Assert.That(extraColliders, Is.Zero, "a CharacterController body adds no colliders besides the controller itself");
     }
 
     [Test]
