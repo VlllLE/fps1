@@ -2943,7 +2943,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 080aafebec364137af2d212e569fe61b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Scripts::WeaponModelLoader
-  modelPrefab: {fileID: 100100000, guid: 69365f058d475e79b3cd9285d50ec958, type: 3}
+  modelPrefab: {fileID: 919132149155446097, guid: 69365f058d475e79b3cd9285d50ec958, type: 3}
   visualRoot: {fileID: 0}
   instanceName: DetailedModel
   requiredParts:

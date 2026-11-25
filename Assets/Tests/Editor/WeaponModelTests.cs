@@ -70,6 +70,7 @@ public class WeaponModelTests
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
         Assert.That(prefab, Is.Not.Null, prefabPath);
         var instance = (GameObject)Object.Instantiate(prefab);
+        instance.name = prefab.name;
         created.Add(instance);
         Transform root = FindDeep(instance.transform, rootName);
         Assert.That(root, Is.Not.Null, rootName + " in " + prefabPath);
