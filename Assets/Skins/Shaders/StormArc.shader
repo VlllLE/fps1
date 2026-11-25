@@ -85,10 +85,10 @@ Shader "Skins/StormArc"
             // Static look: dark mottled storm cloud body with thin bright arcs along the circuit traces.
             float cloud = noise.r * 0.6 + noise.g * 0.4;
             float trace = saturate(circuit.r * 1.2 + circuit.g * 0.25);
-            float branch = trace * (0.45 + noise.g * 0.9);
-            float arc = smoothstep(0.30, 0.85, branch);
+            float arcBranch = trace * (0.45 + noise.g * 0.9);
+            float arc = smoothstep(0.30, 0.85, arcBranch);
             float flicker = 0.7 + 0.3 * sin(t * 13.0 + noise.r * 30.0);
-            float core = smoothstep(0.78, 1.0, branch) * flicker;
+            float core = smoothstep(0.78, 1.0, arcBranch) * flicker;
 
             fixed3 baseCol = _Color.rgb * _SkinColor.rgb * (0.6 + 0.9 * cloud);
             float3 emit = _EnergyColor.rgb * (arc * flicker) * _Intensity
