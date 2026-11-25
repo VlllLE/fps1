@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 480000002}
   - component: {fileID: 480000003}
   - component: {fileID: 480000004}
+  - component: {fileID: 1808426953860540543}
   m_Layer: 0
   m_Name: LMG
   m_TagString: Untagged
@@ -2570,3 +2571,43 @@ Transform:
   m_Children: []
   m_Father: {fileID: 480000002}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1808426953860540543
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 480000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 080aafebec364137af2d212e569fe61b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::WeaponModelLoader
+  modelPrefab: {fileID: 100100000, guid: 1350bd94b3485db2ac172113d16be63e, type: 3}
+  visualRoot: {fileID: 0}
+  instanceName: DetailedModel
+  requiredParts:
+  - LMGBody
+  - Magazine
+  - Bolt
+  metalMaterial: {fileID: 2100000, guid: 9c56cd1a248e4ea8bd9cd090ebfe1b88, type: 2}
+  polymerMaterial: {fileID: 2100000, guid: 57976278de9a418096150c9efa43832c, type: 2}
+  accentMaterial: {fileID: 2100000, guid: d1fdfe6b7a5f51369a3b697de841adb0, type: 2}
+  fallbackChildren:
+  - GunBody
+  - TopCover
+  - FeedTray
+  - ChargingHandle
+  - Handguard
+  - Barrel
+  - GasTube
+  - FlashHider
+  - CarryHandle
+  - BipodLegLeft
+  - BipodLegRight
+  - BipodMount
+  - Magazine
+  - Grip
+  - Stock
+  - StockPad
+  - RearSight

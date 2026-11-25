@@ -2367,6 +2367,8 @@ GameObject:
   - component: {fileID: 100019}
   - component: {fileID: 100020}
   - component: {fileID: 9900001}
+  - component: {fileID: 1347612208985130798}
+  - component: {fileID: 1861664369243455399}
   m_Layer: 0
   m_Name: TestPistol
   m_TagString: Untagged
@@ -2957,3 +2959,50 @@ MonoBehaviour:
   weaponSwitcher: {fileID: 0}
   firstPersonCamera: {fileID: 100011}
   pauseTimeScale: 0
+--- !u!114 &1347612208985130798
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100018}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 080aafebec364137af2d212e569fe61b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::WeaponModelLoader
+  modelPrefab: {fileID: 100100000, guid: 69365f058d475e79b3cd9285d50ec958, type: 3}
+  visualRoot: {fileID: 0}
+  instanceName: DetailedModel
+  requiredParts:
+  - PistolBody
+  - Slide
+  - Magazine
+  metalMaterial: {fileID: 2100000, guid: 9c56cd1a248e4ea8bd9cd090ebfe1b88, type: 2}
+  polymerMaterial: {fileID: 2100000, guid: 57976278de9a418096150c9efa43832c, type: 2}
+  accentMaterial: {fileID: 2100000, guid: d1fdfe6b7a5f51369a3b697de841adb0, type: 2}
+  fallbackChildren:
+  - Barrel
+  - GunBody
+  - Grip
+--- !u!114 &1861664369243455399
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100018}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c093d6d080704e259d34e3ca646d86ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::WeaponPartAnimator
+  partName: Slide
+  travel: {x: 0, y: 0, z: -0.024}
+  animateOnFire: 1
+  animateOnReloadComplete: 0
+  delay: 0.0
+  backTime: 0.03
+  returnTime: 0.08
+  holdOpenWhenEmpty: 1
+  holdOpenFraction: 0.75
