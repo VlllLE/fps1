@@ -74,6 +74,19 @@ handle lies across the fist and the blade points away from the player toward scr
 - Melee weapons broadcast `-1` for magazine/reserve through `OnAmmoChanged`; the HUD ammo
   readout (`AmmoCounterView`) shows nothing for them. Reload and ADS are ignored.
 
+## Sniper scope and bipod mounting
+
+`BoltActionSniper` and `DMRSniper` group the optic under a `Scope` pivot (child of the root,
+x = 0, local +Z = bore direction). `ScopeBody`, `ScopeLens*` and the two `ScopeRing*` mounting
+rings are children of that pivot, and the rings rest on the `Rail` (bolt sniper gained its own
+rail; the DMR rail was lowered onto the receiver). The bolt sniper also has a `Forend` under the
+barrel and a `Bipod` pivot (mount block + two splayed legs) hanging from it. Muzzle / fire / eject
+points are unchanged. `WeaponController.adsPosition` / `hipPosition` are unset on every gun prefab
+and ADS only lerps FOV, so nothing reads the scope transforms; if a sight-aligned ADS pose is added
+later, aim it along `Scope` local +Z. `Assets/Tests/Editor/SniperMountingTests.cs` asserts the
+parts touch. These two prefabs were edited by `Tools/Weapons/mount_sniper_parts.py` (the older
+flat generator in `Assets/Skins/Tools~/write_batch2_assets.py` no longer matches them).
+
 ## Scale & pivot
 
 - Units are **meters**. Pivot is at the **receiver / grip** (local origin),
