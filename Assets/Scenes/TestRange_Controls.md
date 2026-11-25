@@ -43,10 +43,10 @@ If jumps or slides never register but WASD works, run **Tools → Sync Test Rang
 
 | Key | Class | Primary | Secondary |
 |-----|--------|---------|-----------|
-| F1 | Assault | M4A1 | UMP |
-| F2 | SMG | UMP | SCAR |
-| F3 | Sniper | Bolt-action | UMP |
-| F4 | Hybrid | DMR | M4A1 |
+| F1 | Assault | M4A1 | Karambit |
+| F2 | SMG | UMP | Karambit |
+| F3 | Sniper | Bolt-action | Karambit |
+| F4 | Hybrid | DMR | Karambit |
 
 Re-sync scene player: **Tools → Sync Test Range Player (Character + Classes)**.
 
