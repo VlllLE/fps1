@@ -308,6 +308,7 @@ Plain Python, no Unity or Blender needed, and safe to re-run:
 - `python3 Tools/Blender/wire_weapon_models.py` wires the shotgun, LMG and pistol models into their prefabs and writes the `.fbx.meta` files and `Mat_GunAccent`.
   **Re-run it after `Tools/WeaponGen/build_shotgun_lmg.py`**, because that primitive builder regenerates `Shotgun.prefab` and `LMG.prefab` from scratch and drops the wiring.
 - `Tools/Weapons/wire_assault_models.py` (M4A1, SCAR, UMP) and `Tools/Weapons/wire_imported_gun_models.py` (bolt sniper, DMR) do the same for those prefabs.
+- `python3 Tools/Blender/write_gun_meta.py <model folder> <Gun>` writes the `.meta` files (importer settings, material remaps, pinned GUIDs) for a generated sniper model folder.
 - `Tools/Weapons/mount_sniper_parts.py` rebuilds the scope and bipod hierarchy of the primitive sniper prefabs.
 
 Per-model details (triangle counts, object names, material slots, held poses) are in
