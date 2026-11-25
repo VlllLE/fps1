@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c0b0607fd5145d4acba5756889f951b, type: 3}
+  m_Name: SoldierModelSet
+  m_EditorClassIdentifier: Scripts::SoldierModelSet
+  bodyModel: {fileID: 919132149155446097, guid: d918591548374785bcebd9fe43e11c78, type: 3}
+  armsModel: {fileID: 919132149155446097, guid: c1433c7d455b4a46afcd7b9359a6a654, type: 3}
+  materials:
+  - {fileID: 2100000, guid: b127f6c1031844f490cad912987225e7, type: 2}
+  - {fileID: 2100000, guid: 4185a618920c48d1830c89b4a80755c1, type: 2}
+  - {fileID: 2100000, guid: 3027ffaeb866475d962b9b71bd3371cb, type: 2}
+  - {fileID: 2100000, guid: 80457c640e554414b7dbf211629b94ef, type: 2}
+  - {fileID: 2100000, guid: 6a474fd95597489abe529f3e6bef89d3, type: 2}
+  - {fileID: 2100000, guid: a1665c6c2c5248b99d82dabc08a8cdd6, type: 2}
+  - {fileID: 2100000, guid: e9dcb6f63f2a45d6a3ee1d1d9f56306e, type: 2}
+  ambientOcclusion: {fileID: 2800000, guid: ce66c1f324bf493daa7b408bb726dcdc, type: 3}
+  armsAmbientOcclusion: {fileID: 2800000, guid: 163251a136ee4f8a9f558290e29df427, type: 3}
+  bodyHeight: 1.915
+  armsHeight: 0.737

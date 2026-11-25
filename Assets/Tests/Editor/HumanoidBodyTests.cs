@@ -323,7 +323,7 @@ public class HumanoidBodyTests
     public void Build_CreatesFullBodySizedToTheControllerWithoutColliders()
     {
         GameObject player = CreatePlayerObject(2f);
-        HumanoidBody body = HumanoidBody.AddTo(player, HumanoidBodySettings.Player());
+        HumanoidBody body = HumanoidBody.AddTo(player, ProceduralSettings());
         body.Build();
 
         Assert.That(body.IsBuilt, Is.True);
@@ -359,7 +359,7 @@ public class HumanoidBodyTests
     public void Build_ScalesWithControllerHeight()
     {
         GameObject player = CreatePlayerObject(1.6f);
-        HumanoidBody body = HumanoidBody.AddTo(player, HumanoidBodySettings.Player());
+        HumanoidBody body = HumanoidBody.AddTo(player, ProceduralSettings());
         body.Build();
 
         Assert.That(body.BuiltScale, Is.EqualTo(0.8f).Within(1e-4f));
@@ -373,7 +373,7 @@ public class HumanoidBodyTests
     public void Build_IsRepeatableWithoutDuplicatingTheBody()
     {
         GameObject player = CreatePlayerObject(2f);
-        HumanoidBody body = HumanoidBody.AddTo(player, HumanoidBodySettings.Player());
+        HumanoidBody body = HumanoidBody.AddTo(player, ProceduralSettings());
         body.Build();
         body.Build();
 
@@ -479,7 +479,8 @@ public class HumanoidBodyTests
 
         Assert.That(body.BuiltScale, Is.EqualTo(1.5f).Within(1e-4f));
         Assert.That(bounds.min.y, Is.EqualTo(0f).Within(0.03f), "feet should touch the ground the legacy pivot implied");
-        Assert.That(bounds.max.y, Is.EqualTo(HumanoidProportions.TopOfHeadY * 1.5f).Within(0.05f));
+        float topY = body.UsesImportedModel ? SoldierModelSet.Load().bodyHeight : HumanoidProportions.TopOfHeadY;
+        Assert.That(bounds.max.y, Is.EqualTo(topY * 1.5f).Within(0.05f));
     }
 
     [Test]
@@ -518,7 +519,7 @@ public class HumanoidBodyTests
         Assert.That(head.GetComponent<SphereCollider>(), Is.Not.Null);
         Assert.That(head.GetComponent<HitZone>().ZoneType, Is.EqualTo(HitZoneType.Head));
         Assert.That(root.transform.Find("Body").GetComponent<MeshFilter>(), Is.Null, "legacy cylinder body was replaced");
-        Assert.That(body.BodyRoot.GetComponentsInChildren<MeshRenderer>().Length, Is.EqualTo(HumanoidParts.BoneCount));
+        Assert.That(body.BodyRoot.GetComponentsInChildren<Renderer>().Length, Is.EqualTo(body.UsesImportedModel ? 4 : HumanoidParts.BoneCount));
 
         Color.RGBToHSV(Color.green, out float legacyHue, out _, out _);
         Color.RGBToHSV(body.Materials[(int)HumanoidSlot.Suit].color, out float suitHue, out _, out _);
@@ -598,12 +599,19 @@ public class HumanoidBodyTests
     {
         ProceduralFirstPersonArms arms = CreateFirstPersonArms(out _);
         Assert.That(arms.ArmsRoot.GetComponentsInChildren<Collider>().Length, Is.Zero);
-        foreach (MeshRenderer renderer in arms.ArmsRoot.GetComponentsInChildren<MeshRenderer>())
+        foreach (Renderer renderer in arms.ArmsRoot.GetComponentsInChildren<Renderer>())
             Assert.That(renderer.shadowCastingMode, Is.EqualTo(UnityEngine.Rendering.ShadowCastingMode.Off));
-        Assert.That(arms.ArmsRoot.GetComponentsInChildren<MeshRenderer>().Length, Is.EqualTo(6));
+        Assert.That(arms.ArmsRoot.GetComponentsInChildren<Renderer>().Length, Is.EqualTo(arms.UsesImportedModel ? 1 : 6));
     }
 
     // --- Helpers ----------------------------------------------------------------------------
+
+    private static HumanoidBodySettings ProceduralSettings()
+    {
+        HumanoidBodySettings settings = HumanoidBodySettings.Player();
+        settings.forceProcedural = true;
+        return settings;
+    }
 
     private ProceduralFirstPersonArms CreateFirstPersonArms(out Transform holder)
     {
@@ -699,9 +707,26 @@ public class HumanoidBodyTests
     private static Bounds CombinedRendererBounds(Transform root)
     {
         Renderer[] renderers = root.GetComponentsInChildren<Renderer>();
-        Bounds bounds = renderers[0].bounds;
+        Bounds bounds = TightBounds(renderers[0]);
         for (int i = 1; i < renderers.Length; i++)
-            bounds.Encapsulate(renderers[i].bounds);
+            bounds.Encapsulate(TightBounds(renderers[i]));
+        return bounds;
+    }
+
+    // SkinnedMeshRenderer.bounds is the padded culling volume, so measure the baked vertices instead.
+    private static Bounds TightBounds(Renderer renderer)
+    {
+        if (!(renderer is SkinnedMeshRenderer skinned) || skinned.sharedMesh == null)
+            return renderer.bounds;
+
+        var baked = new Mesh();
+        skinned.BakeMesh(baked, true);
+        Matrix4x4 toWorld = Matrix4x4.TRS(skinned.transform.position, skinned.transform.rotation, Vector3.one);
+        Vector3[] vertices = baked.vertices;
+        Bounds bounds = new Bounds(toWorld.MultiplyPoint3x4(vertices[0]), Vector3.zero);
+        for (int i = 1; i < vertices.Length; i++)
+            bounds.Encapsulate(toWorld.MultiplyPoint3x4(vertices[i]));
+        Object.DestroyImmediate(baked);
         return bounds;
     }
 

@@ -12,6 +12,8 @@ public struct HumanoidBodySettings
     public bool useFeetOffset;
     public bool createHitboxes;
     public HumanoidArmPose armPose;
+    /// <summary>Skip the imported Blender soldier and build the primitive procedural body instead.</summary>
+    public bool forceProcedural;
 
     public static HumanoidBodySettings Player()
     {
@@ -41,10 +43,12 @@ public struct HumanoidBodySettings
 }
 
 /// <summary>
-/// Builds and animates the stylised procedural humanoid used for the first-person player's shadow /
-/// third-person body and for training targets. The body is generated at runtime (rigid parts parented
-/// to a bone hierarchy, no skinning) so prefabs and scenes only store this small component. It is
-/// sized from the CharacterController and never touches movement, input or camera code.
+/// Builds and animates the humanoid used for the first-person player's shadow / third-person body and
+/// for training targets. The 19-bone hierarchy is generated at runtime so prefabs and scenes only store
+/// this small component. The visible mesh is the Blender-built soldier (skinned to those bones, see
+/// <see cref="SoldierModelBinder"/>); if the imported model is missing or fails validation the body falls
+/// back to the primitive procedural parts (rigid meshes on the bones). It is sized from the
+/// CharacterController and never touches movement, input or camera code.
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(-100)]
@@ -53,6 +57,9 @@ public sealed class HumanoidBody : MonoBehaviour
     public const string BodyRootName = "BodyRoot";
 
     private static HumanoidBodySettings? pendingSettings;
+
+    /// <summary>Test hook: use this model set instead of the one in Resources (an empty set exercises the fallback).</summary>
+    public static SoldierModelSet ModelSetOverride;
 
     [Header("Look")]
     [SerializeField] private HumanoidPalette palette = new HumanoidPalette
@@ -76,6 +83,8 @@ public sealed class HumanoidBody : MonoBehaviour
     [Tooltip("Create static Head/Body/limb hit volumes (for targets and remote pawns, not for the CharacterController player).")]
     [SerializeField] private bool createHitboxes;
     [SerializeField] private bool animate = true;
+    [Tooltip("Always use the primitive procedural body, even when the imported soldier model is available.")]
+    [SerializeField] private bool forceProcedural;
     [SerializeField] private HumanoidArmPose armPose = HumanoidArmPose.WeaponReady;
     [Tooltip("Optional look direction source (usually the player camera). Found automatically if empty.")]
     [SerializeField] private Transform lookSource;
@@ -85,6 +94,8 @@ public sealed class HumanoidBody : MonoBehaviour
     private readonly List<Object> ownedObjects = new List<Object>();
     private Transform bodyRoot;
     private Material[] materials;
+    private SoldierBuildResult soldierBuild;
+    private string importFallbackReason;
     private HumanoidAnimator animator;
     private CharacterController controller;
     private MovementController movement;
@@ -119,6 +130,12 @@ public sealed class HumanoidBody : MonoBehaviour
     public bool IsBuilt => bodyRoot != null;
     public IReadOnlyList<GameObject> Hitboxes => hitboxes;
     public Material[] Materials => materials;
+    /// <summary>True when the imported Blender soldier (skinned meshes) is displayed instead of the procedural parts.</summary>
+    public bool UsesImportedModel => soldierBuild != null;
+    /// <summary>Why the imported model was not used (null when it is in use or was not attempted).</summary>
+    public string ImportFallbackReason => importFallbackReason;
+    public IReadOnlyList<SkinnedMeshRenderer> SoldierRenderers
+        => soldierBuild != null ? (IReadOnlyList<SkinnedMeshRenderer>)soldierBuild.renderers : System.Array.Empty<SkinnedMeshRenderer>();
     public HumanoidArmPose ArmPose { get => armPose; set => armPose = value; }
     public bool AnimationEnabled { get => animate; set => animate = value; }
 
@@ -191,6 +208,7 @@ public sealed class HumanoidBody : MonoBehaviour
         feetOffsetOverride = settings.feetOffset;
         createHitboxes = settings.createHitboxes;
         armPose = settings.armPose;
+        forceProcedural = settings.forceProcedural;
     }
 
     /// <summary>(Re)builds the body hierarchy, meshes, materials and optional hit volumes.</summary>
@@ -214,16 +232,15 @@ public sealed class HumanoidBody : MonoBehaviour
         bodyRoot.localRotation = Quaternion.identity;
         bodyRoot.localScale = Vector3.one;
 
-        materials = HumanoidMaterials.Create(palette);
-        for (int i = 0; i < materials.Length; i++)
-            ownedObjects.Add(materials[i]);
-
         animator = new HumanoidAnimator();
 
         foreach (HumanoidBone bone in HumanoidParts.AllBones)
             CreateBone(bone);
 
         ApplyPose();
+
+        if (!TryAttachImportedModel())
+            AttachProceduralParts();
 
         if (createHitboxes)
             BuildHitboxes(feet);
@@ -258,6 +275,12 @@ public sealed class HumanoidBody : MonoBehaviour
         for (int i = 0; i < bones.Length; i++)
             bones[i] = null;
 
+        if (soldierBuild != null)
+        {
+            soldierBuild.Destroy();
+            soldierBuild = null;
+        }
+
         DestroyOwnedObjects();
         animator = null;
     }
@@ -277,6 +300,12 @@ public sealed class HumanoidBody : MonoBehaviour
         palette = newPalette;
         if (materials == null)
             return;
+        if (soldierBuild != null)
+        {
+            SoldierMaterials.ApplyPalette(soldierBuild.soldierMaterials, newPalette);
+            return;
+        }
+
         for (int i = 0; i < materials.Length; i++)
         {
             if (materials[i] != null)
@@ -312,24 +341,78 @@ public sealed class HumanoidBody : MonoBehaviour
         go.transform.localPosition = animator.GetLocalPosition(bone) * builtScale;
         go.transform.localRotation = animator.GetLocalRotation(bone);
         bones[(int)bone] = go.transform;
+    }
 
-        HumanoidMeshBuilder geometry = HumanoidParts.Build(bone, builtScale);
-        if (geometry.VertexCount == 0)
-            return;
+    private bool TryAttachImportedModel()
+    {
+        importFallbackReason = null;
+        if (forceProcedural)
+        {
+            importFallbackReason = "procedural body requested";
+            return false;
+        }
 
-        Mesh mesh = geometry.ToMesh("Humanoid_" + bone, out HumanoidSlot[] usedSlots);
-        ownedObjects.Add(mesh);
+        try
+        {
+            SoldierModelSet set = ModelSetOverride != null ? ModelSetOverride : SoldierModelSet.Load();
+            if (!SoldierModelBinder.TryBuildBody(set, bones, bodyRoot, builtScale, palette, gameObject.layer,
+                    out SoldierBuildResult build, out string error))
+            {
+                importFallbackReason = error ?? "unknown error";
+                Debug.LogWarning("[HumanoidBody] Imported soldier model unavailable, using the procedural body: " + importFallbackReason, this);
+                return false;
+            }
 
-        var filter = go.AddComponent<MeshFilter>();
-        filter.sharedMesh = mesh;
+            soldierBuild = build;
+            materials = new Material[HumanoidMeshBuilder.SlotCount];
+            for (int i = 0; i < materials.Length; i++)
+                materials[i] = build.soldierMaterials[(int)SoldierMaterials.ForHumanoidSlot((HumanoidSlot)i)];
+            return true;
+        }
+        catch (System.Exception exception)
+        {
+            importFallbackReason = exception.GetType().Name + ": " + exception.Message;
+            Debug.LogWarning("[HumanoidBody] Imported soldier model failed, using the procedural body: " + importFallbackReason, this);
+            if (soldierBuild != null)
+            {
+                soldierBuild.Destroy();
+                soldierBuild = null;
+            }
 
-        var renderer = go.AddComponent<MeshRenderer>();
-        var slotMaterials = new Material[usedSlots.Length];
-        for (int i = 0; i < usedSlots.Length; i++)
-            slotMaterials[i] = materials[(int)usedSlots[i]];
-        renderer.sharedMaterials = slotMaterials;
-        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
-        renderer.receiveShadows = true;
+            return false;
+        }
+    }
+
+    private void AttachProceduralParts()
+    {
+        materials = HumanoidMaterials.Create(palette);
+        for (int i = 0; i < materials.Length; i++)
+            ownedObjects.Add(materials[i]);
+
+        foreach (HumanoidBone bone in HumanoidParts.AllBones)
+        {
+            Transform t = bones[(int)bone];
+            if (t == null)
+                continue;
+
+            HumanoidMeshBuilder geometry = HumanoidParts.Build(bone, builtScale);
+            if (geometry.VertexCount == 0)
+                continue;
+
+            Mesh mesh = geometry.ToMesh("Humanoid_" + bone, out HumanoidSlot[] usedSlots);
+            ownedObjects.Add(mesh);
+
+            var filter = t.gameObject.AddComponent<MeshFilter>();
+            filter.sharedMesh = mesh;
+
+            var renderer = t.gameObject.AddComponent<MeshRenderer>();
+            var slotMaterials = new Material[usedSlots.Length];
+            for (int i = 0; i < usedSlots.Length; i++)
+                slotMaterials[i] = materials[(int)usedSlots[i]];
+            renderer.sharedMaterials = slotMaterials;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            renderer.receiveShadows = true;
+        }
     }
 
     private void ApplyPose()
