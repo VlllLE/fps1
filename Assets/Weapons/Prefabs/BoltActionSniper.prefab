@@ -1860,7 +1860,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0c2f15b41d54878987f0b4a5132ba77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Scripts::ImportedGunModel
-  importedModelPrefab: {fileID: 4108250301144107001, guid: c27a5f4768394efc97b97cd6339d7a9f, type: 3}
+  importedModelPrefab: {fileID: 919132149155446097, guid: c27a5f4768394efc97b97cd6339d7a9f, type: 3}
   editorAssetPath: Assets/Weapons/Models/BoltActionSniper/BoltActionSniper.fbx
   visualRoot: {fileID: 440009004}
   metalMaterial: {fileID: 2100000, guid: 9c56cd1a248e4ea8bd9cd090ebfe1b88, type: 2}
