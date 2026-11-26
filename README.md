@@ -130,14 +130,14 @@ The Blender-built soldier in engine: a target bot, the player body with a rifle 
 
 ### Weapons in engine
 
-Blender-built models in Play Mode on the Shipment map, wearing weapon skins, against its dark neon purple and blue backdrop: the M4A1, shotgun and DMR in first person, the rest held in the third-person body view.
+Blender-built models in Play Mode on the Shipment map, wearing weapon skins, against its dark neon purple and blue backdrop: the M4A1, shotgun and DMR in first person, the rest in the third-person body view, where the skin is applied to the gun the soldier is holding.
 
 | | |
 | --- | --- |
-| ![M4A1 with the Woodland Camo skin, first person](docs/screenshots/model-m4a1.jpg) | ![SCAR-H with the Desert Tiger skin, held by the soldier](docs/screenshots/model-scar.jpg) |
-| ![UMP45 with the Kryptek Fracture skin, held by the soldier](docs/screenshots/model-ump.jpg) | ![Pump shotgun with the Copper Patina skin, first person](docs/screenshots/model-shotgun.jpg) |
-| ![LMG with the Arctic Digital skin, held by the soldier](docs/screenshots/model-lmg.jpg) | ![Bolt-action sniper with the Damascus skin, glass scope and bipod](docs/screenshots/model-sniper.jpg) |
-| ![DMR with the Night Viper skin, first person](docs/screenshots/model-dmr.jpg) | ![Pistol with the Carbon Fiber skin, held by the soldier](docs/screenshots/model-pistol.jpg) |
+| ![M4A1 with the Woodland Camo skin, first person](docs/screenshots/model-m4a1.jpg) | ![SCAR-H with the Desert Tiger skin on the held gun](docs/screenshots/model-scar.jpg) |
+| ![UMP45 with the Kryptek Fracture skin on the held gun](docs/screenshots/model-ump.jpg) | ![Pump shotgun with the Copper Patina skin, first person](docs/screenshots/model-shotgun.jpg) |
+| ![LMG with the Arctic Digital skin on the held gun](docs/screenshots/model-lmg.jpg) | ![Bolt-action sniper with the Damascus skin on the held gun, glass scope and bipod](docs/screenshots/model-sniper.jpg) |
+| ![DMR with the Night Viper skin, first person](docs/screenshots/model-dmr.jpg) | ![Pistol with the Carbon Fiber skin on the held gun](docs/screenshots/model-pistol.jpg) |
 
 The Damascus-skinned karambit in first person:
 
