@@ -81,7 +81,7 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     public float Health01 => settings != null && settings.maxHealth > 0f ? Mathf.Clamp01(health / settings.maxHealth) : 0f;
     public bool IsDead => brain != null && brain.State == BotState.Dead;
     public bool Frozen { get => frozen; set => frozen = value; }
-    public int SourceId => gameObject.GetInstanceID();
+    public int SourceId => gameObject.GetHashCode();
     public int Deaths { get; private set; }
     public int ShotsFired { get; private set; }
     public float DamageDealt { get; private set; }
