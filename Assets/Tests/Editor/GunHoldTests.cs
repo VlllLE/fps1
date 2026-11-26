@@ -46,6 +46,29 @@ public class GunHoldTests
         Assert.AreEqual(expected, GunHoldCatalog.Get(type, null).category);
     }
 
+    [TestCase("DMRSniperConfig", "DMR", WeaponType.Sniper, "DMRSniper")]
+    [TestCase("BoltActionSniperConfig", "Bolt Action Sniper", WeaponType.Sniper, "BoltActionSniper")]
+    [TestCase("SCARConfig", "SCAR", WeaponType.AssaultRifle, "SCAR")]
+    [TestCase("M4A1Config", "M4A1", WeaponType.AssaultRifle, "M4A1")]
+    [TestCase("UMPConfig", "UMP", WeaponType.SMG, "UMP")]
+    public void Catalog_ResolvesSlotNamedInstancesFromTheConfig(string assetName, string weaponName, WeaponType type, string expected)
+    {
+        var config = ScriptableObject.CreateInstance<WeaponConfig>();
+        config.name = assetName;
+        config.weaponName = weaponName;
+        config.weaponType = type;
+        var instance = new GameObject("Assault_Primary");
+        try
+        {
+            Assert.AreEqual(expected, GunHoldCatalog.Get(config, instance).name);
+        }
+        finally
+        {
+            Object.DestroyImmediate(instance);
+            Object.DestroyImmediate(config);
+        }
+    }
+
     [Test]
     public void Catalog_ReturnsIndependentInstances()
     {

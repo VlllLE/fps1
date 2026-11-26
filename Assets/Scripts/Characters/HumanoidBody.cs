@@ -241,9 +241,7 @@ public sealed class HumanoidBody : MonoBehaviour
     {
         heldConfig = config;
         heldModelSource = modelSource;
-        holdProfile = config != null ? GunHoldCatalog.Get(config) : null;
-        if (config != null && modelSource != null)
-            holdProfile = GunHoldCatalog.Get(config.weaponType, modelSource.name);
+        holdProfile = config != null ? GunHoldCatalog.Get(config, modelSource) : null;
         RebuildGun();
     }
 

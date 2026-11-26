@@ -150,25 +150,11 @@ public static class GunHoldCatalog
     /// <summary>Picks a profile from the weapon type and a weapon/prefab name. Always returns a new, editable instance.</summary>
     public static GunHoldProfile Get(WeaponType type, string weaponName)
     {
-        string key = Normalize(weaponName);
-        if (key.Contains("karambit") || key.Contains("knife") || type == WeaponType.Melee)
+        if (type == WeaponType.Melee)
             return Build(Karambit);
-        if (key.Contains("bolt"))
-            return Build(BoltSniper);
-        if (key.Contains("dmr") || key.Contains("marksman"))
-            return Build(Dmr);
-        if (key.Contains("scar"))
-            return Build(Scar);
-        if (key.Contains("m4a1") || key.Contains("m4"))
-            return Build(M4A1);
-        if (key.Contains("ump"))
-            return Build(Ump);
-        if (key.Contains("lmg") || key.Contains("machine"))
-            return Build(Lmg);
-        if (key.Contains("shotgun"))
-            return Build(ShotgunName);
-        if (key.Contains("pistol"))
-            return Build(PistolName);
+        string match = MatchName(weaponName);
+        if (match != null)
+            return Build(match);
 
         switch (type)
         {
@@ -180,6 +166,53 @@ public static class GunHoldCatalog
             case WeaponType.Pistol: return Build(PistolName);
             default: return Build(M4A1);
         }
+    }
+
+    /// <summary>The profile name a weapon/prefab name maps to, or null when the name says nothing about the weapon.</summary>
+    public static string MatchName(string weaponName)
+    {
+        string key = Normalize(weaponName);
+        if (key.Length == 0)
+            return null;
+        if (key.Contains("karambit") || key.Contains("knife"))
+            return Karambit;
+        if (key.Contains("bolt"))
+            return BoltSniper;
+        if (key.Contains("dmr") || key.Contains("marksman"))
+            return Dmr;
+        if (key.Contains("scar"))
+            return Scar;
+        if (key.Contains("m4a1") || key.Contains("m4"))
+            return M4A1;
+        if (key.Contains("ump"))
+            return Ump;
+        if (key.Contains("lmg") || key.Contains("machine"))
+            return Lmg;
+        if (key.Contains("shotgun"))
+            return ShotgunName;
+        if (key.Contains("pistol"))
+            return PistolName;
+        return null;
+    }
+
+    /// <summary>
+    /// Profile for a weapon instance. A scene instance is often named after its inventory slot ("Assault_Primary"), so the
+    /// instance name is tried first and the config's prefab, asset and display names after it, before the weapon type.
+    /// </summary>
+    public static GunHoldProfile Get(WeaponConfig config, GameObject instance)
+    {
+        if (config == null)
+            return Get(WeaponType.AssaultRifle, instance != null ? instance.name : null);
+        if (config.weaponType == WeaponType.Melee)
+            return Build(Karambit);
+
+        string match = MatchName(instance != null ? instance.name : null)
+            ?? MatchName(config.weaponPrefab != null ? config.weaponPrefab.name : null)
+            ?? MatchName(config.name)
+            ?? MatchName(config.weaponName);
+        if (match != null)
+            return Build(match);
+        return Get(config.weaponType, null);
     }
 
     public static GunHoldProfile Get(WeaponConfig config)

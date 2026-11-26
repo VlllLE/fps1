@@ -196,7 +196,7 @@ public sealed class ProceduralFirstPersonArms : MonoBehaviour
             return false;
 
         heldWeapon = found;
-        heldProfile = GunHoldCatalog.Get(found.Config.weaponType, found.gameObject.name);
+        heldProfile = GunHoldCatalog.Get(found.Config, found.gameObject);
         heldMagazine = FindDescendant(found.transform, "Magazine");
         return true;
     }

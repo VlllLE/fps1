@@ -63,9 +63,7 @@ public sealed class ThirdPersonGun
         if (weaponPrefab == null && config != null)
             weaponPrefab = config.weaponPrefab;
 
-        GunHoldProfile profile = config != null ? GunHoldCatalog.Get(config) : GunHoldCatalog.Build(GunHoldCatalog.M4A1);
-        if (weaponPrefab != null && config != null)
-            profile = GunHoldCatalog.Get(config.weaponType, weaponPrefab.name);
+        GunHoldProfile profile = config != null ? GunHoldCatalog.Get(config, weaponPrefab) : GunHoldCatalog.Build(GunHoldCatalog.M4A1);
 
         var rootObject = new GameObject(RootName);
         rootObject.layer = layer;
