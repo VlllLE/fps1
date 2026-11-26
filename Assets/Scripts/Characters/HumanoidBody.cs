@@ -200,10 +200,18 @@ public sealed class HumanoidBody : MonoBehaviour
             target = GetComponent<Target>();
         if (target != null)
             target.OnDamageTaken += HandleDamageTaken;
+        HeldGunSkins.SkinChanged += HandleWeaponSkinChanged;
+    }
+
+    private void HandleWeaponSkinChanged(GameObject weapon)
+    {
+        if (gun != null && gun.CopiesSkinFrom(weapon))
+            gun.RefreshSkin();
     }
 
     private void OnDisable()
     {
+        HeldGunSkins.SkinChanged -= HandleWeaponSkinChanged;
         if (target != null)
             target.OnDamageTaken -= HandleDamageTaken;
         hasLastPosition = false;

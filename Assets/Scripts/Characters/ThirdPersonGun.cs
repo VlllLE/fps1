@@ -24,11 +24,14 @@ public sealed class ThirdPersonGun
     private readonly Vector3 boltRest;
     private readonly bool usesModel;
     private readonly Material ownedMaterial;
+    private readonly GameObject skinSource;
+    private UnityEngine.Object appliedSkin;
     private DroppedGunPhysics drop;
     private Transform owner;
 
-    private ThirdPersonGun(Transform root, GunHoldProfile profile, Transform magazine, Transform bolt, Transform muzzle, bool usesModel, Material ownedMaterial)
+    private ThirdPersonGun(Transform root, GunHoldProfile profile, Transform magazine, Transform bolt, Transform muzzle, bool usesModel, Material ownedMaterial, GameObject skinSource)
     {
+        this.skinSource = skinSource;
         this.root = root;
         this.profile = profile;
         this.magazine = magazine;
@@ -127,7 +130,36 @@ public sealed class ThirdPersonGun
         }
 
         SetLayer(rootObject, layer);
-        return new ThirdPersonGun(rootObject.transform, profile, magazine, bolt, muzzle, usesModel, material);
+        var gun = new ThirdPersonGun(rootObject.transform, profile, magazine, bolt, muzzle, usesModel, material, weaponPrefab);
+        gun.RefreshSkin();
+        return gun;
+    }
+
+    /// <summary>The skin the held gun currently wears (an opaque handle from <see cref="HeldGunSkins"/>), or null.</summary>
+    public UnityEngine.Object AppliedSkin => appliedSkin;
+
+    /// <summary>
+    /// Paints the gun with the skin its weapon source (the spawned weapon or its prefab) wears. Only models are skinned;
+    /// the primitive fallback gun stays plain. Does nothing while no skin provider is registered.
+    /// </summary>
+    public void RefreshSkin()
+    {
+        IHeldGunSkinProvider provider = HeldGunSkins.Provider;
+        if (provider == null || root == null || !usesModel || skinSource == null)
+            return;
+
+        UnityEngine.Object skin = provider.GetSkin(skinSource);
+        if (skin == appliedSkin)
+            return;
+
+        provider.Apply(root.gameObject, skin);
+        appliedSkin = skin;
+    }
+
+    /// <summary>True when <paramref name="weapon"/> is, or sits under, the weapon this gun copies its skin from.</summary>
+    public bool CopiesSkinFrom(GameObject weapon)
+    {
+        return weapon != null && skinSource != null && (weapon == skinSource || weapon.transform.IsChildOf(skinSource.transform));
     }
 
     /// <summary>Places the gun where the animator wants it (in the parent's space, scaled with the body).</summary>

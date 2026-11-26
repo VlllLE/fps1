@@ -72,6 +72,12 @@ public class WeaponSkinApplier : MonoBehaviour
     /// </summary>
     public void ApplySkin(WeaponSkinDefinition skin)
     {
+        ApplySkinToRenderers(skin);
+        HeldGunSkins.NotifySkinChanged(gameObject);
+    }
+
+    private void ApplySkinToRenderers(WeaponSkinDefinition skin)
+    {
         if (!initialized)
             Initialize(applyDefault: false);
 
