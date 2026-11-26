@@ -130,16 +130,16 @@ The Blender-built soldier in engine: a target bot, the player body with a rifle 
 
 ### Weapons in engine
 
-Blender-built models in Play Mode, wearing weapon skins.
+Blender-built models in Play Mode, wearing weapon skins: the M4A1, shotgun and DMR in first person, the rest held in the third-person body view.
 
 | | |
 | --- | --- |
-| ![M4A1, first person](docs/screenshots/model-m4a1.jpg) | ![SCAR-H](docs/screenshots/model-scar.jpg) |
-| ![UMP45](docs/screenshots/model-ump.jpg) | ![Pump shotgun, first person](docs/screenshots/model-shotgun.jpg) |
-| ![LMG](docs/screenshots/model-lmg.jpg) | ![Bolt-action sniper with scope and bipod](docs/screenshots/model-sniper.jpg) |
-| ![DMR, aiming](docs/screenshots/model-dmr.jpg) | ![Pistol](docs/screenshots/model-pistol.jpg) |
+| ![M4A1 with a camo skin, first person](docs/screenshots/model-m4a1.jpg) | ![SCAR-H held by the soldier](docs/screenshots/model-scar.jpg) |
+| ![UMP45 held by the soldier](docs/screenshots/model-ump.jpg) | ![Pump shotgun with a camo skin, first person](docs/screenshots/model-shotgun.jpg) |
+| ![LMG held by the soldier](docs/screenshots/model-lmg.jpg) | ![Bolt-action sniper with glass scope and bipod](docs/screenshots/model-sniper.jpg) |
+| ![DMR with a circuit skin, first person](docs/screenshots/model-dmr.jpg) | ![Pistol held by the soldier](docs/screenshots/model-pistol.jpg) |
 
-The karambit in hand:
+The karambit in first person:
 
 ![Karambit in hand](docs/screenshots/fp-karambit.jpg)
 
@@ -157,7 +157,7 @@ Static skin textures (one tile each):
 
 ![Static skin textures](docs/screenshots/skins-static-textures.jpg)
 
-Animated skins (still frames of shaders that animate in game; captured on the earlier primitive gun models):
+Animated skins on the Blender models (DMR, bolt sniper, shotgun, karambit). These are still frames of shaders that animate in game:
 
 ![Animated skins](docs/screenshots/skins-animated.png)
 
