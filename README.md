@@ -5,7 +5,7 @@ A first-person shooter prototype built in **Unity 6 (6000.6.10f1)** around tight
 weapons and cosmetics to try it all out. Everything you see is generated from code or scripts in this repo, with no downloaded assets:
 Blender-built guns and soldier (with procedural fallbacks), generated map scenes, shader-driven weapon skins.
 
-![Dome map with the map selector label](docs/screenshots/ui-map-selector.jpg)
+![First-person view with the map selector label](docs/screenshots/ui-map-selector-v2.jpg)
 
 ## Contents
 
@@ -109,7 +109,7 @@ TestRange, Shipment and Dome from several sides.
 
 | | |
 | --- | --- |
-| ![TestRange overview](docs/screenshots/map-testrange-overview.jpg) | ![TestRange from the spawn](docs/screenshots/map-testrange-spawn.jpg) |
+| ![TestRange overview](docs/screenshots/map-testrange-overview-v2.jpg) | ![TestRange from the spawn](docs/screenshots/map-testrange-spawn-v2.jpg) |
 | ![Shipment overview](docs/screenshots/map-shipment-overview.jpg) | ![Shipment from the west](docs/screenshots/map-shipment-west.jpg) |
 | ![Shipment at the west spawn](docs/screenshots/map-shipment-spawn.jpg) | ![Dome overview](docs/screenshots/map-dome-overview.jpg) |
 | ![Dome from the north](docs/screenshots/map-dome-north.jpg) | ![Dome at the south spawn](docs/screenshots/map-dome-spawn.jpg) |
@@ -118,15 +118,15 @@ TestRange, Shipment and Dome from several sides.
 
 The loadout menu (`L` or `Esc`), with the map label shown top right. The map selector label is the first image on this page.
 
-![Loadout menu](docs/screenshots/ui-loadout-menu.png)
+![Loadout menu with the weapon preview](docs/screenshots/ui-loadout-menu-v2.jpg)
 
 ### Characters
 
-The Blender-built soldier in engine on the Shipment map, each holding its actual gun with the equipped skin applied: a target bot with a skinned rifle, the player body with a Woodland Camo M4A1, and the player body with a Copper Patina shotgun.
+The Blender-built soldier in engine on TestRange, holding a rifle: a target bot, the player from the front, and the player from the side.
 
 | | | |
 | --- | --- | --- |
-| ![Target bot holding a skinned rifle](docs/screenshots/soldier-target-held-gun.jpg) | ![Player soldier holding a Woodland Camo M4A1](docs/screenshots/soldier-player-held-gun.jpg) | ![Player soldier holding a Copper Patina shotgun](docs/screenshots/soldier-held-shotgun.jpg) |
+| ![Target bot holding a rifle](docs/screenshots/soldier-target-v2.jpg) | ![Player soldier holding a rifle](docs/screenshots/soldier-player-v2.jpg) | ![Player soldier holding a rifle, side](docs/screenshots/soldier-arms-fp-v2.jpg) |
 
 ### Weapons in engine
 
