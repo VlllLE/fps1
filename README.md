@@ -122,11 +122,11 @@ The loadout menu (`L` or `Esc`), with the map label shown top right. The map sel
 
 ### Characters
 
-The Blender-built soldier in engine: a target bot, the player body with a rifle held in both hands, and a side view.
+The Blender-built soldier in engine on the Shipment map, each holding its actual gun with the equipped skin applied: a target bot with a skinned rifle, the player body with a Woodland Camo M4A1, and the player body with a Copper Patina shotgun.
 
 | | | |
 | --- | --- | --- |
-| ![Soldier target bot, front](docs/screenshots/soldier-target.jpg) | ![Player soldier, front](docs/screenshots/soldier-player.jpg) | ![Player soldier holding a rifle, side](docs/screenshots/soldier-arms-fp.jpg) |
+| ![Target bot holding a skinned rifle](docs/screenshots/soldier-target-held-gun.jpg) | ![Player soldier holding a Woodland Camo M4A1](docs/screenshots/soldier-player-held-gun.jpg) | ![Player soldier holding a Copper Patina shotgun](docs/screenshots/soldier-held-shotgun.jpg) |
 
 ### Weapons in engine
 
