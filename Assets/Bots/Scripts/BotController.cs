@@ -49,6 +49,17 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     private float currentSpeed;
     private Vector3 lastMoveDirection = Vector3.forward;
 
+    private BotStuckDetector stuck;
+    private BotEngagementWatchdog fireWatchdog;
+    private bool wantsMove;
+    private float steeringUntil;
+    private float repositionUntil;
+    private Vector3 repositionPoint;
+    private float probeSign = 1f;
+    private Vector3 separation;
+    private readonly List<Vector3> neighbourPositions = new List<Vector3>(8);
+    private static readonly float[] ProbeAngles = { 0f, 35f, 70f, 110f, 150f };
+
     private int waypointIndex;
     private float patrolPause;
     private bool waypointsBuilt;
@@ -84,6 +95,11 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     public bool IsDead => brain != null && brain.State == BotState.Dead;
     public bool Frozen { get => frozen; set => frozen = value; }
     public int SourceId => gameObject.GetHashCode();
+    public int StuckLevel => stuck != null ? stuck.Level : 0;
+    public int StuckRecoveries { get; private set; }
+    public bool IsRepositioning => Time.time < repositionUntil;
+    public bool IsSteering => Time.time < steeringUntil;
+    public Vector3 Separation => separation;
     public int Deaths { get; private set; }
     public int ShotsFired { get; private set; }
     public float DamageDealt { get; private set; }
@@ -169,6 +185,9 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         settings = botSettings;
         rng = new System.Random(seed);
         brain = new BotBrain(settings);
+        stuck = new BotStuckDetector();
+        stuck.Reset(transform.position);
+        fireWatchdog = new BotEngagementWatchdog();
         aim = new BotAimModel(settings);
         gun = new BotGun(weapon, settings, rng);
         health = settings.maxHealth;
@@ -321,25 +340,53 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
 
         aim.Track(desiredAim, dt);
 
+        stuck.Window = settings.stuckWindow;
+        stuck.MinProgress = settings.stuckMinProgress;
+        fireWatchdog.Limit = settings.noFireRepositionTime;
+        UpdateSeparation();
+
+        wantsMove = false;
         bool moved = false;
-        switch (brain.State)
+        if (now < repositionUntil && brain.State != BotState.Patrol && brain.State != BotState.TakeCover)
         {
-            case BotState.Patrol:
-                moved = DoPatrol(dt);
-                break;
-            case BotState.Investigate:
-                moved = DoInvestigate(dt, senses);
-                break;
-            case BotState.Chase:
-                moved = DoChase(dt, sees);
-                break;
-            case BotState.Attack:
-                moved = DoAttack(dt, target, sees);
-                break;
-            case BotState.TakeCover:
-                moved = DoTakeCover(dt, sees);
-                break;
+            moved = DoReposition(dt);
         }
+        else
+        {
+            switch (brain.State)
+            {
+                case BotState.Patrol:
+                    moved = DoPatrol(dt);
+                    break;
+                case BotState.Investigate:
+                    moved = DoInvestigate(dt, senses);
+                    break;
+                case BotState.Chase:
+                    moved = DoChase(dt, sees);
+                    break;
+                case BotState.Attack:
+                    moved = DoAttack(dt, target, sees);
+                    break;
+                case BotState.TakeCover:
+                    moved = DoTakeCover(dt, sees);
+                    break;
+            }
+        }
+
+        if (IsDead)
+            return;
+
+        bool trackLong = brain.State == BotState.Patrol || brain.State == BotState.Investigate || brain.State == BotState.Chase;
+        BotStuckAction stuckAction = stuck.Update(dt, transform.position, wantsMove, trackLong);
+        if (stuckAction != BotStuckAction.None)
+        {
+            HandleStuck(stuckAction, now);
+            if (IsDead)
+                return;
+        }
+
+        if (!moved && !frozen)
+            DriftApart(dt);
 
         if (!moved)
         {
@@ -353,8 +400,12 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
             facing = Flatten(Quaternion.Euler(0f, scanYaw, 0f) * Vector3.forward);
         FaceToward(facing, dt);
 
+        bool fired = false;
         if (brain.State == BotState.Attack && sees && brain.CanFire && aim.TrackingError <= 12f && !gun.IsReloading)
-            TryShoot(now, target);
+            fired = TryShoot(now, target);
+
+        if (fireWatchdog.Update(dt, brain.State == BotState.Attack && !fired && !gun.IsReloading))
+            StartReposition(now);
 
         UpdateArmPose();
     }
@@ -425,8 +476,16 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
 
     private bool DoAttack(float dt, PlayerHealth target, bool sees)
     {
-        if (target == null || !sees)
+        if (target == null)
             return false;
+
+        if (!sees)
+        {
+            if (!brain.HasLastKnownPosition)
+                return false;
+            bool peeking = MoveAlongPath(brain.LastKnownPosition, settings.runSpeed * 0.7f, dt, out bool peekGaveUp);
+            return !peeking && !peekGaveUp;
+        }
 
         Vector3 toTarget = Flatten(target.transform.position - transform.position);
         float distance = toTarget.magnitude;
@@ -464,6 +523,7 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
             return false;
 
         move.Normalize();
+        wantsMove = true;
         bool stepped = StepDirection(move, speed, dt);
         if (!stepped && settings.strafe)
         {
@@ -556,6 +616,10 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         if (PlanarDistance(position, destination) < ArriveDistance && Mathf.Abs(position.y - destination.y) < 2.5f)
             return true;
 
+        wantsMove = true;
+        if (Time.time < steeringUntil)
+            return SteerTowards(destination, speed, dt);
+
         repathTimer -= dt;
         if (!hasPath || repathTimer <= 0f || PlanarDistance(pathDestination, destination) > 1.5f)
         {
@@ -607,8 +671,128 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         return false;
     }
 
+    private void UpdateSeparation()
+    {
+        neighbourPositions.Clear();
+        for (int i = 0; i < Registry.Count; i++)
+        {
+            BotController other = Registry[i];
+            if (other == null || other == this || other.IsDead || other.brain == null)
+                continue;
+            neighbourPositions.Add(other.transform.position);
+        }
+
+        separation = neighbourPositions.Count == 0
+            ? Vector3.zero
+            : BotSeparation.Compute(transform.position, SourceId, neighbourPositions, settings.separationRadius);
+    }
+
+    private void DriftApart(float dt)
+    {
+        float strength = separation.magnitude;
+        if (strength < 0.02f)
+            return;
+
+        Vector3 from = transform.position;
+        Vector3 step = separation / strength * (1.6f * Mathf.Min(1f, strength * 1.5f) * dt);
+        if (BotNavigation.TryStep(from, step, transform, out Vector3 result))
+            transform.position = result;
+    }
+
+    private void HandleStuck(BotStuckAction action, float now)
+    {
+        StuckRecoveries++;
+        switch (action)
+        {
+            case BotStuckAction.Repath:
+                hasPath = false;
+                repathTimer = 0f;
+                break;
+
+            case BotStuckAction.NewGoal:
+                hasPath = false;
+                coverValid = false;
+                if (brain.State == BotState.Patrol)
+                {
+                    if (waypoints.Count < 2)
+                    {
+                        waypoints.Clear();
+                        waypointsBuilt = false;
+                    }
+
+                    waypointIndex++;
+                    patrolPause = 0f;
+                }
+                else
+                {
+                    StartReposition(now);
+                }
+
+                break;
+
+            case BotStuckAction.Steering:
+                hasPath = false;
+                steeringUntil = now + 3f;
+                break;
+
+            case BotStuckAction.Respawn:
+                Respawn(BotManager.FindRespawnPosition(this, spawnPoint));
+                break;
+        }
+    }
+
+    private void StartReposition(float now)
+    {
+        if (BotNavigation.TryRandomReachablePoint(transform.position, 10f, rng, transform, scratchPath, out Vector3 point))
+        {
+            repositionPoint = point;
+            repositionUntil = now + 4f;
+            hasPath = false;
+        }
+    }
+
+    private bool DoReposition(float dt)
+    {
+        bool arrived = MoveAlongPath(repositionPoint, settings.runSpeed, dt, out bool gaveUp);
+        if (arrived || gaveUp)
+        {
+            repositionUntil = 0f;
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool SteerTowards(Vector3 destination, float speed, float dt)
+    {
+        Vector3 direction = Flatten(destination - transform.position);
+        if (direction.sqrMagnitude < 1e-4f)
+            return false;
+        direction.Normalize();
+
+        for (int i = 0; i < ProbeAngles.Length; i++)
+        {
+            float angle = ProbeAngles[i];
+            for (int side = 0; side < (angle == 0f ? 1 : 2); side++)
+            {
+                float signed = angle * (side == 0 ? probeSign : -probeSign);
+                if (StepDirection(Quaternion.Euler(0f, signed, 0f) * direction, speed, dt))
+                {
+                    if (angle != 0f)
+                        probeSign = side == 0 ? probeSign : -probeSign;
+                    return false;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private bool StepDirection(Vector3 direction, float speed, float dt)
     {
+        direction = BotSeparation.Blend(direction, separation, settings.separationStrength);
+        if (direction.sqrMagnitude < 1e-6f)
+            return false;
         currentSpeed = Mathf.MoveTowards(currentSpeed, speed, 14f * dt);
         float step = currentSpeed * dt;
         Vector3 from = transform.position;
@@ -663,11 +847,11 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
 
     #region Shooting
 
-    private void TryShoot(float now, PlayerHealth target)
+    private bool TryShoot(float now, PlayerHealth target)
     {
         float weaponSpread = gun.CurrentSpreadDegrees;
         if (!gun.TryFire(now))
-            return;
+            return false;
 
         ShotsFired++;
         WeaponConfig config = gun.Config;
@@ -700,6 +884,7 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         }
 
         PlayShotEffects(config, tracerEnd);
+        return true;
     }
 
     private void PlayShotEffects(WeaponConfig config, Vector3 tracerEnd)
@@ -819,6 +1004,10 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         damagedPending = false;
         stuckTimer = 0f;
         patrolPause = 0f;
+        repositionUntil = 0f;
+        steeringUntil = 0f;
+        stuck.Reset(transform.position);
+        fireWatchdog.Reset();
         brain.Revive();
         SetCollidersEnabled(true);
         SetBodyVisible(true);

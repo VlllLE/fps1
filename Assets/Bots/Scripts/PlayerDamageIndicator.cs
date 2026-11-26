@@ -19,6 +19,20 @@ public static class DamageIndicatorMath
         return Vector3.SignedAngle(forward, to, Vector3.up);
     }
 
+    /// <summary>
+    /// Opacity (0..1) of the damage vignette at normalised screen position (u, v): zero across the middle, rising smoothly
+    /// towards the edges and corners (no hard bands).
+    /// </summary>
+    public static float VignetteAlpha(float u, float v, float innerRadius = 0.45f)
+    {
+        float dx = (u - 0.5f) * 2f;
+        float dy = (v - 0.5f) * 2f;
+        float r = Mathf.Sqrt(dx * dx + dy * dy) * 0.70710678f;
+        float t = Mathf.Clamp01((r - innerRadius) / Mathf.Max(0.01f, 1f - innerRadius));
+        float smooth = t * t * (3f - 2f * t);
+        return smooth * smooth;
+    }
+
     /// <summary>Opacity of an indicator <paramref name="age"/> seconds after the hit.</summary>
     public static float Fade(float age, float lifetime)
     {
@@ -49,6 +63,7 @@ public sealed class PlayerDamageIndicator : MonoBehaviour
     private float lastHitTime = -99f;
     private float lastHitStrength;
     private GUIStyle deathStyle;
+    private Texture2D vignetteTexture;
 
     public int ActiveMarkerCount => markers.Count;
 
@@ -63,6 +78,41 @@ public sealed class PlayerDamageIndicator : MonoBehaviour
     {
         if (health != null)
             health.OnDamaged -= HandleDamaged;
+    }
+
+    private void OnDestroy()
+    {
+        if (vignetteTexture != null)
+            Destroy(vignetteTexture);
+    }
+
+    private Texture2D GetVignetteTexture()
+    {
+        if (vignetteTexture != null)
+            return vignetteTexture;
+
+        const int size = 64;
+        vignetteTexture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            name = "DamageVignette",
+            wrapMode = TextureWrapMode.Clamp,
+            filterMode = FilterMode.Bilinear,
+            hideFlags = HideFlags.HideAndDontSave
+        };
+
+        var pixels = new Color[size * size];
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float a = DamageIndicatorMath.VignetteAlpha((x + 0.5f) / size, (y + 0.5f) / size);
+                pixels[y * size + x] = new Color(0.8f, 0f, 0f, a);
+            }
+        }
+
+        vignetteTexture.SetPixels(pixels);
+        vignetteTexture.Apply(false, true);
+        return vignetteTexture;
     }
 
     private void HandleDamaged(float amount, Vector3 sourcePosition, bool fatal)
@@ -102,13 +152,8 @@ public sealed class PlayerDamageIndicator : MonoBehaviour
         if (alpha <= 0.01f)
             return;
 
-        float edge = Screen.height * 0.16f;
-        GUI.color = new Color(0.75f, 0f, 0f, alpha);
-        Texture2D white = Texture2D.whiteTexture;
-        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, edge), white);
-        GUI.DrawTexture(new Rect(0f, Screen.height - edge, Screen.width, edge), white);
-        GUI.DrawTexture(new Rect(0f, edge, edge, Screen.height - 2f * edge), white);
-        GUI.DrawTexture(new Rect(Screen.width - edge, edge, edge, Screen.height - 2f * edge), white);
+        GUI.color = new Color(1f, 1f, 1f, Mathf.Clamp01(alpha * 1.6f));
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), GetVignetteTexture(), ScaleMode.StretchToFill, true);
     }
 
     private void DrawMarkers(float scale)

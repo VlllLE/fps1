@@ -22,6 +22,9 @@ public sealed class PlayerHealth : MonoBehaviour, IHitDamageReceiver, IDamageabl
     private float deathTime;
     private bool dead;
     private Vector3 spawnPosition;
+    private float spawnYaw;
+    private float spawnPitch;
+    private FirstPersonCamera lookCamera;
     private CharacterController controller;
     private MovementController movement;
 
@@ -80,8 +83,11 @@ public sealed class PlayerHealth : MonoBehaviour, IHitDamageReceiver, IDamageabl
         initialised = true;
         currentHealth = maxHealth;
         spawnPosition = transform.position;
+        spawnYaw = transform.eulerAngles.y;
         controller = GetComponent<CharacterController>();
         movement = GetComponent<MovementController>();
+        lookCamera = GetComponentInChildren<FirstPersonCamera>();
+        spawnPitch = lookCamera != null ? NormalizeAngle(lookCamera.transform.localEulerAngles.x) : 0f;
         Local = this;
     }
 
@@ -169,6 +175,17 @@ public sealed class PlayerHealth : MonoBehaviour, IHitDamageReceiver, IDamageabl
         spawnPosition = position;
     }
 
+    /// <summary>Facing restored on respawn (degrees).</summary>
+    public void SetSpawnFacing(float yaw, float pitch)
+    {
+        Initialise();
+        spawnYaw = yaw;
+        spawnPitch = pitch;
+    }
+
+    public float SpawnYaw { get { Initialise(); return spawnYaw; } }
+    public float SpawnPitch { get { Initialise(); return spawnPitch; } }
+
     private void Die()
     {
         dead = true;
@@ -188,6 +205,9 @@ public sealed class PlayerHealth : MonoBehaviour, IHitDamageReceiver, IDamageabl
         if (controller != null)
             controller.enabled = false;
         transform.position = spawnPosition;
+        transform.rotation = Quaternion.Euler(0f, spawnYaw, 0f);
+        if (lookCamera != null)
+            lookCamera.SetLook(spawnYaw, spawnPitch);
         if (controller != null)
             controller.enabled = true;
         if (movement != null)
@@ -195,6 +215,16 @@ public sealed class PlayerHealth : MonoBehaviour, IHitDamageReceiver, IDamageabl
 
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
         OnRespawned?.Invoke();
+    }
+
+    private static float NormalizeAngle(float degrees)
+    {
+        degrees %= 360f;
+        if (degrees > 180f)
+            degrees -= 360f;
+        else if (degrees < -180f)
+            degrees += 360f;
+        return degrees;
     }
 
     private Vector3 ResolveCenter()

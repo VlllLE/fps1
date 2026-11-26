@@ -323,6 +323,30 @@ public class BotPlayModeTests
         Assert.That(playerHealth.IsDead, Is.False);
         Assert.That(playerHealth.CurrentHealth, Is.GreaterThan(0f));
     }
+
+    [UnityTest]
+    public IEnumerator PlayerHealth_RespawnRestoresTheSpawnFacing()
+    {
+        playerHealth.SetSpawnFacing(25f, 0f);
+        playerObject.transform.rotation = Quaternion.Euler(0f, 170f, 0f);
+
+        playerHealth.TakeDamage(1000f, new Vector3(0f, 0f, 10f));
+        yield return new WaitForSeconds(3.3f);
+
+        Assert.That(playerHealth.IsDead, Is.False);
+        Assert.That(Mathf.DeltaAngle(playerObject.transform.eulerAngles.y, 25f), Is.EqualTo(0f).Within(1f));
+    }
+
+    [UnityTest]
+    public IEnumerator Bots_StartedOnTheSameSpot_SpreadApart()
+    {
+        Vector3 spot = new Vector3(25f, 0f, 25f);
+        BotController a = manager.SpawnBot(spot);
+        BotController b = manager.SpawnBot(spot);
+        yield return new WaitForSeconds(3f);
+
+        Assert.That(Vector3.Distance(a.transform.position, b.transform.position), Is.GreaterThan(1.2f));
+    }
 }
 
 /// <summary>Smoke test on the real maps: the manager adds player health, builds navigation and bots walk.</summary>

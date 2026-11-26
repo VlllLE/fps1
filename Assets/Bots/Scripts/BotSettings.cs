@@ -88,6 +88,23 @@ public class BotSettings : ScriptableObject
     [Min(0f)] public float coverDuration = 2.5f;
     [Min(0f)] public float coverCooldown = 8f;
 
+    [Header("Anti-flicker")]
+    [Tooltip("Minimum seconds in Chase or Attack before the bot may switch between the two because of range or sight.")]
+    [Min(0f)] public float minStateTime = 0.6f;
+    [Tooltip("Seconds of uninterrupted line of sight a chasing bot needs before it stops to attack.")]
+    [Min(0f)] public float engageSightTime = 0.25f;
+    [Tooltip("Seconds an attacking bot may fail to fire before it repositions.")]
+    [Min(0.5f)] public float noFireRepositionTime = 3f;
+
+    [Header("Unstuck and separation")]
+    [Tooltip("Seconds without progress while the bot wants to move before the next recovery step.")]
+    [Min(0.5f)] public float stuckWindow = 2f;
+    [Tooltip("Metres the bot must get away from its anchor within the window to count as making progress.")]
+    [Min(0.05f)] public float stuckMinProgress = 0.6f;
+    [Tooltip("Bots closer than this push each other apart.")]
+    [Min(0f)] public float separationRadius = 1.8f;
+    [Min(0f)] public float separationStrength = 1.2f;
+
     [Header("Patrol")]
     [Min(2f)] public float patrolRadius = 28f;
     [Min(2)] public int patrolWaypointCount = 4;

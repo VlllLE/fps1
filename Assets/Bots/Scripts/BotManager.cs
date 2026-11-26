@@ -22,6 +22,7 @@ public sealed class BotManager : MonoBehaviour
     public static readonly KeyCode DifficultyKey = KeyCode.F10;
     public static readonly KeyCode DebugKey = KeyCode.F11;
     public static readonly KeyCode ClearKey = KeyCode.Backslash;
+    public static readonly KeyCode ClearAltKey = KeyCode.F12;
 
     private static readonly Color[] Tints =
     {
@@ -491,7 +492,7 @@ public sealed class BotManager : MonoBehaviour
             Notice("Bot debug " + (debugOverlay ? "on" : "off"));
         }
 
-        if (Input.GetKeyDown(ClearKey))
+        if (IsClearPressed())
         {
             if (bots.Count > 0)
             {
@@ -508,6 +509,15 @@ public sealed class BotManager : MonoBehaviour
 
         if (debugOverlay)
             DrawSceneDebug();
+    }
+
+    /// <summary>
+    /// Backslash is not KeyCode.Backslash on every layout (UK ISO keyboards report a different key), so the typed
+    /// character is checked as well; F12 always works.
+    /// </summary>
+    private static bool IsClearPressed()
+    {
+        return Input.GetKeyDown(ClearKey) || Input.GetKeyDown(ClearAltKey) || Input.inputString.IndexOf('\\') >= 0;
     }
 
     private void Notice(string text)
@@ -549,7 +559,7 @@ public sealed class BotManager : MonoBehaviour
         if (debugOverlay)
         {
             GUI.Label(new Rect(Screen.width - 460f, 62f, 450f, 20f),
-                "F8 spawn  F9 freeze  F10 difficulty  F11 debug  \\ remove/add", labelStyle);
+                "F8 spawn  F9 freeze  F10 difficulty  F11 debug  \\ or F12 remove/add", labelStyle);
         }
 
         if (Time.unscaledTime < noticeUntil)

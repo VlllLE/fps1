@@ -42,6 +42,9 @@ public sealed class BotBrain
     private float coverCooldownLeft;
     private float lostSightTime;
 
+    /// <summary>Seconds of accumulated sight lost per second without sight, so a one-frame flicker does not restart the reaction time.</summary>
+    private const float SightDecayRate = 2f;
+
     public BotBrain(BotSettings settings)
     {
         this.settings = settings != null ? settings : throw new ArgumentNullException(nameof(settings));
@@ -85,7 +88,7 @@ public sealed class BotBrain
         else
         {
             TimeSinceSeen += dt;
-            TimeSeeingTarget = 0f;
+            TimeSeeingTarget = Mathf.Max(0f, TimeSeeingTarget - dt * SightDecayRate);
             lostSightTime += dt;
         }
 
@@ -127,7 +130,9 @@ public sealed class BotBrain
             case BotState.Chase:
                 if (sees)
                 {
-                    if (senses.targetDistance <= settings.maxEngageRange)
+                    if (senses.targetDistance <= settings.maxEngageRange
+                        && TimeInState >= settings.minStateTime
+                        && TimeSeeingTarget >= settings.engageSightTime)
                         SetState(BotState.Attack);
                 }
                 else if (TimeSinceSeen > settings.memoryTime)
@@ -145,7 +150,8 @@ public sealed class BotBrain
                 {
                     SetState(BotState.Chase);
                 }
-                else if (sees && senses.targetDistance > settings.maxEngageRange * 1.15f)
+                else if (sees && senses.targetDistance > settings.maxEngageRange * 1.15f
+                    && TimeInState >= settings.minStateTime)
                 {
                     SetState(BotState.Chase);
                 }

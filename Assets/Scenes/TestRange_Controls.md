@@ -69,7 +69,7 @@ Armed AI soldiers spawn automatically in every map: **3 bots at Normal difficult
 | `F9` | Freeze / unfreeze every bot (they stop moving, aiming and shooting) |
 | `F10` | Cycle difficulty Easy → Normal → Hard → Veteran (applies to every bot immediately, saved in `PlayerPrefs` key `FPS.Bots.Difficulty.v1`) |
 | `F11` | Toggle the bot debug overlay (state, health and distance above each bot) |
-| `\` | Remove all bots; press again to bring the default bots back |
+| `\` or `F12` | Remove all bots; press again to bring the default bots back. `F12` always works; `\` is also detected by the typed character, so it works on UK (ISO) and other layouts where the key is not reported as Backslash |
 
 | Difficulty | Health | Reaction | Aim error | Damage vs player |
 |------------|--------|----------|-----------|------------------|
@@ -77,6 +77,8 @@ Armed AI soldiers spawn automatically in every map: **3 bots at Normal difficult
 | Normal | 100 | ~0.5 s | ~3.5° | 40 % |
 | Hard | 130 | ~0.3 s | ~2° | 60 % |
 | Veteran | 160 | ~0.15 s | ~1° | 80 % |
+
+Robustness: bots that want to move but make no progress escalate through repath, a new waypoint/reposition point, direct steering and finally a respawn; Chase/Attack switches have a minimum state time and sight requirement so a bot at a corner does not flicker; an attacking bot that cannot shoot for 3 s repositions; bots push each other apart instead of stacking. The player's yaw/pitch is reset to the spawn facing on respawn and the damage vignette is a soft radial gradient. Tunables are on `BotSettings` (*Anti-flicker*, *Unstuck and separation*).
 
 Difficulty also scales movement speed, view distance, burst length and cover use. Set the environment variable `FPS_BOTS=0` to disable the auto-spawn and bot keys.
 
