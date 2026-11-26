@@ -138,6 +138,8 @@ public sealed class HumanoidBody : MonoBehaviour
         => soldierBuild != null ? (IReadOnlyList<SkinnedMeshRenderer>)soldierBuild.renderers : System.Array.Empty<SkinnedMeshRenderer>();
     public HumanoidArmPose ArmPose { get => armPose; set => armPose = value; }
     public bool AnimationEnabled { get => animate; set => animate = value; }
+    /// <summary>Transform whose forward pitch drives the head/arm look pitch (a bot's eye, the player camera).</summary>
+    public Transform LookSource { get => lookSource; set => lookSource = value; }
 
     public Transform GetBone(HumanoidBone bone)
     {

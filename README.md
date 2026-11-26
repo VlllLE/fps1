@@ -188,6 +188,7 @@ Legacy Input Manager. Source of truth: [`Assets/Scenes/TestRange_Controls.md`](A
 | Class | `F1` Assault, `F2` SMG, `F3` Sniper, `F4` Hybrid |
 | Map | `F5` TestRange, `F6` Shipment, `F7` Dome, `PgUp` / `PgDn` to cycle |
 | Cycle skin | `[` previous, `]` next (active weapon) |
+| Bots | `F8` spawn, `F9` freeze, `F10` difficulty, `F11` debug overlay, `\` or `F12` remove / restore (see `TestRange_Controls.md`) |
 
 ### Movement techniques
 

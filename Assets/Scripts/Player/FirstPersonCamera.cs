@@ -56,6 +56,16 @@ public class FirstPersonCamera : MonoBehaviour
             playerBody.rotation = Quaternion.Euler(0f, yRotation, 0f);
     }
     
+    /// <summary>Sets the look direction absolutely (degrees); used to restore the spawn facing on respawn.</summary>
+    public void SetLook(float yaw, float pitch)
+    {
+        yRotation = yaw;
+        xRotation = Mathf.Clamp(pitch, -maxLookAngle, maxLookAngle);
+        transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        if (playerBody != null)
+            playerBody.rotation = Quaternion.Euler(0f, yRotation, 0f);
+    }
+
     public void SetCursorLock(bool locked)
     {
         cursorLocked = locked;

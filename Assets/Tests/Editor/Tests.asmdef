@@ -6,7 +6,8 @@
         "UnityEditor.TestRunner",
         "Scripts",
         "Skins",
-        "Loadout"
+        "Loadout",
+        "Bots"
     ],
     "includePlatforms": [
         "Editor"
