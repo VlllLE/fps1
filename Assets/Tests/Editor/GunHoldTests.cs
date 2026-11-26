@@ -265,4 +265,183 @@ public class GunHoldTests
         Assert.AreEqual(a.GunPosition, b.GunPosition);
         Assert.AreEqual(a.GunRotation, b.GunRotation);
     }
+    // --- Shouldered aim, recoil and bipod stance --------------------------------------------
+
+    private static readonly string[] Shouldered = { "M4A1", "SCAR", "UMP", "LMG", "Shotgun", "BoltActionSniper", "DMRSniper" };
+
+    private static Vector3 EyePoint(HumanoidAnimator a)
+    {
+        return a.GetWorldPosition(HumanoidBone.Head) + a.GetWorldRotation(HumanoidBone.Head) * new Vector3(0.03f, 0.2f, 0.09f);
+    }
+
+    [Test]
+    public void Aim_StockSitsInTheShoulderPocketWithTheCheekNearIt()
+    {
+        foreach (string gun in Shouldered)
+        {
+            GunHoldProfile profile = GunHoldCatalog.Build(gun);
+            HumanoidAnimator a = Settle(profile, HoldStance.Aim);
+            Vector3 stock = a.GunPosition + a.GunRotation * profile.stock;
+            Vector3 shoulder = a.GetWorldPosition(HumanoidBone.UpperArmR);
+
+            Assert.Less(Vector3.Distance(stock, shoulder), 0.13f, gun + ": stock butt at the right shoulder");
+            Assert.Greater(stock.x, 0.05f, gun + ": stock on the shooting side");
+            Assert.Less(Vector3.Distance(EyePoint(a), stock), gun == "LMG" ? 0.42f : 0.33f, gun + ": cheek close to the stock");
+        }
+    }
+
+    [Test]
+    public void Aim_HeadTiltsTowardsTheSightsAndTheShootingShoulder()
+    {
+        foreach (string gun in Shouldered)
+        {
+            HumanoidAnimator a = Settle(GunHoldCatalog.Build(gun), HoldStance.Aim);
+            Vector3 up = a.GetWorldRotation(HumanoidBone.Head) * Vector3.up;
+            Assert.Greater(up.x, 0.05f, gun + ": head leans to the stock side");
+            Assert.Greater(up.z, 0.1f, gun + ": chin nods down towards the sights");
+        }
+    }
+
+    [Test]
+    public void Aim_ShootingElbowIsTuckedAndSupportElbowIsUnderTheGun()
+    {
+        foreach (string gun in Shouldered)
+        {
+            GunHoldProfile profile = GunHoldCatalog.Build(gun);
+            HumanoidAnimator a = Settle(profile, HoldStance.Aim);
+            Vector3 rightElbow = a.GetWorldPosition(HumanoidBone.ForearmR);
+            Vector3 leftElbow = a.GetWorldPosition(HumanoidBone.ForearmL);
+            Vector3 rightShoulder = a.GetWorldPosition(HumanoidBone.UpperArmR);
+
+            Assert.LessOrEqual(rightElbow.x, rightShoulder.x + 0.03f, gun + ": right elbow not flared outwards");
+            Assert.Less(rightElbow.y, rightShoulder.y - 0.12f, gun + ": right elbow drops towards the ribs");
+            Assert.Less(leftElbow.y, a.GunPosition.y - 0.05f, gun + ": left elbow hangs below the gun");
+            Assert.Less(Mathf.Abs(leftElbow.x - a.GunPosition.x), 0.3f, gun + ": left elbow stays under the weapon line");
+        }
+    }
+
+    [Test]
+    public void Aim_StaysAlignedWithTheLookDirectionAtEveryPitch()
+    {
+        foreach (string gun in Shouldered)
+        {
+            foreach (float pitch in new[] { -40f, 0f, 35f })
+            {
+                HumanoidAnimator a = Settle(GunHoldCatalog.Build(gun), HoldStance.Aim, pitch);
+                Vector3 look = Quaternion.Euler(pitch, 0f, 0f) * Vector3.forward;
+                Assert.Less(Vector3.Angle(a.GunRotation * Vector3.forward, look), 1.5f, gun + " pitch " + pitch);
+            }
+        }
+    }
+
+    private struct RecoilPeak
+    {
+        public float rise;
+        public float back;
+        public float torso;
+    }
+
+    private static RecoilPeak PeakRecoil(string gun)
+    {
+        GunHoldProfile profile = GunHoldCatalog.Build(gun);
+        HumanoidAnimator a = Settle(profile, HoldStance.Aim);
+        var input = new HumanoidAnimationInput { holdProfile = profile, holdStance = HoldStance.Aim };
+        float restPitch = Mathf.Asin((a.GunRotation * Vector3.forward).y) * Mathf.Rad2Deg;
+        Vector3 restPos = a.GunPosition;
+        Vector3 restForward = a.GunRotation * Vector3.forward;
+        float restTorso = (a.GetWorldRotation(HumanoidBone.Chest) * Vector3.forward).y;
+        var peak = new RecoilPeak();
+        a.NotifyShot();
+        for (int i = 0; i < 40; i++)
+        {
+            a.Tick(0.016f, input);
+            peak.rise = Mathf.Max(peak.rise, Mathf.Asin((a.GunRotation * Vector3.forward).y) * Mathf.Rad2Deg - restPitch);
+            peak.back = Mathf.Max(peak.back, Vector3.Dot(restPos - a.GunPosition, restForward));
+            peak.torso = Mathf.Max(peak.torso, Mathf.Abs((a.GetWorldRotation(HumanoidBone.Chest) * Vector3.forward).y - restTorso));
+        }
+
+        return peak;
+    }
+
+    [Test]
+    public void Recoil_IsVisibleForARifleShot()
+    {
+        RecoilPeak peak = PeakRecoil("M4A1");
+        Assert.Greater(peak.rise, 3f, "muzzle rises by a few degrees");
+        Assert.Greater(peak.back, 0.03f, "the gun kicks back into the shoulder");
+        Assert.Greater(peak.torso, 0.01f, "the torso rocks with the shot");
+    }
+
+    [Test]
+    public void Recoil_ScalesPerWeaponClass()
+    {
+        float smg = PeakRecoil("UMP").rise;
+        float rifle = PeakRecoil("M4A1").rise;
+        float lmg = PeakRecoil("LMG").rise;
+        float dmr = PeakRecoil("DMRSniper").rise;
+        float shotgun = PeakRecoil("Shotgun").rise;
+        float bolt = PeakRecoil("BoltActionSniper").rise;
+
+        Assert.Less(smg, rifle, "SMG kicks less than a rifle");
+        Assert.Less(lmg, rifle, "the heavy LMG is steadier than a rifle");
+        Assert.Greater(dmr, rifle);
+        Assert.Greater(shotgun, dmr);
+        Assert.Greater(bolt, rifle * 2f, "bolt sniper has the biggest kick");
+        Assert.Greater(PeakRecoil("Pistol").rise, rifle, "pistol muzzle flips");
+    }
+
+    [Test]
+    public void Recoil_RecoversAndSustainedFireStaysBounded()
+    {
+        foreach (string gun in Guns)
+        {
+            GunHoldProfile profile = GunHoldCatalog.Build(gun);
+            HumanoidAnimator a = Settle(profile, HoldStance.Aim);
+            var input = new HumanoidAnimationInput { holdProfile = profile, holdStance = HoldStance.Aim };
+            float rest = a.GunPosition.z;
+            for (int i = 0; i < 30; i++)
+            {
+                if (i % 3 == 0)
+                    a.NotifyShot();
+                a.Tick(0.016f, input);
+                Assert.Less(a.Recoil, 2.3f, gun + ": recoil stays bounded");
+            }
+
+            for (int i = 0; i < 100; i++)
+                a.Tick(0.016f, input);
+            Assert.AreEqual(rest, a.GunPosition.z, 0.015f, gun + ": back on target after the burst");
+            Assert.AreEqual(0f, a.Recoil, 0.02f);
+        }
+    }
+
+    [Test]
+    public void LmgBipod_AimsFromABracedLeaningCrouchWithTheSupportHandOnTheHandguard()
+    {
+        GunHoldProfile lmg = GunHoldCatalog.Build("LMG");
+        HumanoidAnimator braced = Settle(lmg, HoldStance.Aim);
+        HumanoidAnimator rifle = Settle(GunHoldCatalog.Build("M4A1"), HoldStance.Aim);
+
+        Assert.Greater(braced.CrouchWeight, 0.3f, "knees bend");
+        Assert.AreEqual(0f, rifle.CrouchWeight, 1e-3f, "other guns keep standing");
+        Assert.Less(braced.HipsOffset.y, rifle.HipsOffset.y - 0.12f, "the hips drop");
+
+        float lean = Vector3.Angle(braced.GetWorldRotation(HumanoidBone.Chest) * Vector3.up, Vector3.up);
+        float rifleLean = Vector3.Angle(rifle.GetWorldRotation(HumanoidBone.Chest) * Vector3.up, Vector3.up);
+        Assert.Greater(lean, rifleLean + 10f, "the torso leans into the gun");
+
+        Assert.Less(Vector3.Distance(braced.GetPalmPosition(false), braced.GetPalmTarget(false)), 0.03f, "support hand on the handguard");
+        Assert.Less(Vector3.Distance(braced.GetPalmPosition(true), braced.GetPalmTarget(true)), 0.03f, "shooting hand on the grip");
+    }
+
+    [Test]
+    public void LmgBipod_StanceIsDistinctFromReady()
+    {
+        GunHoldProfile lmg = GunHoldCatalog.Build("LMG");
+        HumanoidAnimator ready = Settle(lmg, HoldStance.Ready);
+        HumanoidAnimator aim = Settle(lmg, HoldStance.Aim);
+        Assert.Less(ready.CrouchWeight, 0.05f);
+        Assert.Greater(aim.CrouchWeight, 0.3f);
+        Assert.Greater(Vector3.Distance(ready.GunPosition, aim.GunPosition), 0.12f);
+    }
 }
+

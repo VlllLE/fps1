@@ -20,6 +20,7 @@ public sealed partial class HumanoidAnimator
     private float stanceT;
     private float aimYaw;
     private float recoil;
+    private float recoilVelocity;
     private bool reloading;
     private float reloadProgress;
     private int reloadCycles = 1;
@@ -62,7 +63,27 @@ public sealed partial class HumanoidAnimator
     /// <summary>Kicks the weapon (and the hands holding it) for one shot. Strength 1 is a rifle round.</summary>
     public void NotifyShot(float strength = 1f)
     {
-        recoil = Mathf.Clamp(recoil + Mathf.Clamp(strength, 0f, 2f), 0f, 1.6f);
+        float scale = profile != null ? profile.recoilKick : 1f;
+        recoilVelocity = Mathf.Min(recoilVelocity + RecoilImpulse * Mathf.Clamp(strength, 0f, 2f) * scale, RecoilImpulse * 3f);
+    }
+
+    private const float RecoilImpulse = 40f;
+    private const float RecoilOmega = 21f;
+    private const float RecoilDamping = 0.55f;
+
+    /// <summary>Under-damped spring: a shot snaps the weapon back and up, then it settles with a small overshoot.</summary>
+    private void TickRecoil(float dt)
+    {
+        int steps = Mathf.Max(1, Mathf.CeilToInt(dt / 0.004f));
+        float h = dt / steps;
+        for (int i = 0; i < steps; i++)
+        {
+            float accel = -RecoilOmega * RecoilOmega * recoil - 2f * RecoilDamping * RecoilOmega * recoilVelocity;
+            recoilVelocity += accel * h;
+            recoil += recoilVelocity * h;
+        }
+
+        recoil = Mathf.Clamp(recoil, -0.3f, 2.2f);
     }
 
     /// <summary>World-space (body-root space) palm centre of the animated hand.</summary>
@@ -85,6 +106,15 @@ public sealed partial class HumanoidAnimator
         return holdArmWeight[right ? RightIndex : LeftIndex];
     }
 
+    /// <summary>Knee bend a braced (bipod) weapon asks for while aiming.</summary>
+    private static float HoldCrouchTarget(HumanoidAnimationInput input)
+    {
+        GunHoldProfile p = input.holdProfile;
+        if (p == null || p.aimCrouch <= 0f)
+            return 0f;
+        return p.aimCrouch * Mathf.Clamp01((int)input.holdStance - 1f);
+    }
+
     private void TickHold(float dt, HumanoidAnimationInput input)
     {
         if (input.holdProfile != null)
@@ -99,7 +129,7 @@ public sealed partial class HumanoidAnimator
             holdWeight = 0f;
         stanceT = Approach(stanceT, (float)input.holdStance, dt, 7f);
         aimYaw = Approach(aimYaw, Mathf.Clamp(input.aimYawDegrees, -120f, 120f), dt, 14f);
-        recoil *= Mathf.Exp(-16f * dt);
+        TickRecoil(dt);
         reloading = input.reloading;
         reloadProgress = Mathf.Clamp01(input.reloadProgress);
         reloadCycles = Mathf.Max(1, input.reloadCycles);
@@ -114,12 +144,14 @@ public sealed partial class HumanoidAnimator
 
         HoldStancePose pose = profile.Evaluate(stanceT);
         float w = holdWeight;
+        float aimWeight = Mathf.Clamp01(stanceT - 1f);
         float lean = profile.bipodStance ? 6f * Mathf.Clamp01(stanceT) : 0f;
+        lean += profile.aimLean * aimWeight - 2.4f * recoil;
 
         float spineYaw = -hipsYaw * 0.9f + w * (pose.blade * 0.5f + aimYaw * 0.25f);
         float chestYaw = -hipsYaw * 0.5f + w * (pose.blade * 0.5f + aimYaw * 0.35f);
         localRot[(int)HumanoidBone.Spine] = Quaternion.Euler(spinePitch + w * (lookPitch * 0.10f + lean), spineYaw, 0f);
-        localRot[(int)HumanoidBone.Chest] = Quaternion.Euler(chestPitch + lookPitch * (0.2f + 0.1f * w), chestYaw, flinchRoll);
+        localRot[(int)HumanoidBone.Chest] = Quaternion.Euler(chestPitch + lookPitch * (0.2f + 0.1f * w) - 1.6f * recoil * w, chestYaw, flinchRoll);
 
         UpdateWorld(HumanoidBone.Hips);
         UpdateWorld(HumanoidBone.Spine);
@@ -130,6 +162,7 @@ public sealed partial class HumanoidAnimator
         Quaternion lookRotation = Quaternion.Euler(lookPitch, aimYaw, 0f);
         Quaternion headTarget = Quaternion.Slerp(headBase, lookRotation, w);
         Quaternion residual = Quaternion.Inverse(chest) * headTarget;
+        residual *= Quaternion.Euler((pose.headNod - 3f * recoil) * w, 0f, pose.headRoll * w);
         Quaternion neck = Quaternion.Slerp(Quaternion.identity, residual, 0.4f);
         localRot[(int)HumanoidBone.Neck] = neck;
         localRot[(int)HumanoidBone.Head] = Quaternion.Inverse(neck) * residual;
@@ -150,6 +183,14 @@ public sealed partial class HumanoidAnimator
         if (!HoldActive)
             return 0f;
         return holdArmWeight[side < 0f ? LeftIndex : RightIndex];
+    }
+
+    /// <summary>Elbow pole direction (chest space) for the held-weapon arm: tucked in for the shooting arm, under the gun for the support arm.</summary>
+    private Vector3 HoldElbowPole(float side)
+    {
+        HoldStancePose pose = profile.Evaluate(stanceT);
+        Vector2 elbow = side < 0f ? pose.leftElbow : pose.rightElbow;
+        return new Vector3(side * elbow.x, -1f, -elbow.y);
     }
 
     private Vector3 HoldWristTarget(float side)
@@ -186,10 +227,10 @@ public sealed partial class HumanoidAnimator
         Vector3 chestPosition = worldPos[(int)HumanoidBone.Chest];
         HoldStancePose pose = profile.Evaluate(stanceT);
 
-        float pitch = pose.pitchBase + lookPitch * pose.pitchLook - 4.5f * recoil;
+        float pitch = pose.pitchBase + lookPitch * pose.pitchLook - 7.5f * recoil;
         gunRotation = Quaternion.Euler(pitch, aimYaw + pose.yawOffset, 0f);
         Vector3 reference = chestPosition + chestRotation * pose.anchor;
-        reference += gunRotation * new Vector3(0f, 0.004f * recoil, -0.035f * recoil);
+        reference += gunRotation * new Vector3(0f, 0.008f * recoil, -0.065f * recoil);
         gunPosition = reference - gunRotation * profile.ReferencePoint;
 
         Quaternion leftFrame = GunHoldCatalog.HandRotation(false, profile.leftFingers, profile.leftPalmNormal);

@@ -160,7 +160,7 @@ public sealed partial class HumanoidAnimator
             phase = Mathf.Repeat(phase + speed * dt / cycleLength, 1f);
 
         idleTime += dt;
-        crouchWeight = Approach(crouchWeight, Mathf.Clamp01(input.crouch01), dt, 12f);
+        crouchWeight = Approach(crouchWeight, Mathf.Clamp01(Mathf.Max(input.crouch01, HoldCrouchTarget(input))), dt, 12f);
         slideWeight = Approach(slideWeight, input.locomotion == HumanoidLocomotion.Sliding ? 1f : 0f, dt, 14f);
         airWeight = Approach(airWeight, input.locomotion == HumanoidLocomotion.Airborne ? 1f : 0f, dt, 10f);
         diveWeight = Approach(diveWeight, input.locomotion == HumanoidLocomotion.Diving ? 1f : 0f, dt, 12f);
@@ -326,7 +326,7 @@ public sealed partial class HumanoidAnimator
         if (holdArm > 1e-4f)
         {
             target = Vector3.Lerp(target, HoldWristTarget(side), holdArm);
-            pole = Vector3.Lerp(pole, chestRotation * new Vector3(side * 0.6f, -1f, -0.2f), holdArm);
+            pole = Vector3.Lerp(pole, chestRotation * HoldElbowPole(side), holdArm);
         }
 
         SolveLimb(upper, lower, HumanoidProportions.UpperArmLength, HumanoidProportions.ForearmLength,

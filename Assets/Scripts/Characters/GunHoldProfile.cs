@@ -37,6 +37,16 @@ public struct HoldStancePose
     public float yawOffset;
     /// <summary>Chest yaw towards the shooting hand's side, in degrees (a bladed stance brings the support arm onto the gun).</summary>
     public float blade;
+    /// <summary>Extra head pitch in degrees (positive = chin down towards the sights).</summary>
+    public float headNod;
+    /// <summary>Extra head roll in degrees (positive = tilts the head towards the shooting shoulder, cheek towards the stock).</summary>
+    public float headRoll;
+    /// <summary>Elbow pole of the shooting arm in chest space: how far it points outwards and backwards (0 = tucked at the ribs).</summary>
+    public Vector2 rightElbow;
+    /// <summary>Elbow pole of the support arm: outwards (negative = in under the weapon) and backwards.</summary>
+    public Vector2 leftElbow;
+
+    public static readonly Vector2 FlaredElbow = new Vector2(0.6f, 0.2f);
 
     public HoldStancePose(Vector3 anchor, float pitchBase, float pitchLook, float yawOffset, float blade)
     {
@@ -45,16 +55,25 @@ public struct HoldStancePose
         this.pitchLook = pitchLook;
         this.yawOffset = yawOffset;
         this.blade = blade;
+        headNod = 0f;
+        headRoll = 0f;
+        rightElbow = FlaredElbow;
+        leftElbow = FlaredElbow;
     }
 
     public static HoldStancePose Lerp(HoldStancePose a, HoldStancePose b, float t)
     {
-        return new HoldStancePose(
+        HoldStancePose pose = new HoldStancePose(
             Vector3.Lerp(a.anchor, b.anchor, t),
             Mathf.Lerp(a.pitchBase, b.pitchBase, t),
             Mathf.Lerp(a.pitchLook, b.pitchLook, t),
             Mathf.Lerp(a.yawOffset, b.yawOffset, t),
             Mathf.Lerp(a.blade, b.blade, t));
+        pose.headNod = Mathf.Lerp(a.headNod, b.headNod, t);
+        pose.headRoll = Mathf.Lerp(a.headRoll, b.headRoll, t);
+        pose.rightElbow = new Vector2(Mathf.Lerp(a.rightElbow.x, b.rightElbow.x, t), Mathf.Lerp(a.rightElbow.y, b.rightElbow.y, t));
+        pose.leftElbow = new Vector2(Mathf.Lerp(a.leftElbow.x, b.leftElbow.x, t), Mathf.Lerp(a.leftElbow.y, b.leftElbow.y, t));
+        return pose;
     }
 }
 
@@ -98,6 +117,12 @@ public sealed class GunHoldProfile
     public Vector3 leftPalmNormal = new Vector3(0.3f, 0.95f, 0f);
     public Vector3 magFingers = new Vector3(0f, -0.4f, 0.9f);
     public Vector3 magPalmNormal = Vector3.right;
+
+    /// <summary>Third-person recoil scale: 1 = rifle round. Muzzle rise, push back and torso rock all scale with it.</summary>
+    public float recoilKick = 1f;
+    /// <summary>Extra forward lean (degrees) and knee bend (0..1) while aiming, for a braced bipod stance.</summary>
+    public float aimLean;
+    public float aimCrouch;
 
     public HoldStancePose lowered;
     public HoldStancePose ready;
@@ -254,6 +279,7 @@ public static class GunHoldCatalog
                 p.boltHandle = V(0f, 0.060f, -0.050f);
                 p.muzzle = V(0f, 0.050f, 0.590f);
                 ApplyStocked(p);
+                p.recoilKick = 1.1f;
                 break;
 
             case Ump:
@@ -266,6 +292,7 @@ public static class GunHoldCatalog
                 p.boltHandle = V(0f, 0.060f, -0.040f);
                 p.muzzle = V(0f, 0.030f, 0.398f);
                 ApplyStocked(p);
+                p.recoilKick = 0.65f;
                 break;
 
             case Lmg:
@@ -279,8 +306,13 @@ public static class GunHoldCatalog
                 p.boltHandle = V(0.04f, 0.050f, 0.050f);
                 p.muzzle = V(0f, 0.040f, 0.740f);
                 ApplyStocked(p);
-                p.aim.anchor = V(0.14f, 0.11f, 0.10f);
+                p.recoilKick = 0.85f;
+                p.aimLean = 15f;
+                p.aimCrouch = 0.45f;
+                p.aim.anchor = V(0.15f, 0.17f, 0.08f);
                 p.aim.blade = 32f;
+                p.aim.headNod = 6f;
+                p.aim.headRoll = -7f;
                 p.ready.anchor = V(0.14f, 0.00f, 0.12f);
                 p.lowered.anchor = V(0.17f, -0.11f, 0.09f);
                 break;
@@ -296,10 +328,12 @@ public static class GunHoldCatalog
                 p.boltHandle = V(0f, 0.04f, 0.2f);
                 p.muzzle = V(0f, 0.030f, 0.570f);
                 ApplyStocked(p);
+                p.recoilKick = 2.3f;
                 break;
 
             case PistolName:
                 p.category = HoldCategory.Pistol;
+                p.recoilKick = 1.4f;
                 p.stocked = false;
                 p.twoHanded = true;
                 p.supportHandFreeWhenLowered = true;
@@ -328,6 +362,10 @@ public static class GunHoldCatalog
                 p.boltHandle = V(0.050f, 0.022f, -0.030f);
                 p.muzzle = V(0f, 0.030f, 0.660f);
                 ApplyStocked(p);
+                p.recoilKick = 2.7f;
+                p.aim.headRoll = -13f;
+                p.aim.headNod = 15f;
+                p.aim.anchor = V(0.15f, 0.27f, 0.05f);
                 break;
 
             case Dmr:
@@ -340,10 +378,15 @@ public static class GunHoldCatalog
                 p.boltHandle = V(0f, 0.060f, -0.030f);
                 p.muzzle = V(0f, 0.045f, 0.580f);
                 ApplyStocked(p);
+                p.recoilKick = 1.7f;
+                p.aim.headRoll = -12f;
+                p.aim.headNod = 14f;
+                p.aim.anchor = V(0.15f, 0.27f, 0.05f);
                 break;
 
             case Karambit:
                 p.category = HoldCategory.Melee;
+                p.recoilKick = 0.6f;
                 p.stocked = false;
                 p.twoHanded = false;
                 p.supportHandFreeWhenLowered = true;
@@ -370,6 +413,7 @@ public static class GunHoldCatalog
                 p.boltHandle = V(0f, 0.060f, -0.060f);
                 p.muzzle = V(0f, 0.040f, 0.544f);
                 ApplyStocked(p);
+                p.recoilKick = 1f;
                 break;
         }
 
@@ -381,8 +425,14 @@ public static class GunHoldCatalog
     {
         p.stocked = true;
         p.twoHanded = true;
-        p.aim = new HoldStancePose(V(0.13f, 0.15f, 0.08f), 0f, 1f, 0f, 35f);
+        p.aim = new HoldStancePose(V(0.15f, 0.25f, 0.05f), 0f, 1f, 0f, 35f);
+        p.aim.headNod = 13f;
+        p.aim.headRoll = -9f;
+        p.aim.rightElbow = new Vector2(0.06f, 0.55f);
+        p.aim.leftElbow = new Vector2(-0.10f, 0.05f);
         p.ready = new HoldStancePose(V(0.14f, 0.05f, 0.12f), 12f, 0.6f, -4f, 26f);
+        p.ready.rightElbow = new Vector2(0.30f, 0.35f);
+        p.ready.leftElbow = new Vector2(0.15f, 0.10f);
         p.lowered = new HoldStancePose(V(0.17f, -0.08f, 0.08f), 32f, 0.2f, -8f, 12f);
     }
 
