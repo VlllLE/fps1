@@ -104,6 +104,9 @@ Previews for batch-2 static textures live in the project store under `media/skin
 
 ## Notes
 
+- Glass is never skinned: `WeaponSkinApplier` skips material slots that `WeaponGlass` recognises (`Weapons/ScopeGlass` shader, or
+  a material/renderer named `*Glass*` / `*Lens*`), so scope lenses stay transparent on every skin and survive clearing. Skin
+  parameter overrides (`_Color` etc.) are written per slot and never reach a lens.
 - Pipeline: **Built-in** (`m_CustomRenderPipeline` is unset). These shaders
   will not work as-is under URP/HDRP.
 - Shaders / materials were authored without the Unity editor and are

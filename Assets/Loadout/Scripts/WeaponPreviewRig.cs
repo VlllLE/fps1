@@ -119,6 +119,11 @@ public sealed class WeaponPreviewRig : IDisposable
         if (karambit != null)
             karambit.Build();
 
+        // Same reason for the imported Blender guns: without this the preview shows the primitive fallback.
+        ImportedGunModel[] importedModels = instance.GetComponentsInChildren<ImportedGunModel>(true);
+        for (int i = 0; i < importedModels.Length; i++)
+            importedModels[i].Build();
+
         skinApplier = instance.GetComponent<WeaponSkinApplier>();
         if (skinApplier == null)
             skinApplier = instance.GetComponentInChildren<WeaponSkinApplier>(true);
