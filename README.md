@@ -137,7 +137,7 @@ Blender-built models in Play Mode, wearing weapon skins: the M4A1, shotgun and D
 | ![M4A1 with a camo skin, first person](docs/screenshots/model-m4a1.jpg) | ![SCAR-H held by the soldier](docs/screenshots/model-scar.jpg) |
 | ![UMP45 held by the soldier](docs/screenshots/model-ump.jpg) | ![Pump shotgun with a camo skin, first person](docs/screenshots/model-shotgun.jpg) |
 | ![LMG held by the soldier](docs/screenshots/model-lmg.jpg) | ![Bolt-action sniper with glass scope and bipod](docs/screenshots/model-sniper.jpg) |
-| ![DMR with a circuit skin, first person](docs/screenshots/model-dmr.jpg) | ![Pistol held by the soldier](docs/screenshots/model-pistol.jpg) |
+| ![DMR with the Night Viper skin, first person](docs/screenshots/model-dmr.jpg) | ![Pistol held by the soldier](docs/screenshots/model-pistol.jpg) |
 
 The karambit in first person:
 
