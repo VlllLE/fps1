@@ -28,6 +28,16 @@ public struct HumanoidAnimationInput
     /// <summary>Look pitch in degrees; positive looks down (Unity convention).</summary>
     public float lookPitchDegrees;
     public HumanoidArmPose armPose;
+    /// <summary>Weapon hold data; null means no weapon is held and the legacy arm poses are used.</summary>
+    public GunHoldProfile holdProfile;
+    public HoldStance holdStance;
+    /// <summary>Look yaw relative to the body root, in degrees (positive = right).</summary>
+    public float aimYawDegrees;
+    public bool reloading;
+    /// <summary>Reload progress in [0, 1] while <see cref="reloading"/>.</summary>
+    public float reloadProgress;
+    /// <summary>Number of load cycles (shells) for shell-by-shell reloads.</summary>
+    public int reloadCycles;
 }
 
 /// <summary>
@@ -36,7 +46,7 @@ public struct HumanoidAnimationInput
 /// unscaled body-root space (feet at y = 0). Legs and arms are placed with analytic two-bone IK so
 /// crouching, sliding and airborne poses keep feet and hands consistent without keyframed clips.
 /// </summary>
-public sealed class HumanoidAnimator
+public sealed partial class HumanoidAnimator
 {
     private const float TwoPi = Mathf.PI * 2f;
     private const float MoveThreshold = 0.25f;
@@ -156,6 +166,7 @@ public sealed class HumanoidAnimator
         diveWeight = Approach(diveWeight, input.locomotion == HumanoidLocomotion.Diving ? 1f : 0f, dt, 12f);
         readyWeight = Approach(readyWeight, input.armPose == HumanoidArmPose.WeaponReady ? 1f : 0f, dt, 8f);
         lookPitch = Approach(lookPitch, Mathf.Clamp(input.lookPitchDegrees, -70f, 70f), dt, 14f);
+        TickHold(dt, input);
         verticalSpeed = Approach(verticalSpeed, input.verticalSpeed, dt, 10f);
 
         float decay = Mathf.Exp(-10f * dt);
@@ -206,11 +217,14 @@ public sealed class HumanoidAnimator
         localRot[(int)HumanoidBone.ShoulderL] = Quaternion.identity;
         localRot[(int)HumanoidBone.ShoulderR] = Quaternion.identity;
 
+        ApplyHoldTorso(spinePitch, chestPitch, hipsYaw, leanSum);
+
         for (int i = 0; i <= (int)HumanoidBone.ShoulderR; i++)
             UpdateWorld((HumanoidBone)i);
 
         SolveLeg(-1f);
         SolveLeg(1f);
+        ComputeHold();
         SolveArm(-1f, breathe);
         SolveArm(1f, breathe);
 
@@ -308,9 +322,18 @@ public sealed class HumanoidAnimator
         Vector3 pole = chestRotation * new Vector3(side * 0.2f, -0.8f, -0.5f);
         Vector3 rollReference = chestRotation * Vector3.forward;
 
+        float holdArm = HoldArmWeight(side);
+        if (holdArm > 1e-4f)
+        {
+            target = Vector3.Lerp(target, HoldWristTarget(side), holdArm);
+            pole = Vector3.Lerp(pole, chestRotation * new Vector3(side * 0.6f, -1f, -0.2f), holdArm);
+        }
+
         SolveLimb(upper, lower, HumanoidProportions.UpperArmLength, HumanoidProportions.ForearmLength,
             target, pole, rollReference, chestRotation * Vector3.up);
-        localRot[(int)hand] = Quaternion.identity;
+        localRot[(int)hand] = holdArm > 1e-4f
+            ? Quaternion.Slerp(Quaternion.identity, Quaternion.Inverse(worldRot[(int)lower]) * HoldHandRotation(side), holdArm)
+            : Quaternion.identity;
     }
 
     private void SolveLimb(
