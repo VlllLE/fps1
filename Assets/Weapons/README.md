@@ -207,8 +207,12 @@ The prefabs reference the FBX root with a pinned fileID (`internalIDToNameTable`
 regenerates that id, **Tools > Weapons > Relink Imported Gun Models** reassigns the reference, and in the editor the
 component also falls back to loading by `editorAssetPath`.
 
-`WeaponSkinApplier` assigns the skin material to every slot of every renderer, so the scope lens takes the skin too
-(it does not know about `Mat_SniperGlass`); a glass opt-out belongs in the applier, which this change does not touch.
+The scope lens is the `SniperGlass` slot of the `Scope` mesh (the body, tube and mounts are the other slots), mapped to
+`Mat_SniperGlass`, which uses the `Weapons/ScopeGlass` surface shader (`Assets/Weapons/Shaders`: tinted, alpha-blended,
+fresnel-boosted reflection, still see-through for ADS). `WeaponSkinApplier` skins every slot except glass (`WeaponGlass`:
+`Weapons/ScopeGlass` shader, or a material or renderer named `*Glass*` / `*Lens*`), so a skinned sniper keeps real scope glass in
+the hands, the loadout preview, and (unskinned) on the third-person and dropped gun. Any future optic only has to use a
+glass material or a `Lens` renderer name. The project has no other optics (the other guns use iron sights).
 `Assets/Tests/Editor/ImportedGunModelTests.cs` checks part names, triangle budget, UVs, muzzle position, scope-on-rail,
 bipod, material remap and the fallback; `SniperMountingTests` still covers the fallback primitives.
 

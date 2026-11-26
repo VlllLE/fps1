@@ -6,6 +6,9 @@ using UnityEngine;
 /// (or an explicit target root). Works with any mesh: skins use object-space triplanar
 /// materials and do not depend on weapon UVs.
 ///
+/// Optical glass (scope and sight lenses, see <see cref="WeaponGlass"/>) is never skinned or restored: those
+/// material slots keep their transparent glass material.
+///
 /// Attach beside a WeaponController, or call <see cref="ApplySkin"/> from UI / loadout code.
 /// The skin is re-applied whenever the weapon is enabled, so holster/equip cycles and
 /// loadout swaps never fall back to the default grey materials.
@@ -98,21 +101,79 @@ public class WeaponSkinApplier : MonoBehaviour
             if (renderer == null)
                 continue;
 
-            int slotCount = renderer.sharedMaterials != null ? renderer.sharedMaterials.Length : 1;
+            Material[] current = renderer.sharedMaterials;
+            int slotCount = current != null ? current.Length : 1;
             if (slotCount <= 0)
                 slotCount = 1;
 
+            originalMaterials.TryGetValue(renderer, out Material[] originals);
             Material[] materials = new Material[slotCount];
+            bool[] glass = new bool[slotCount];
             for (int slot = 0; slot < slotCount; slot++)
-                materials[slot] = material;
+            {
+                glass[slot] = IsGlassSlot(renderer, originals, current, slot);
+                materials[slot] = glass[slot] ? GlassMaterialAt(originals, current, slot) : material;
+            }
 
             renderer.sharedMaterials = materials;
 
+            // The block is written per slot: a skin's _Color / _Glossiness overrides must never reach a lens.
+            renderer.SetPropertyBlock(null);
             if (skin.applyParameterOverrides)
-                renderer.SetPropertyBlock(block);
-            else
-                renderer.SetPropertyBlock(null);
+            {
+                for (int slot = 0; slot < slotCount; slot++)
+                {
+                    if (!glass[slot])
+                        renderer.SetPropertyBlock(block, slot);
+                }
+            }
         }
+    }
+
+    /// <summary>
+    /// Number of material slots on this weapon that are optical glass and therefore never skinned (for diagnostics and tests).
+    /// </summary>
+    public int GlassSlotCount
+    {
+        get
+        {
+            if (!initialized)
+                Initialize(applyDefault: false);
+            CacheRenderers();
+            CaptureOriginalMaterials();
+
+            int count = 0;
+            for (int i = 0; i < cachedRenderers.Count; i++)
+            {
+                Renderer renderer = cachedRenderers[i];
+                if (renderer == null)
+                    continue;
+                Material[] current = renderer.sharedMaterials;
+                originalMaterials.TryGetValue(renderer, out Material[] originals);
+                for (int slot = 0; slot < current.Length; slot++)
+                {
+                    if (IsGlassSlot(renderer, originals, current, slot))
+                        count++;
+                }
+            }
+
+            return count;
+        }
+    }
+
+    private static bool IsGlassSlot(Renderer renderer, Material[] originals, Material[] current, int slot)
+    {
+        Material original = originals != null && slot < originals.Length ? originals[slot] : null;
+        if (original == null && current != null && slot < current.Length)
+            original = current[slot];
+        return WeaponGlass.IsGlassSlot(renderer, original);
+    }
+
+    private static Material GlassMaterialAt(Material[] originals, Material[] current, int slot)
+    {
+        if (originals != null && slot < originals.Length && originals[slot] != null)
+            return originals[slot];
+        return current != null && slot < current.Length ? current[slot] : null;
     }
 
     public void ClearSkin()
@@ -246,7 +307,17 @@ public class WeaponSkinApplier : MonoBehaviour
         {
             if (pair.Key == null)
                 continue;
-            pair.Key.sharedMaterials = pair.Value;
+
+            // Glass slots were never skinned, so whatever material they hold now (including a tuned lens) stays.
+            Material[] restored = (Material[])pair.Value.Clone();
+            Material[] current = pair.Key.sharedMaterials;
+            for (int slot = 0; slot < restored.Length && slot < current.Length; slot++)
+            {
+                if (WeaponGlass.IsGlassSlot(pair.Key, restored[slot]))
+                    restored[slot] = current[slot];
+            }
+
+            pair.Key.sharedMaterials = restored;
             pair.Key.SetPropertyBlock(null);
         }
     }
