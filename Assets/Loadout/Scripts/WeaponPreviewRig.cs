@@ -81,6 +81,20 @@ public sealed class WeaponPreviewRig : IDisposable
     public Camera PreviewCamera => previewCamera;
     public bool IsActive => previewCamera != null && previewCamera.enabled;
 
+    /// <summary>True when the preview shows the weapon's imported Blender model rather than the primitive fallback.</summary>
+    public bool ShowsImportedModel { get; private set; }
+
+    private static bool AnyImported(ImportedGunModel[] imported, AssaultWeaponModel[] assault, WeaponModelLoader[] loaders, KarambitModel karambit)
+    {
+        for (int i = 0; i < imported.Length; i++)
+            if (imported[i].UsesImportedModel) return true;
+        for (int i = 0; i < assault.Length; i++)
+            if (assault[i].UsesImportedModel) return true;
+        for (int i = 0; i < loaders.Length; i++)
+            if (loaders[i].IsLoaded) return true;
+        return karambit != null && karambit.UsesImportedModel;
+    }
+
     /// <summary>Material currently shown on the first mesh part (null when nothing is loaded). For tests/diagnostics.</summary>
     public Material FirstPartMaterial
     {
@@ -120,9 +134,20 @@ public sealed class WeaponPreviewRig : IDisposable
             karambit.Build();
 
         // Same reason for the imported Blender guns: without this the preview shows the primitive fallback.
+        // Each weapon family has its own loader (sniper/DMR, assault rifles/SMG, and the generic loader for the rest).
         ImportedGunModel[] importedModels = instance.GetComponentsInChildren<ImportedGunModel>(true);
         for (int i = 0; i < importedModels.Length; i++)
             importedModels[i].Build();
+
+        AssaultWeaponModel[] assaultModels = instance.GetComponentsInChildren<AssaultWeaponModel>(true);
+        for (int i = 0; i < assaultModels.Length; i++)
+            assaultModels[i].Build();
+
+        WeaponModelLoader[] modelLoaders = instance.GetComponentsInChildren<WeaponModelLoader>(true);
+        for (int i = 0; i < modelLoaders.Length; i++)
+            modelLoaders[i].Load();
+
+        ShowsImportedModel = AnyImported(importedModels, assaultModels, modelLoaders, karambit);
 
         skinApplier = instance.GetComponent<WeaponSkinApplier>();
         if (skinApplier == null)
@@ -315,6 +340,7 @@ public sealed class WeaponPreviewRig : IDisposable
     private void ClearInstance()
     {
         parts.Clear();
+        ShowsImportedModel = false;
         skinApplier = null;
         shownSkin = null;
         hasShownSkin = false;
