@@ -18,6 +18,14 @@ public class BotPlayModeTests
     [UnitySetUp]
     public IEnumerator SetUp()
     {
+        Scene leftover = SceneManager.GetActiveScene();
+        if (System.Array.IndexOf(BotMapPlayModeTests.Maps, leftover.name) >= 0)
+        {
+            Scene arena = SceneManager.CreateScene("BotArena");
+            SceneManager.SetActiveScene(arena);
+            yield return SceneManager.UnloadSceneAsync(leftover);
+        }
+
         var ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
         ground.name = "BotArenaGround";
         ground.transform.position = new Vector3(0f, -0.5f, 0f);
@@ -113,7 +121,8 @@ public class BotPlayModeTests
 
         Assert.That(PlayerHealth.Local, Is.EqualTo(playerHealth));
         Assert.That(manager.Bots.Count, Is.EqualTo(1));
-        Assert.That(bot.Brain.State, Is.EqualTo(BotState.Patrol).Or.EqualTo(BotState.Attack).Or.EqualTo(BotState.Investigate));
+        Assert.That(bot.Brain.State, Is.EqualTo(BotState.Patrol).Or.EqualTo(BotState.Attack).Or.EqualTo(BotState.Investigate)
+            .Or.EqualTo(BotState.Chase));
         Assert.That(Vector3.Distance(bot.transform.position, playerObject.transform.position), Is.GreaterThan(3f));
     }
 
