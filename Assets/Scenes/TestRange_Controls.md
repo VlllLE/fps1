@@ -58,3 +58,28 @@ Re-sync scene player: **Tools → Sync Test Range Player (Character + Classes)**
 - `Esc` closes the menu, `L` toggles it on the Loadout tab. Closing always re-locks the cursor and restores the time scale; firing / weapon switching are suppressed while it is open.
 - The catalog also offers the **Pump Shotgun** (9 pellets, short range, per-shell reload) and the **LMG** (100-round belt, slow reload, heavy recoil) as primary or secondary.
 - The weapon/skin/class lists come from `Assets/Resources/WeaponLoadoutCatalog.asset`; after adding a weapon prefab, skin or class run **Tools → Loadout → Rebuild Weapon Catalog**.
+
+### Enemy bots (TestRange, Shipment, Dome)
+
+Armed AI soldiers spawn automatically in every map: **3 bots at Normal difficulty** shortly after the scene loads. They patrol, spot you through a view cone with a line-of-sight check, chase or strafe at a preferred range, shoot with real weapon configs (`HitDetection`, fire rate, bursts, reload), duck behind cover when hurt, die and respawn. You get a health bar, red damage-direction wedges, a vignette and a "YOU DIED" screen, then respawn at your start after about 3 s. Health regenerates after ~5 s without damage. The static training targets are unchanged.
+
+| Key | Action |
+|-----|--------|
+| `F8` | Spawn another bot out of your sight |
+| `F9` | Freeze / unfreeze every bot (they stop moving, aiming and shooting) |
+| `F10` | Cycle difficulty Easy → Normal → Hard → Veteran (applies to every bot immediately, saved in `PlayerPrefs` key `FPS.Bots.Difficulty.v1`) |
+| `F11` | Toggle the bot debug overlay (state, health and distance above each bot) |
+| `\` | Remove all bots; press again to bring the default bots back |
+
+| Difficulty | Health | Reaction | Aim error | Damage vs player |
+|------------|--------|----------|-----------|------------------|
+| Easy | 70 | ~0.95 s | ~7° | 25 % |
+| Normal | 100 | ~0.5 s | ~3.5° | 40 % |
+| Hard | 130 | ~0.3 s | ~2° | 60 % |
+| Veteran | 160 | ~0.15 s | ~1° | 80 % |
+
+Difficulty also scales movement speed, view distance, burst length and cover use. Set the environment variable `FPS_BOTS=0` to disable the auto-spawn and bot keys.
+
+**Navigation:** there is no baked NavMesh. The `BotManager` builds one at runtime from the scene colliders (legacy `UnityEngine.AI` `NavMeshBuilder`, player/targets/bots excluded) so it works on all three maps without editing scenes or map builders. If NavMesh generation fails, bots fall back to raycast/capsule-cast steering.
+
+**Customising:** drop `BotWaypoint` components on empty objects to define patrol routes (otherwise random reachable points are used), or create a `BotSettings` asset (*Create → Bots → Bot Settings*) and assign it with `BotManager.UseSettings`.
