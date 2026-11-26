@@ -39,6 +39,8 @@ public class ImportedGunModel : MonoBehaviour
     public bool UsesImportedModel => importedInstance != null;
     public GameObject ImportedInstance => importedInstance;
     public GameObject ProceduralFallback => proceduralFallback;
+    /// <summary>The serialized model asset (read from a prefab asset by code that builds visual-only copies, such as third-person guns).</summary>
+    public GameObject ImportedModelPrefab => importedModelPrefab;
 
     private void Awake()
     {
@@ -147,7 +149,7 @@ public class ImportedGunModel : MonoBehaviour
         return false;
     }
 
-    private void ApplyMaterials(GameObject instance)
+    public void ApplyMaterials(GameObject instance)
     {
         Renderer[] renderers = instance.GetComponentsInChildren<Renderer>(true);
         for (int r = 0; r < renderers.Length; r++)

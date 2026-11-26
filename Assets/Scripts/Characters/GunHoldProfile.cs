@@ -249,7 +249,7 @@ public static class GunHoldCatalog
                 p.aim.anchor = V(0.14f, 0.11f, 0.10f);
                 p.aim.blade = 32f;
                 p.ready.anchor = V(0.14f, 0.00f, 0.12f);
-                p.lowered.anchor = V(0.17f, -0.14f, 0.09f);
+                p.lowered.anchor = V(0.17f, -0.11f, 0.09f);
                 break;
 
             case ShotgunName:

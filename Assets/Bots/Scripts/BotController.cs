@@ -28,11 +28,9 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     private System.Random rng;
     private HumanoidBody body;
     private Transform eye;
-    private Transform muzzle;
+    private bool bodyDeath;
     private LineRenderer tracer;
-    private Material propMaterial;
     private Material tracerMaterial;
-    private readonly List<GameObject> props = new List<GameObject>();
 
     private float health;
     private bool frozen;
@@ -203,7 +201,7 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         if (body != null)
             body.LookSource = eye;
 
-        BuildWeaponProp();
+        EquipBodyWeapon(weapon);
         BuildTracer();
         brain.StateChanged += OnStateChanged;
         UpdateArmPose();
@@ -223,8 +221,6 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     private void OnDestroy()
     {
         Registry.Remove(this);
-        if (propMaterial != null)
-            Destroy(propMaterial);
         if (tracerMaterial != null)
             Destroy(tracerMaterial);
     }
@@ -836,6 +832,27 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
             return;
         bool ready = brain.State != BotState.Patrol && brain.State != BotState.Dead;
         body.ArmPose = ready ? HumanoidArmPose.WeaponReady : HumanoidArmPose.Relaxed;
+        body.Stance = StanceFor(brain.State);
+        body.SetReloadState(gun.IsReloading, gun.ReloadProgress01(Time.time),
+            gun.Config != null && gun.Config.perShellReload ? Mathf.Clamp(gun.MagazineSize - gun.Ammo, 1, 12) : 1);
+    }
+
+    /// <summary>Lowered carry while patrolling, shouldered rifle while shooting, ready position in between.</summary>
+    public static HoldStance StanceFor(BotState state)
+    {
+        switch (state)
+        {
+            case BotState.Attack: return HoldStance.Aim;
+            case BotState.Patrol:
+            case BotState.Dead: return HoldStance.Lowered;
+            default: return HoldStance.Ready;
+        }
+    }
+
+    private void EquipBodyWeapon(WeaponConfig weapon)
+    {
+        if (body != null)
+            body.EquipWeapon(weapon, BotManager.GetWeaponPrefab(weapon));
     }
 
     private float NextStrafeInterval()
@@ -891,9 +908,12 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     {
         if (body != null && body.Animator != null)
             body.Animator.AddFlinch(0.1f, Vector3.back);
+        if (body != null)
+            body.NotifyShot(1f);
 
         if (tracer != null)
         {
+            Transform muzzle = body != null ? body.Muzzle : null;
             Vector3 start = muzzle != null ? muzzle.position : EyePosition;
             tracer.SetPosition(0, start);
             tracer.SetPosition(1, tracerEnd);
@@ -941,14 +961,14 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         }
 
         if (health <= 0f)
-            Die(direction);
+            Die(direction, headshot, amount);
     }
 
     public float GetHealth() => health;
 
     bool IDamageable.IsDead() => IsDead;
 
-    private void Die(Vector3 shotDirection)
+    private void Die(Vector3 shotDirection, bool headshot, float amount)
     {
         health = 0f;
         Deaths++;
@@ -957,6 +977,7 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         SetCollidersEnabled(false);
         if (tracer != null)
             tracer.enabled = false;
+        float deathSpeed = lastPlanarSpeed;
         currentSpeed = 0f;
         lastPlanarSpeed = 0f;
 
@@ -967,13 +988,32 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         Vector3 axis = Vector3.Cross(Vector3.up, flat);
         fallFrom = transform.rotation;
         fallTo = Quaternion.AngleAxis(88f, axis) * fallFrom;
+
+        bodyDeath = body != null && body.IsBuilt && body.Animator != null;
+        if (bodyDeath)
+        {
+            Vector3 planarVelocity = lastMoveDirection * deathSpeed;
+            var context = new DeathContext
+            {
+                localHitDirection = transform.InverseTransformDirection(flat),
+                headshot = headshot,
+                damage = amount,
+                forwardSpeed = Vector3.Dot(planarVelocity, transform.forward),
+                crouched = false,
+                roll = (float)rng.NextDouble()
+            };
+            float impulse = Mathf.Clamp(0.8f + amount / 100f + (headshot ? 0.3f : 0f), 0.8f, 1.7f);
+            body.BeginDeath(context, impulse);
+        }
+
         Died?.Invoke(this);
     }
 
     private void UpdateDead(float now)
     {
         float elapsed = now - deathTime;
-        transform.rotation = Quaternion.Slerp(fallFrom, fallTo, Mathf.Clamp01(elapsed / FallDuration));
+        if (!bodyDeath)
+            transform.rotation = Quaternion.Slerp(fallFrom, fallTo, Mathf.Clamp01(elapsed / FallDuration));
 
         if (!bodyHidden && elapsed >= settings.corpseTime)
             SetBodyVisible(false);
@@ -988,6 +1028,9 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     /// <summary>Brings the bot back with full health and ammo at <paramref name="position"/>.</summary>
     public void Respawn(Vector3 position)
     {
+        if (body != null)
+            body.EndDeath();
+        bodyDeath = false;
         transform.position = BotNavigation.Snap(position, transform);
         transform.rotation = Quaternion.Euler(0f, (float)(rng.NextDouble() * 360.0), 0f);
         spawnPoint = transform.position;
@@ -1056,60 +1099,6 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     #endregion
 
     #region Visual props
-
-    private void BuildWeaponProp()
-    {
-        if (body == null)
-            return;
-
-        Transform hand = body.GetBone(HumanoidBone.HandR);
-        if (hand == null)
-            return;
-
-        propMaterial = CreateUnlitMaterial(new Color(0.08f, 0.08f, 0.09f));
-        Mesh cube = GetCubeMesh();
-        if (cube == null)
-            return;
-
-        var rifle = new GameObject("BotRifle").transform;
-        rifle.SetParent(hand, false);
-        rifle.localPosition = new Vector3(0f, -0.12f, 0.02f);
-        rifle.localRotation = Quaternion.identity;
-        props.Add(rifle.gameObject);
-
-        AddPropPart(rifle, cube, new Vector3(0f, -0.10f, 0f), new Vector3(0.05f, 0.55f, 0.07f));
-        AddPropPart(rifle, cube, new Vector3(0f, 0.12f, 0.04f), new Vector3(0.04f, 0.18f, 0.06f));
-        AddPropPart(rifle, cube, new Vector3(0f, -0.12f, -0.08f), new Vector3(0.035f, 0.1f, 0.1f));
-
-        muzzle = new GameObject("Muzzle").transform;
-        muzzle.SetParent(rifle, false);
-        muzzle.localPosition = new Vector3(0f, -0.4f, 0f);
-    }
-
-    private static Mesh GetCubeMesh()
-    {
-        Mesh cube = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
-        if (cube != null)
-            return cube;
-
-        GameObject temp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        temp.transform.position = new Vector3(0f, -10000f, 0f);
-        cube = temp.GetComponent<MeshFilter>().sharedMesh;
-        Destroy(temp);
-        return cube;
-    }
-
-    private void AddPropPart(Transform parent, Mesh mesh, Vector3 localPosition, Vector3 localScale)
-    {
-        var part = new GameObject("Part");
-        part.transform.SetParent(parent, false);
-        part.transform.localPosition = localPosition;
-        part.transform.localScale = localScale;
-        part.AddComponent<MeshFilter>().sharedMesh = mesh;
-        var renderer = part.AddComponent<MeshRenderer>();
-        renderer.sharedMaterial = propMaterial;
-        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-    }
 
     private void BuildTracer()
     {

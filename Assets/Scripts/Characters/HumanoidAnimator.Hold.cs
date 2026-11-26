@@ -237,7 +237,7 @@ public sealed partial class HumanoidAnimator
                     Vector3 toShoulder = leftShoulder - wrist;
                     float shortfall = toShoulder.magnitude - ArmReach;
                     if (shortfall > 0f && toShoulder.sqrMagnitude > 1e-8f)
-                        gunPosition += toShoulder.normalized * Mathf.Min(shortfall + 0.002f, 0.12f);
+                        gunPosition += toShoulder.normalized * Mathf.Min(shortfall + 0.002f, 0.2f);
                 }
             }
         }

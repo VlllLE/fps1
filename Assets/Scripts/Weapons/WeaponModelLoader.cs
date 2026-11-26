@@ -42,6 +42,8 @@ public class WeaponModelLoader : MonoBehaviour
 
     public bool IsLoaded => modelInstance != null;
     public GameObject ModelInstance => modelInstance;
+    /// <summary>The serialized model asset (read from a prefab asset by code that builds visual-only copies).</summary>
+    public GameObject ModelPrefab => modelPrefab;
     public string InstanceName => instanceName;
     public IReadOnlyList<string> FallbackChildren => fallbackChildren;
 
@@ -129,7 +131,7 @@ public class WeaponModelLoader : MonoBehaviour
         return false;
     }
 
-    private void ApplyMaterials(GameObject instance)
+    public void ApplyMaterials(GameObject instance)
     {
         Renderer[] renderers = instance.GetComponentsInChildren<Renderer>(true);
         for (int r = 0; r < renderers.Length; r++)

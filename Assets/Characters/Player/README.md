@@ -57,7 +57,12 @@ The following components are in `Assets/Scripts/Characters/`:
 | `HumanoidParts` / `HumanoidMeshBuilder` / `HumanoidMaterials` | Stylised limb, torso, head, boot and visor meshes plus a 5-slot suit palette (Standard shader). |
 | `HumanoidAnimator` / `HumanoidIK` | Code-driven idle breathing, walk/strafe gait, crouch, slide, airborne, dive and weapon-ready arm poses using two-bone IK. No Animator clips needed. |
 | `SoldierModelSet` / `SoldierModelBinder` / `SoldierMaterials` | Load the imported soldier, skin it to the runtime bones, create and tint its materials. |
-| `ProceduralFirstPersonArms` | First-person arms on the camera. Hands IK to grip points on `WeaponHolder`, so weapon attachment points are untouched. |
+| `ProceduralFirstPersonArms` | First-person arms on the camera. Hands IK to per-weapon grip points (`GunHoldCatalog`; melee keeps the fixed grips), so weapon attachment points are untouched. |
+| `GunHoldProfile` / `GunHoldCatalog` | Per-weapon hold data: right grip, left grip/foregrip, stock, magwell and muzzle in weapon space, for Lowered / Ready / Aim stances. The weapon FBXs carry no grip empties, so values are a measured table; child objects named `RightGrip`, `LeftGrip`, `Stock` or `MuzzlePoint` on a weapon model override them. |
+| `HumanoidAnimator.Hold` | Third-person gun holding: shoulder-stocked aim pose, lowered ready pose, aim pitch spread over spine/chest/head, two-bone hand IK onto the gun, recoil kick and a visible reload (magazine swap with the support hand). |
+| `ThirdPersonGun` / `PlayerBodyWeaponSync` | Visual-only gun model on the soldier (bots, the player's own body). The sync component mirrors the player's current weapon, aim, sprint, reload and shots onto the body. |
+| `DeathVariant` / `HumanoidDeathAnimator` / `DroppedGunPhysics` | Procedural death: variant chosen from hit direction, headshot, damage, speed and crouch (fall back, forward collapse, headshot snap-back, side falls, kneel). Bone-driven topple with spring settling, no ragdoll and no Animator. The gun drops and bounces to rest. |
+| `DeathCamera` / `PlayerDeathPresentation` | Player death: the body falls, the camera blends to an orbiting third-person view and is restored on respawn. |
 | `HumanoidBodyBootstrap` | At scene load, upgrades legacy primitive players and targets (old scenes/prefabs) to the procedural body. Idempotent. |
 
 Bodies are rebuilt every time the scene loads and are not saved into scenes or prefabs

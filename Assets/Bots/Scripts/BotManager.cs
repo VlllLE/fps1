@@ -171,6 +171,8 @@ public sealed class BotManager : MonoBehaviour
                 playerHealth = player.gameObject.AddComponent<PlayerHealth>();
             if (player.GetComponent<PlayerDamageIndicator>() == null)
                 player.gameObject.AddComponent<PlayerDamageIndicator>();
+            if (player.GetComponent<PlayerDeathPresentation>() == null)
+                player.gameObject.AddComponent<PlayerDeathPresentation>();
         }
 
         yield return null;
@@ -433,6 +435,15 @@ public sealed class BotManager : MonoBehaviour
         return weaponPool[index % weaponPool.Count];
     }
 
+    private static readonly Dictionary<WeaponConfig, GameObject> WeaponPrefabs = new Dictionary<WeaponConfig, GameObject>();
+
+    /// <summary>Weapon prefab the loadout catalog lists for a config (used for the bots' third-person gun model), or null.</summary>
+    public static GameObject GetWeaponPrefab(WeaponConfig config)
+    {
+        GameObject prefab;
+        return config != null && WeaponPrefabs.TryGetValue(config, out prefab) ? prefab : null;
+    }
+
     private static List<WeaponConfig> BuildWeaponPool()
     {
         var pool = new List<WeaponConfig>();
@@ -457,6 +468,8 @@ public sealed class BotManager : MonoBehaviour
                 continue;
             if (config.weaponType != WeaponType.AssaultRifle && config.weaponType != WeaponType.SMG && config.weaponType != WeaponType.LMG)
                 continue;
+            if (entry.prefab != null)
+                WeaponPrefabs[config] = entry.prefab;
             pool.Add(config);
         }
 

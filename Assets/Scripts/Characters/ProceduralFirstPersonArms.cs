@@ -42,6 +42,9 @@ public sealed class ProceduralFirstPersonArms : MonoBehaviour
     [Tooltip("Weapon holder the hands follow. Found by name under the camera when empty.")]
     [SerializeField] private Transform weaponHolder;
 
+    [Tooltip("Use the per-weapon grip points of GunHoldCatalog (right hand on the grip, left hand on the handguard, magazine follow on reload) instead of the fixed grip points above.")]
+    [SerializeField] private bool usePerWeaponGrips = true;
+
     private sealed class Arm
     {
         public Transform upper;
@@ -59,6 +62,10 @@ public sealed class ProceduralFirstPersonArms : MonoBehaviour
     private float upperLength;
     private float lowerLength;
     private float idleTime;
+    private WeaponController heldWeapon;
+    private GunHoldProfile heldProfile;
+    private Transform heldMagazine;
+    private float nextWeaponScan;
 
     public bool IsBuilt => armsRoot != null;
     /// <summary>True when the imported Blender arm model (one skinned mesh) is displayed.</summary>
@@ -102,11 +109,111 @@ public sealed class ProceduralFirstPersonArms : MonoBehaviour
     /// <summary>Hand position the solver aims for (camera space) for the given side.</summary>
     public Vector3 GetGripTargetLocal(bool right)
     {
+        if (TryGetWeaponGrip(right, out Vector3 weaponTarget))
+            return weaponTarget;
+
         Vector3 grip = right ? rightGrip : leftGrip;
         Transform holder = ResolveWeaponHolder();
         if (holder == null)
             return grip + new Vector3(0.3f, -0.2f, 0.5f);
         return transform.InverseTransformPoint(holder.TransformPoint(grip));
+    }
+
+    /// <summary>Longest straight reach of an arm (shoulder to wrist) the solver treats as comfortable.</summary>
+    public float MaxReach => (upperLength + lowerLength) * 0.97f;
+
+    /// <summary>Picks the point on the handguard segment that the left hand can reach from <paramref name="shoulder"/>; sliding rearwards shortens the reach.</summary>
+    public static Vector3 ClampSupportGrip(Vector3 shoulder, Vector3 front, Vector3 rear, float maxReach)
+    {
+        const int Steps = 10;
+        Vector3 best = front;
+        for (int i = 0; i <= Steps; i++)
+        {
+            Vector3 p = Vector3.Lerp(front, rear, i / (float)Steps);
+            best = p;
+            if ((p - shoulder).magnitude <= maxReach)
+                break;
+        }
+
+        return best;
+    }
+
+    private bool TryGetWeaponGrip(bool right, out Vector3 target)
+    {
+        target = Vector3.zero;
+        if (!usePerWeaponGrips || !ResolveHeldWeapon() || heldProfile == null || heldProfile.category == HoldCategory.Melee)
+            return false;
+
+        Transform weapon = heldWeapon.transform;
+        Vector3 shoulder = right ? rightShoulder : leftShoulder;
+        float backOff = HumanoidAnimator.PalmOffset * armScale;
+        Vector3 point;
+        if (right)
+        {
+            point = transform.InverseTransformPoint(weapon.TransformPoint(heldProfile.rightGrip));
+        }
+        else
+        {
+            Vector3 front = transform.InverseTransformPoint(weapon.TransformPoint(heldProfile.leftGrip));
+            Vector3 rear = transform.InverseTransformPoint(weapon.TransformPoint(heldProfile.leftGripRear));
+            point = ClampSupportGrip(shoulder, front, rear, MaxReach + backOff);
+            point = ApplyMagazineFollow(point);
+        }
+
+        Vector3 toShoulder = shoulder - point;
+        target = toShoulder.sqrMagnitude > 1e-6f ? point + toShoulder.normalized * backOff : point;
+        return true;
+    }
+
+    private Vector3 ApplyMagazineFollow(Vector3 gripPoint)
+    {
+        if (heldMagazine == null || heldWeapon == null || !heldWeapon.IsReloading)
+            return gripPoint;
+
+        float p = heldWeapon.ReloadProgress;
+        float w = Mathf.SmoothStep(0f, 1f, p / 0.15f) * (1f - Mathf.SmoothStep(0f, 1f, (p - 0.85f) / 0.15f));
+        Vector3 magPoint = transform.InverseTransformPoint(heldMagazine.position);
+        return Vector3.Lerp(gripPoint, magPoint, w);
+    }
+
+    private bool ResolveHeldWeapon()
+    {
+        if (heldWeapon != null && heldWeapon.gameObject.activeInHierarchy)
+            return true;
+
+        heldWeapon = null;
+        heldProfile = null;
+        heldMagazine = null;
+        if (Time.unscaledTime < nextWeaponScan)
+            return false;
+        nextWeaponScan = Time.unscaledTime + 0.2f;
+
+        Transform holder = ResolveWeaponHolder();
+        if (holder == null)
+            return false;
+        WeaponController found = holder.GetComponentInChildren<WeaponController>(false);
+        if (found == null || found.Config == null)
+            return false;
+
+        heldWeapon = found;
+        heldProfile = GunHoldCatalog.Get(found.Config.weaponType, found.gameObject.name);
+        heldMagazine = FindDescendant(found.transform, "Magazine");
+        return true;
+    }
+
+    private static Transform FindDescendant(Transform parent, string childName)
+    {
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform child = parent.GetChild(i);
+            if (child.name == childName)
+                return child;
+            Transform nested = FindDescendant(child, childName);
+            if (nested != null)
+                return nested;
+        }
+
+        return null;
     }
 
     [ContextMenu("Rebuild First Person Arms")]
