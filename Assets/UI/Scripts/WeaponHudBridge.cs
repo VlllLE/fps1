@@ -275,21 +275,7 @@ namespace CodMovementShooter.UI
             if (!(resultsObject is IEnumerable enumerable))
                 return;
 
-            bool any = false;
-            float totalDamage = 0f;
-            bool headshot = false;
-            foreach (object item in enumerable)
-            {
-                if (item == null)
-                    continue;
-                if (!TryExtractHit(item, out float damage, out bool wasHeadshot))
-                    continue;
-                any = true;
-                totalDamage += damage;
-                headshot |= wasHeadshot;
-            }
-
-            if (any)
+            if (TryExtractShotgunHit(enumerable, out float totalDamage, out bool headshot))
                 HandleHitConfirmed(totalDamage, headshot);
         }
 
@@ -301,12 +287,19 @@ namespace CodMovementShooter.UI
             HandleHitConfirmed(damage, headshot);
         }
 
-        private static bool TryExtractHit(object hitResult, out float damage, out bool headshot)
+        /// <summary>
+        /// True only when the shot damaged a receiver. <c>HitResult.DidHit</c> is deliberately ignored:
+        /// it is also true for walls, floors and anything else the ray struck.
+        /// </summary>
+        public static bool TryExtractHit(object hitResult, out float damage, out bool headshot)
         {
             damage = 0f;
             headshot = false;
+            if (hitResult == null)
+                return false;
+
             Type type = hitResult.GetType();
-            bool didHit = ReadBool(type, hitResult, "DidHit", false);
+            bool didHit = false;
             damage = ReadFloat(type, hitResult, "TotalDamageApplied", 0f);
 
             PropertyInfo impactsProp = type.GetProperty("Impacts", BindingFlags.Instance | BindingFlags.Public);
@@ -328,6 +321,26 @@ namespace CodMovementShooter.UI
             }
 
             return didHit || damage > 0f;
+        }
+
+        public static bool TryExtractShotgunHit(IEnumerable pelletResults, out float totalDamage, out bool headshot)
+        {
+            totalDamage = 0f;
+            headshot = false;
+            bool any = false;
+            if (pelletResults == null)
+                return false;
+
+            foreach (object item in pelletResults)
+            {
+                if (item == null || !TryExtractHit(item, out float damage, out bool wasHeadshot))
+                    continue;
+                any = true;
+                totalDamage += damage;
+                headshot |= wasHeadshot;
+            }
+
+            return any;
         }
 
         private void TryHandleHitImpact(object impact)
