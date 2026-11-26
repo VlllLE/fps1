@@ -545,16 +545,16 @@ public sealed class BotManager : MonoBehaviour
 
         string line = "Bots " + AliveCount() + "/" + bots.Count + "  " + Difficulty + (frozen ? "  FROZEN" : string.Empty)
             + (debugOverlay ? "  [" + BotNavigation.Mode + "]" : string.Empty);
-        GUI.Label(new Rect(Screen.width - 460f, 6f, 450f, 20f), line, labelStyle);
+        GUI.Label(new Rect(Screen.width - 460f, 44f, 450f, 20f), line, labelStyle);
         if (debugOverlay)
         {
-            GUI.Label(new Rect(Screen.width - 460f, 24f, 450f, 20f),
+            GUI.Label(new Rect(Screen.width - 460f, 62f, 450f, 20f),
                 "F8 spawn  F9 freeze  F10 difficulty  F11 debug  \\ remove/add", labelStyle);
         }
 
         if (Time.unscaledTime < noticeUntil)
         {
-            GUI.Label(new Rect(Screen.width - 460f, debugOverlay ? 42f : 24f, 450f, 20f), notice, labelStyle);
+            GUI.Label(new Rect(Screen.width - 460f, debugOverlay ? 80f : 62f, 450f, 20f), notice, labelStyle);
         }
 
         if (!debugOverlay)

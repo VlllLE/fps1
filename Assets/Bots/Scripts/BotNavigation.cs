@@ -295,7 +295,18 @@ public static class BotNavigation
         {
             Vector3 target = position + delta;
             if (NavMesh.Raycast(position, target, out NavMeshHit edge, NavMesh.AllAreas))
+            {
                 target = edge.position;
+                if (Vector3.Distance(position, target) < distance * 0.25f)
+                {
+                    // Pinned against a NavMesh border: slide along it instead of freezing.
+                    Vector3 along = Vector3.ProjectOnPlane(delta, edge.normal);
+                    along.y = 0f;
+                    target = position + along;
+                    if (NavMesh.Raycast(position, target, out NavMeshHit slideEdge, NavMesh.AllAreas))
+                        target = slideEdge.position;
+                }
+            }
             if (!NavMesh.SamplePosition(target, out NavMeshHit sample, 1.2f, NavMesh.AllAreas))
                 return false;
 

@@ -44,6 +44,8 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     private bool hasPath;
     private float repathTimer;
     private float stuckTimer;
+    private int patrolGiveUps;
+    private const int MaxPatrolGiveUps = 3;
     private float currentSpeed;
     private Vector3 lastMoveDirection = Vector3.forward;
 
@@ -371,6 +373,15 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
 
         Vector3 destination = waypoints[waypointIndex % waypoints.Count];
         bool arrived = MoveAlongPath(destination, settings.walkSpeed, dt, out bool gaveUp);
+        if (arrived)
+            patrolGiveUps = 0;
+        else if (gaveUp && ++patrolGiveUps >= MaxPatrolGiveUps)
+        {
+            patrolGiveUps = 0;
+            Respawn(BotManager.FindRespawnPosition(this, spawnPoint));
+            return false;
+        }
+
         if (arrived || gaveUp)
         {
             waypointIndex = (waypointIndex + 1) % waypoints.Count;
