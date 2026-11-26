@@ -23,6 +23,9 @@ public class KarambitModel : MonoBehaviour
     [SerializeField] private MeshFilter bolsterFilter;
     [SerializeField] private MeshFilter ringFilter;
 
+    /// <summary>The serialized model asset (read from a prefab asset by code that builds visual-only copies).</summary>
+    public GameObject ImportedModelPrefab => importedModelPrefab;
+
     private Mesh bladeMesh;
     private Mesh handleMesh;
     private Mesh bolsterMesh;
@@ -139,7 +142,7 @@ public class KarambitModel : MonoBehaviour
         }
     }
 
-    private void ApplyMaterials(GameObject instance)
+    public void ApplyMaterials(GameObject instance)
     {
         Renderer[] renderers = instance.GetComponentsInChildren<Renderer>(true);
         for (int r = 0; r < renderers.Length; r++)

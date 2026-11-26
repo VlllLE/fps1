@@ -44,6 +44,8 @@ public class AssaultWeaponModel : MonoBehaviour
     public GameObject ImportedInstance => importedInstance;
     public GameObject ProceduralRoot => proceduralRoot;
     public Transform VisualRoot => visualRoot != null ? visualRoot : transform;
+    /// <summary>The serialized model asset (read from a prefab asset by code that builds visual-only copies).</summary>
+    public GameObject ImportedModelPrefab => importedModelPrefab;
 
     private void Awake()
     {
@@ -169,7 +171,7 @@ public class AssaultWeaponModel : MonoBehaviour
         return null;
     }
 
-    private void ApplyMaterials(GameObject instance)
+    public void ApplyMaterials(GameObject instance)
     {
         Renderer[] renderers = instance.GetComponentsInChildren<Renderer>(true);
         for (int r = 0; r < renderers.Length; r++)

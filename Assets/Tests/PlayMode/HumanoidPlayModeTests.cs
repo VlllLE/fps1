@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -28,6 +29,14 @@ public class HumanoidPlayModeTests
             characterController = player.GetComponent<CharacterController>();
     }
 
+    private static bool IsUnderHeldGun(Transform t, Transform bodyRoot)
+    {
+        for (; t != null && t != bodyRoot; t = t.parent)
+            if (t.name == ThirdPersonGun.RootName)
+                return true;
+        return false;
+    }
+
     [UnityTest]
     public IEnumerator Player_HasProceduralBodyAndFirstPersonArms()
     {
@@ -35,7 +44,8 @@ public class HumanoidPlayModeTests
         var body = player.GetComponent<HumanoidBody>();
         Assert.IsNotNull(body, "Player body should be upgraded to the humanoid");
         Assert.IsTrue(body.IsBuilt);
-        Assert.AreEqual(body.UsesImportedModel ? 4 : HumanoidParts.BoneCount, body.BodyRoot.GetComponentsInChildren<Renderer>().Length);
+        Assert.AreEqual(body.UsesImportedModel ? 4 : HumanoidParts.BoneCount,
+            body.BodyRoot.GetComponentsInChildren<Renderer>().Count(r => !IsUnderHeldGun(r.transform, body.BodyRoot)));
         Assert.AreEqual(0, body.BodyRoot.GetComponentsInChildren<Collider>().Length, "body must not add colliders to the CharacterController player");
 
         var arms = player.GetComponentInChildren<ProceduralFirstPersonArms>();

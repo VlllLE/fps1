@@ -104,6 +104,20 @@ public sealed class HumanoidBody : MonoBehaviour
     private float standingControllerHeight;
     private Vector3 lastPosition;
     private bool hasLastPosition;
+    private Vector3 bodyRootRest;
+
+    private ThirdPersonGun gun;
+    private WeaponConfig heldConfig;
+    private GameObject heldModelSource;
+    private GunHoldProfile holdProfile;
+    private HoldStance holdStance = HoldStance.Ready;
+    private bool holdReloading;
+    private float holdReloadProgress;
+    private int holdReloadCycles = 1;
+
+    private HumanoidDeathAnimator death;
+    private float gunDropDelay;
+    private Vector3 deathStartVelocity;
 
     /// <summary>
     /// Adds a body with explicit settings. In play mode the body is built during Awake with those settings;
@@ -141,6 +155,15 @@ public sealed class HumanoidBody : MonoBehaviour
     /// <summary>Transform whose forward pitch drives the head/arm look pitch (a bot's eye, the player camera).</summary>
     public Transform LookSource { get => lookSource; set => lookSource = value; }
 
+    /// <summary>The visible third-person gun, or null while no weapon is equipped.</summary>
+    public ThirdPersonGun Gun => gun;
+    /// <summary>Barrel tip of the held gun (null without a weapon).</summary>
+    public Transform Muzzle => gun != null ? gun.Muzzle : null;
+    public HoldStance Stance { get => holdStance; set => holdStance = value; }
+    public bool HasWeapon => holdProfile != null;
+    public bool IsDying => death != null;
+    public HumanoidDeathAnimator DeathAnimator => death;
+
     public Transform GetBone(HumanoidBone bone)
     {
         return bones[(int)bone];
@@ -154,6 +177,8 @@ public sealed class HumanoidBody : MonoBehaviour
         AddIfNotNull(list, bones[(int)HumanoidBone.Head]);
         AddIfNotNull(list, bones[(int)HumanoidBone.ShoulderL]);
         AddIfNotNull(list, bones[(int)HumanoidBone.ShoulderR]);
+        if (gun != null)
+            AddIfNotNull(list, gun.Root);
         return list.ToArray();
     }
 
@@ -186,6 +211,7 @@ public sealed class HumanoidBody : MonoBehaviour
 
     private void OnDestroy()
     {
+        DestroyGun();
         DestroyOwnedObjects();
     }
 
@@ -198,8 +224,172 @@ public sealed class HumanoidBody : MonoBehaviour
         if (dt <= 0f)
             return;
 
+        if (death != null)
+        {
+            TickDeath(dt);
+            return;
+        }
+
         animator.Tick(dt, GatherInput(dt));
         ApplyPose();
+        if (gun != null)
+            gun.Follow(animator, builtScale);
+    }
+
+    /// <summary>Equips a weapon: its model (from <paramref name="modelSource"/>, a prefab or scene instance) is shown in the hands.</summary>
+    public void EquipWeapon(WeaponConfig config, GameObject modelSource = null)
+    {
+        heldConfig = config;
+        heldModelSource = modelSource;
+        holdProfile = config != null ? GunHoldCatalog.Get(config, modelSource) : null;
+        RebuildGun();
+    }
+
+    public void ClearWeapon()
+    {
+        heldConfig = null;
+        heldModelSource = null;
+        holdProfile = null;
+        DestroyGun();
+        LinkLocalVisibility();
+    }
+
+    /// <summary>Kicks the held weapon back (call when a shot is fired).</summary>
+    public void NotifyShot(float strength = 1f)
+    {
+        if (animator != null && death == null)
+            animator.NotifyShot(strength);
+    }
+
+    /// <summary>Feeds reload state to the hands (magazine swap, bolt cycling).</summary>
+    public void SetReloadState(bool reloading, float progress, int cycles = 1)
+    {
+        holdReloading = reloading;
+        holdReloadProgress = Mathf.Clamp01(progress);
+        holdReloadCycles = Mathf.Max(1, cycles);
+    }
+
+    private void RebuildGun()
+    {
+        DestroyGun();
+        if (bodyRoot == null || heldConfig == null)
+            return;
+
+        gun = ThirdPersonGun.Create(bodyRoot, heldConfig, heldModelSource, gameObject.layer);
+        holdProfile = gun.Profile;
+        if (animator != null && death == null)
+            gun.Follow(animator, builtScale);
+        LinkLocalVisibility();
+    }
+
+    private void DestroyGun()
+    {
+        if (gun != null)
+            gun.Destroy();
+        gun = null;
+    }
+
+    /// <summary>
+    /// Starts the procedural death: the body topples about its feet, limbs settle with overshoot and the gun is
+    /// thrown from the hands. The owner is expected to disable movement/colliders itself.
+    /// </summary>
+    public DeathVariant BeginDeath(DeathContext context, float impulse = 1f)
+    {
+        DeathVariant variant = DeathVariantSelector.Select(context);
+        BeginDeath(variant, impulse, context.forwardSpeed);
+        return variant;
+    }
+
+    public void BeginDeath(DeathVariant variant, float impulse = 1f, float forwardSpeed = 0f)
+    {
+        if (animator == null || bodyRoot == null)
+            return;
+        death = new HumanoidDeathAnimator(animator, variant, impulse);
+        gunDropDelay = 0.16f + 0.06f * Mathf.Clamp01(impulse - 0.5f);
+        deathStartVelocity = transform.forward * forwardSpeed;
+    }
+
+    /// <summary>Stands the body back up (respawn) and puts the gun back in the hands.</summary>
+    public void EndDeath()
+    {
+        if (death == null && (gun == null || !gun.IsDropped))
+            return;
+        death = null;
+        if (bodyRoot != null)
+        {
+            bodyRoot.localPosition = bodyRootRest;
+            bodyRoot.localRotation = Quaternion.identity;
+        }
+
+        if (gun != null)
+            gun.Regrip(bodyRoot);
+        if (animator != null)
+        {
+            ApplyPose();
+            if (gun != null)
+                gun.Follow(animator, builtScale);
+        }
+
+        hasLastPosition = false;
+    }
+
+    private void TickDeath(float dt)
+    {
+        death.Tick(dt);
+        bodyRoot.localPosition = bodyRootRest + death.RootPosition * builtScale;
+        bodyRoot.localRotation = death.RootRotation;
+
+        foreach (HumanoidBone bone in HumanoidParts.AllBones)
+        {
+            Transform t = bones[(int)bone];
+            if (t != null)
+                t.localRotation = death.GetLocalRotation(bone);
+        }
+
+        Transform hips = bones[(int)HumanoidBone.Hips];
+        if (hips != null)
+            hips.localPosition = (animator.GetLocalPosition(HumanoidBone.Hips) - animator.HipsOffset + death.HipsOffset) * builtScale;
+
+        if (gun == null)
+            return;
+
+        if (!gun.IsDropped)
+        {
+            gun.Follow(animator, builtScale);
+            gunDropDelay -= dt;
+            if (gunDropDelay <= 0f)
+                DropGun();
+        }
+        else
+        {
+            gun.TickDrop(dt);
+        }
+    }
+
+    private void DropGun()
+    {
+        Vector3 fallWorld = transform.TransformDirection(death.FallDirection);
+        Vector3 velocity = deathStartVelocity * 0.6f + fallWorld * 1.3f + Vector3.up * 0.9f;
+        float side = death.FallDirection.x >= 0f ? 1f : -1f;
+        Vector3 spin = new Vector3(260f * (fallWorld.z >= 0f ? 1f : -1f), 80f * side, 340f * side);
+        float feetY = transform.position.y + bodyRootRest.y;
+        gun.BeginDrop(velocity, spin, p => GroundHeight(p, feetY));
+        gun.Root.SetParent(transform, true);
+    }
+
+    private float GroundHeight(Vector3 position, float fallback)
+    {
+        RaycastHit[] hits = Physics.RaycastAll(position + Vector3.up * 1.2f, Vector3.down, 4f, ~0, QueryTriggerInteraction.Ignore);
+        float best = float.NegativeInfinity;
+        for (int i = 0; i < hits.Length; i++)
+        {
+            if (hits[i].transform.IsChildOf(transform))
+                continue;
+            if (hits[i].point.y > best)
+                best = hits[i].point.y;
+        }
+
+        return float.IsNegativeInfinity(best) ? fallback : best;
     }
 
     public void ApplySettings(HumanoidBodySettings settings)
@@ -231,6 +421,7 @@ public sealed class HumanoidBody : MonoBehaviour
         bodyRoot = rootObject.transform;
         bodyRoot.SetParent(transform, false);
         bodyRoot.localPosition = feet;
+        bodyRootRest = feet;
         bodyRoot.localRotation = Quaternion.identity;
         bodyRoot.localScale = Vector3.one;
 
@@ -247,9 +438,17 @@ public sealed class HumanoidBody : MonoBehaviour
         if (createHitboxes)
             BuildHitboxes(feet);
 
-        LinkLocalVisibility();
         lookSource = lookSource != null ? lookSource : FindLookSource();
         hasLastPosition = false;
+        death = null;
+
+        if (GetComponent<LocalPlayerBodyVisibility>() != null && GetComponent<PlayerBodyWeaponSync>() == null)
+            gameObject.AddComponent<PlayerBodyWeaponSync>();
+
+        if (heldConfig != null)
+            RebuildGun();
+        else
+            LinkLocalVisibility();
     }
 
     /// <summary>Destroys the generated body (not the component).</summary>
@@ -273,6 +472,8 @@ public sealed class HumanoidBody : MonoBehaviour
             DestroyUnityObject(bodyRoot.gameObject);
         }
 
+        DestroyGun();
+        death = null;
         bodyRoot = null;
         for (int i = 0; i < bones.Length; i++)
             bones[i] = null;
@@ -294,6 +495,8 @@ public sealed class HumanoidBody : MonoBehaviour
             return;
         animator.Tick(deltaTime, input);
         ApplyPose();
+        if (gun != null && death == null)
+            gun.Follow(animator, builtScale);
     }
 
     /// <summary>Re-tints the generated materials (e.g. team colours).</summary>
@@ -438,6 +641,14 @@ public sealed class HumanoidBody : MonoBehaviour
     private HumanoidAnimationInput GatherInput(float dt)
     {
         var input = new HumanoidAnimationInput { armPose = armPose };
+        if (holdProfile != null)
+        {
+            input.holdProfile = holdProfile;
+            input.holdStance = holdStance;
+            input.reloading = holdReloading;
+            input.reloadProgress = holdReloadProgress;
+            input.reloadCycles = holdReloadCycles;
+        }
 
         Vector3 worldVelocity;
         if (movement != null)
@@ -488,6 +699,9 @@ public sealed class HumanoidBody : MonoBehaviour
         {
             float y = Mathf.Clamp(lookSource.forward.y, -1f, 1f);
             input.lookPitchDegrees = -Mathf.Asin(y) * Mathf.Rad2Deg;
+            Vector3 localLook = transform.InverseTransformDirection(lookSource.forward);
+            if (localLook.x * localLook.x + localLook.z * localLook.z > 0.01f)
+                input.aimYawDegrees = Mathf.Clamp(Mathf.Atan2(localLook.x, localLook.z) * Mathf.Rad2Deg, -70f, 70f);
         }
 
         return input;

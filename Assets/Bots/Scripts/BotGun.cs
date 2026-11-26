@@ -14,6 +14,7 @@ public sealed class BotGun
     private float nextShotTime;
     private float burstPauseUntil;
     private float reloadEndTime;
+    private float reloadStartTime;
     private int burstRemaining;
     private float bloom;
 
@@ -65,9 +66,19 @@ public sealed class BotGun
             return false;
 
         IsReloading = true;
+        reloadStartTime = now;
         reloadEndTime = now + ReloadDuration(config, Ammo);
         burstRemaining = 0;
         return true;
+    }
+
+    /// <summary>0..1 progress of the running reload (0 when not reloading).</summary>
+    public float ReloadProgress01(float now)
+    {
+        if (!IsReloading)
+            return 0f;
+        float length = reloadEndTime - reloadStartTime;
+        return length > 1e-3f ? Mathf.Clamp01((now - reloadStartTime) / length) : 1f;
     }
 
     /// <summary>Advances reload completion and spread recovery.</summary>
