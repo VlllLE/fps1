@@ -251,7 +251,7 @@ public sealed class HumanoidDeathAnimator
     }
 
     /// <summary>Unit step response of an under-damped spring: overshoots and rings before settling at 1.</summary>
-    internal static float SpringResponse(float t, float frequency)
+    public static float SpringResponse(float t, float frequency)
     {
         if (t <= 0f)
             return 0f;
@@ -262,7 +262,7 @@ public sealed class HumanoidDeathAnimator
     }
 
     /// <summary>Rotation about the same axis as <paramref name="q"/> by <paramref name="s"/> times its angle (s may exceed 1).</summary>
-    internal static Quaternion ScaleRotation(Quaternion q, float s)
+    public static Quaternion ScaleRotation(Quaternion q, float s)
     {
         if (q.w < 0f)
             q = new Quaternion(-q.x, -q.y, -q.z, -q.w);
@@ -433,7 +433,7 @@ public sealed class HumanoidDeathAnimator
 
     private static Vector3 V(float x, float y, float z) => new Vector3(x, y, z);
 
-    internal static HumanoidBone Mirrored(HumanoidBone bone)
+    public static HumanoidBone Mirrored(HumanoidBone bone)
     {
         switch (bone)
         {
