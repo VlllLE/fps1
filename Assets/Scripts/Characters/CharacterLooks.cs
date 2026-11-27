@@ -49,6 +49,15 @@ public static class CharacterLooks
         return AllIds[(int)((uint)seed % (uint)AllIds.Length)];
     }
 
+    /// <summary>How far a training dummy's colour cue (red, green, blue...) pulls its look's own colours.</summary>
+    public const float DummyLookTint = 0.3f;
+
+    /// <summary>The look of the <paramref name="index"/>th training dummy: the three looks in turn, so every map shows a mix.</summary>
+    public static string ForDummy(int index)
+    {
+        return AllIds[(int)((uint)index % (uint)AllIds.Length)];
+    }
+
     /// <summary>Sleeve and glove colours of the first-person arms for a look, so the arms match the body in view.</summary>
     public static HumanoidPalette GetArmsPalette(string id)
     {
