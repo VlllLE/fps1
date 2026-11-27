@@ -14,6 +14,10 @@ public struct HumanoidBodySettings
     public HumanoidArmPose armPose;
     /// <summary>Skip the imported Blender soldier and build the primitive procedural body instead.</summary>
     public bool forceProcedural;
+    /// <summary>Id of a downloaded character look (see <see cref="CharacterLooks"/>). Empty keeps the classic Blender soldier.</summary>
+    public string look;
+    /// <summary>0..1: how far the look's own colours are pulled towards the palette's suit colour.</summary>
+    public float lookTint;
 
     public static HumanoidBodySettings Player()
     {
@@ -85,6 +89,9 @@ public sealed class HumanoidBody : MonoBehaviour
     [SerializeField] private bool animate = true;
     [Tooltip("Always use the primitive procedural body, even when the imported soldier model is available.")]
     [SerializeField] private bool forceProcedural;
+    [Tooltip("Downloaded character look to wear (Operator, Soldier, Ghillie). Empty uses the classic Blender soldier.")]
+    [SerializeField] private string lookId;
+    [SerializeField, Range(0f, 1f)] private float lookTint;
     [SerializeField] private HumanoidArmPose armPose = HumanoidArmPose.WeaponReady;
     [Tooltip("Optional look direction source (usually the player camera). Found automatically if empty.")]
     [SerializeField] private Transform lookSource;
@@ -96,6 +103,7 @@ public sealed class HumanoidBody : MonoBehaviour
     private Material[] materials;
     private SoldierBuildResult soldierBuild;
     private string importFallbackReason;
+    private string lookFallbackReason;
     private HumanoidAnimator animator;
     private CharacterController controller;
     private MovementController movement;
@@ -148,6 +156,12 @@ public sealed class HumanoidBody : MonoBehaviour
     public bool UsesImportedModel => soldierBuild != null;
     /// <summary>Why the imported model was not used (null when it is in use or was not attempted).</summary>
     public string ImportFallbackReason => importFallbackReason;
+    /// <summary>The look that was requested (may be empty); see <see cref="ActiveLookId"/> for the one actually shown.</summary>
+    public string LookId => lookId;
+    /// <summary>Id of the downloaded character look currently shown, or null (classic Blender soldier or procedural body).</summary>
+    public string ActiveLookId => soldierBuild != null ? soldierBuild.lookId : null;
+    /// <summary>Why the requested look was not shown (null when it is shown or none was requested).</summary>
+    public string LookFallbackReason => lookFallbackReason;
     public IReadOnlyList<SkinnedMeshRenderer> SoldierRenderers
         => soldierBuild != null ? (IReadOnlyList<SkinnedMeshRenderer>)soldierBuild.renderers : System.Array.Empty<SkinnedMeshRenderer>();
     public HumanoidArmPose ArmPose { get => armPose; set => armPose = value; }
@@ -414,6 +428,25 @@ public sealed class HumanoidBody : MonoBehaviour
         createHitboxes = settings.createHitboxes;
         armPose = settings.armPose;
         forceProcedural = settings.forceProcedural;
+        lookId = settings.look;
+        lookTint = Mathf.Clamp01(settings.lookTint);
+    }
+
+    /// <summary>
+    /// Switches the downloaded character look (empty = classic Blender soldier). A built body is rebuilt in place;
+    /// the held weapon, stance and local-camera hiding are carried over.
+    /// </summary>
+    public void SetLook(string id, float tint = 0f)
+    {
+        id = id ?? string.Empty;
+        tint = Mathf.Clamp01(tint);
+        if (id == (lookId ?? string.Empty) && Mathf.Approximately(tint, lookTint))
+            return;
+
+        lookId = id;
+        lookTint = tint;
+        if (IsBuilt && death == null)
+            Build();
     }
 
     /// <summary>(Re)builds the body hierarchy, meshes, materials and optional hit volumes.</summary>
@@ -520,7 +553,10 @@ public sealed class HumanoidBody : MonoBehaviour
             return;
         if (soldierBuild != null)
         {
-            SoldierMaterials.ApplyPalette(soldierBuild.soldierMaterials, newPalette);
+            if (soldierBuild.IsLook)
+                SoldierMaterials.ApplyLookTint(soldierBuild.lookMaterials, soldierBuild.lookBaseColors, newPalette.suit, lookTint);
+            else
+                SoldierMaterials.ApplyPalette(soldierBuild.soldierMaterials, newPalette);
             return;
         }
 
@@ -564,6 +600,7 @@ public sealed class HumanoidBody : MonoBehaviour
     private bool TryAttachImportedModel()
     {
         importFallbackReason = null;
+        lookFallbackReason = null;
         if (forceProcedural)
         {
             importFallbackReason = "procedural body requested";
@@ -573,6 +610,8 @@ public sealed class HumanoidBody : MonoBehaviour
         try
         {
             SoldierModelSet set = ModelSetOverride != null ? ModelSetOverride : SoldierModelSet.Load();
+            if (!string.IsNullOrEmpty(lookId) && TryAttachLook(set))
+                return true;
             if (!SoldierModelBinder.TryBuildBody(set, bones, bodyRoot, builtScale, palette, gameObject.layer,
                     out SoldierBuildResult build, out string error))
             {
@@ -591,6 +630,46 @@ public sealed class HumanoidBody : MonoBehaviour
         {
             importFallbackReason = exception.GetType().Name + ": " + exception.Message;
             Debug.LogWarning("[HumanoidBody] Imported soldier model failed, using the procedural body: " + importFallbackReason, this);
+            if (soldierBuild != null)
+            {
+                soldierBuild.Destroy();
+                soldierBuild = null;
+            }
+
+            return false;
+        }
+    }
+
+    private bool TryAttachLook(SoldierModelSet set)
+    {
+        CharacterLookEntry entry = set != null ? set.GetLook(lookId) : null;
+        if (entry == null || entry.model == null)
+        {
+            lookFallbackReason = "look '" + lookId + "' is not configured";
+            Debug.LogWarning("[HumanoidBody] " + lookFallbackReason + ", using the classic soldier.", this);
+            return false;
+        }
+
+        try
+        {
+            if (!SoldierModelBinder.TryBuildLook(set, entry, bones, bodyRoot, builtScale, palette, lookTint,
+                    gameObject.layer, out SoldierBuildResult build, out string error))
+            {
+                lookFallbackReason = "look '" + lookId + "' failed: " + (error ?? "unknown error");
+                Debug.LogWarning("[HumanoidBody] " + lookFallbackReason + ", using the classic soldier.", this);
+                return false;
+            }
+
+            soldierBuild = build;
+            materials = new Material[HumanoidMeshBuilder.SlotCount];
+            for (int i = 0; i < materials.Length; i++)
+                materials[i] = build.lookMaterials[0];
+            return true;
+        }
+        catch (System.Exception exception)
+        {
+            lookFallbackReason = "look '" + lookId + "' failed: " + exception.GetType().Name + ": " + exception.Message;
+            Debug.LogWarning("[HumanoidBody] " + lookFallbackReason + ", using the classic soldier.", this);
             if (soldierBuild != null)
             {
                 soldierBuild.Destroy();

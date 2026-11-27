@@ -134,6 +134,49 @@ public class LocalBodyHiddenPlayModeTests
     }
 
     [UnityTest]
+    public IEnumerator EveryCharacterLook_IsHiddenFromTheFirstPersonCamera_StandingAndCrouched()
+    {
+        HumanoidBody body = player.GetComponent<HumanoidBody>();
+        PlayerBodyWeaponSync sync = player.GetComponent<PlayerBodyWeaponSync>();
+        Assert.That(sync, Is.Not.Null);
+        sync.LookFollowsPrimary = false;
+
+        foreach (string id in CharacterLooks.AllIds)
+        {
+            input.SetCrouchHeld(false);
+            body.SetLook(id);
+            yield return Settle(15);
+            Assert.That(body.ActiveLookId, Is.EqualTo(id), body.LookFallbackReason);
+            AssertNoOwnBodyVisible(id + " standing");
+
+            input.SetCrouchHeld(true);
+            yield return Settle(50);
+            AssertNoOwnBodyVisible(id + " crouched");
+
+            foreach (float pitch in new[] { 85f, 0f })
+            {
+                look.SetLook(player.transform.eulerAngles.y, pitch);
+                yield return Settle(3);
+                AssertNoOwnBodyVisible(id + " crouched, pitch " + pitch);
+            }
+        }
+    }
+
+    [UnityTest]
+    public IEnumerator PlayersLook_FollowsThePrimaryWeaponClass()
+    {
+        yield return Settle(15);
+        HumanoidBody body = player.GetComponent<HumanoidBody>();
+        WeaponSwitcher switcher = player.GetComponentInChildren<WeaponSwitcher>(true);
+        Assert.That(switcher, Is.Not.Null);
+
+        WeaponController primary = switcher.GetWeaponOfType(SlotType.Primary);
+        string expected = primary != null && primary.Config != null ? CharacterLooks.ForWeapon(primary.Config) : CharacterLooks.Soldier;
+        Assert.That(body.ActiveLookId, Is.EqualTo(expected), body.LookFallbackReason);
+        Assert.That(body.UsesImportedModel, Is.True);
+    }
+
+    [UnityTest]
     public IEnumerator BodyMeshesStillCastShadowsAndExistForOtherCameras()
     {
         yield return Settle(10);
