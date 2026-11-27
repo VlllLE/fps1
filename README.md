@@ -29,7 +29,7 @@ Tuned through `MovementConfig` assets (`Assets/Configs`), implemented in `Assets
 - **Dolphin dive**: dive forward out of a sprint; short cooldown.
 - **Air strafing**: hold A or D in the air to build speed.
 - **Wall bounce**: jump into a wall at speed and press Space to bounce off it.
-- **Movement archetypes**: Default, Scout, Heavy, Acrobat and Marksman configs, plus per-class speed multipliers.
+- **Movement archetypes**: Default, Scout, Heavy, Acrobat and Marksman configs, plus per-class speed multipliers. Pick one in game from the **MOVEMENT** tab of the loadout menu (`M`).
 - **Movement feedback**: slide dust, landing and wall sparks, camera shake and roll, procedural placeholder sounds.
 
 ### Weapons and attachments
@@ -83,6 +83,15 @@ and plays an alternating forehand and backhand slash. Details are in [`Assets/We
 
 The menu can override any slot (including the shotgun and LMG), so the class is just a starting point.
 
+### Movement menu
+
+- Press `M` (or open the **MOVEMENT** tab in the `L` / `Esc` menu) to choose a movement archetype: **Default**, **Scout**, **Heavy**, **Acrobat** or **Marksman**.
+- Each archetype shows its key stats as bars: walk and sprint speed, jump height, air control and acceleration, slide boost and length, bunny-hop cap and speed kept, dive speed and wall bounce, plus the wall run, wall bounce and mantle traits.
+- Hover an archetype to compare it against the selected one (the white tick marks the selected value and the percentage is the difference). Click it, or press `1` to `5` while the tab is open, to switch. The chosen one is marked `SELECTED`.
+- The choice applies to the live player straight away, with no restart, and is saved in `PlayerPrefs` (key `FPS.Movement.v1`), so it comes back next session and on every map.
+- It is an explicit choice, independent of class: the default is **Default** (whatever config the scene already uses) and nothing is saved until you pick one. **Reset movement to default** clears it.
+- The class speed multiplier (Assault x1.00, SMG x1.08, Sniper x0.94, Hybrid x1.00) is not replaced by the archetype. It still comes from the class and multiplies the archetype's speeds, and the tab shows the resulting walk speed and the per-class list.
+
 ### Maps
 
 | Map | Scene | Hotkey | Description |
@@ -121,6 +130,10 @@ TestRange, Shipment and Dome from several sides.
 The loadout menu (`L` or `Esc`), with the map label shown top right. The map selector label is the first image on this page.
 
 ![Loadout menu with the weapon preview](docs/screenshots/ui-loadout-menu-v2.jpg)
+
+The MOVEMENT tab (`M`) with Default selected, hovering Scout to compare its stats against the selected archetype.
+
+![Movement menu comparing Scout with the selected Default archetype](docs/screenshots/ui-movement-menu.jpg)
 
 ### Characters
 
@@ -189,6 +202,7 @@ Legacy Input Manager. Source of truth: [`Assets/Scenes/TestRange_Controls.md`](A
 | Action | Keys |
 | --- | --- |
 | Loadout menu | `L` (Loadout tab) or `Esc` (pause menu) |
+| Movement archetype | `M` (Movement tab), then click or press `1` to `5` (Default, Scout, Heavy, Acrobat, Marksman) |
 | Class | `F1` Assault, `F2` SMG, `F3` Sniper, `F4` Hybrid |
 | Map | `F5` TestRange, `F6` Shipment, `F7` Dome, `PgUp` / `PgDn` to cycle |
 | Cycle skin | `[` previous, `]` next (active weapon) |
@@ -226,7 +240,7 @@ The `Tools` menu holds the editor utilities:
 | `Tools > Loadout > Rebuild Weapon Catalog` | Regenerate `Assets/Resources/WeaponLoadoutCatalog.asset` after adding weapons, skins or classes |
 | `Tools > Skins > Rebuild Weapon Skin Catalog` | Regenerate the skin catalog used by the skin cycler (an EditMode test fails if it is stale) |
 | `Tools > Classes > ...` | Create the default class definitions, add the class applier, apply a class to the scene player |
-| `Tools > Movement > ...` | Ensure the movement configs, add feedback, apply an archetype config to the scene player |
+| `Tools > Movement > ...` | Ensure the movement configs, add feedback, apply an archetype config to the scene player, and `Rebuild Movement Catalog` (regenerates `Assets/Resources/MovementArchetypeCatalog.asset` behind the MOVEMENT tab; an EditMode test fails if it is stale) |
 | `Tools > Build Player Character Prefab` | Regenerate the `PlayerCharacter` prefab |
 | `Tools > Run Play Mode Smoke Check` | Quick play-mode sanity run |
 
@@ -247,7 +261,7 @@ Assets/
   Configs/         MovementConfig archetypes and per-weapon WeaponConfig assets
   Characters/      PlayerCharacter prefab and notes; Models/ holds the Blender-built soldier and first-person arms
   Maps/            Shipment and Dome scripts, shaders, materials, textures and tests
-  Resources/       Weapon loadout catalog and runtime-loaded audio
+  Resources/       Weapon loadout and movement archetype catalogs, runtime-loaded audio
   Editor/          Map builders, scene sync tools and the Tools menu items
   Tests/           EditMode (Editor) and PlayMode test assemblies
 Tools/
@@ -271,8 +285,8 @@ Unity -batchmode -projectPath . -runTests -testPlatform EditMode -testResults Ed
 Unity -batchmode -projectPath . -runTests -testPlatform PlayMode -testResults PlayModeResults.xml
 ```
 
-- **EditMode** (`Assets/Tests/Editor`, plus `Assets/Maps/*/Tests`): movement logic, hit detection, class and loadout selection, skin catalog and applier, humanoid body, melee, shotgun and LMG configs, sniper mounting, map catalog, and map layout and geometry contracts.
-- **PlayMode** (`Assets/Tests/PlayMode`, plus `Assets/Maps/*/Tests`): TestRange smoke tests, movement techniques such as bunny hop, humanoid bodies in scene, map selector, loadout menu, melee, shotgun and LMG, and the Shipment and Dome scenes (the generated scene has to exist first, so build the map before running its PlayMode tests).
+- **EditMode** (`Assets/Tests/Editor`, plus `Assets/Maps/*/Tests`): movement logic, hit detection, class and loadout selection, movement archetype catalog and selection, skin catalog and applier, humanoid body, melee, shotgun and LMG configs, sniper mounting, map catalog, and map layout and geometry contracts.
+- **PlayMode** (`Assets/Tests/PlayMode`, plus `Assets/Maps/*/Tests`): TestRange smoke tests, movement techniques such as bunny hop, humanoid bodies in scene, map selector, loadout and movement menus, melee, shotgun and LMG, and the Shipment and Dome scenes (the generated scene has to exist first, so build the map before running its PlayMode tests).
 
 ## Blender models and tooling
 
