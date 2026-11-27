@@ -263,7 +263,7 @@ public class LoadoutPauseMenu : MonoBehaviour
         var selector = MapSelector.EnsureInstance();
         int current = MapSelector.CurrentMapIndex;
         string currentName = current >= 0 ? MapCatalog.Maps[current].DisplayName : MapSelector.CurrentSceneName;
-        GUILayout.Label($"Map: {currentName}  (F5/F6/F7, PgUp/PgDn)", labelStyle);
+        GUILayout.Label($"Map: {currentName}  ({MapCatalog.HotKeySummary()}, PgUp/PgDn)", labelStyle);
 
         GUILayout.BeginHorizontal();
         for (int i = 0; i < MapCatalog.Count; i++)

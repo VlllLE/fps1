@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Scene-level bot service. Created automatically after a scene with a player loads (TestRange, Shipment, Dome): it adds
+/// Scene-level bot service. Created automatically after a scene with a player loads (TestRange, Shipment, Dome, Triad): it adds
 /// <see cref="PlayerHealth"/> and the damage HUD to the player, generates the runtime NavMesh, spawns the opening bots and
 /// handles the debug keys. Nothing here edits scenes or assets, so no map builder has to be re-run.
 /// </summary>

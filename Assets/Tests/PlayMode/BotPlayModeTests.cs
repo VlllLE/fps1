@@ -416,5 +416,5 @@ public class BotMapPlayModeTests
         }
     }
 
-    public static readonly string[] Maps = { "TestRange", "Shipment", "Dome" };
+    public static readonly string[] Maps = { "TestRange", "Shipment", "Dome", "Triad" };
 }

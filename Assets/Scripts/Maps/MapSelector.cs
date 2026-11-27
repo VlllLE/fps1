@@ -4,8 +4,8 @@ using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Runtime map switcher. Auto-created (DontDestroyOnLoad) after the first scene loads, so no scene edits
-/// are needed. Only active while the current scene is a catalog map (TestRange / Shipment / Dome).
-/// F5/F6/F7 load a specific map, PageUp/PageDown cycle. Shows a small current-map label.
+/// are needed. Only active while the current scene is a catalog map (TestRange / Shipment / Dome / Triad).
+/// F5/F6/F7/Home load a specific map, PageUp/PageDown cycle. Shows a small current-map label.
 /// </summary>
 [DefaultExecutionOrder(-40)]
 public class MapSelector : MonoBehaviour
@@ -200,12 +200,12 @@ public class MapSelector : MonoBehaviour
         }
 
         int index = CurrentMapIndex;
-        string text = $"Map: {MapCatalog.Maps[index].DisplayName}   [F5 TestRange · F6 Shipment · F7 Dome · PgUp/PgDn]";
+        string text = $"Map: {MapCatalog.Maps[index].DisplayName}   [{MapCatalog.HotKeySummary()} · PgUp/PgDn]";
         string status = StatusMessage;
         if (!string.IsNullOrEmpty(status))
             text += "\n" + status;
 
-        var rect = new Rect(Screen.width - 520f, 6f, 510f, 40f);
+        var rect = new Rect(Screen.width - 640f, 6f, 630f, 40f);
         GUI.depth = 10;
         GUI.Label(new Rect(rect.x + 1f, rect.y + 1f, rect.width, rect.height), text, shadowStyle);
         GUI.Label(rect, text, labelStyle);
