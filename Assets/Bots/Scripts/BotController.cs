@@ -29,9 +29,6 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     private HumanoidBody body;
     private Transform eye;
     private bool bodyDeath;
-    private LineRenderer tracer;
-    private Material tracerMaterial;
-
     private float health;
     private bool frozen;
     private bool damagedPending;
@@ -74,7 +71,6 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     private float coverSearchTimer;
 
     private float deathTime;
-    private float tracerHideTime;
     private Quaternion fallFrom;
     private Quaternion fallTo;
     private bool bodyHidden;
@@ -137,7 +133,7 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     }
 
     /// <summary>
-    /// Creates a bot standing at <paramref name="position"/> (its feet). The humanoid body, hit boxes, weapon prop and tracer
+    /// Creates a bot standing at <paramref name="position"/> (its feet). The humanoid body, hit boxes, weapon prop
     /// are generated at runtime; nothing is saved as an asset.
     /// </summary>
     public static BotController Create(
@@ -204,7 +200,6 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
             body.LookSource = eye;
 
         EquipBodyWeapon(weapon);
-        BuildTracer();
         brain.StateChanged += OnStateChanged;
         UpdateArmPose();
     }
@@ -223,8 +218,6 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     private void OnDestroy()
     {
         Registry.Remove(this);
-        if (tracerMaterial != null)
-            Destroy(tracerMaterial);
     }
 
     private void Update()
@@ -237,8 +230,6 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
             return;
 
         float now = Time.time;
-        if (tracer != null && tracer.enabled && now >= tracerHideTime)
-            tracer.enabled = false;
 
         if (IsDead)
         {
@@ -879,7 +870,8 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         Vector3 shotDirection = BotAimModel.ApplyInaccuracy(aim.AimDirection, skillError, rng);
 
         HitDetection resolver = BotManager.HitResolver;
-        Vector3 tracerEnd = origin + shotDirection * Mathf.Min(config.range, 60f);
+        Transform muzzle = body != null ? body.Muzzle : null;
+        Vector3 muzzlePosition = muzzle != null ? muzzle.position : origin;
         if (resolver != null)
         {
             int pellets = Mathf.Max(1, config.pelletCount);
@@ -893,35 +885,20 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
                     settings.damageMultiplier);
                 HitResult result = resolver.Resolve(request);
                 DamageDealt += result.TotalDamageApplied;
-                if (i == 0)
-                {
-                    tracerEnd = result.Impacts.Count > 0
-                        ? result.Impacts[result.Impacts.Count - 1].RaycastHit.point
-                        : origin + pelletDirection * Mathf.Min(config.range, 60f);
-                }
+                ShotEffects.PlayHitscan(muzzlePosition, result, config);
             }
         }
 
-        PlayShotEffects(config, tracerEnd);
+        PlayShotEffects(config);
         return true;
     }
 
-    private void PlayShotEffects(WeaponConfig config, Vector3 tracerEnd)
+    private void PlayShotEffects(WeaponConfig config)
     {
         if (body != null && body.Animator != null)
             body.Animator.AddFlinch(0.1f, Vector3.back);
         if (body != null)
-            body.NotifyShot(1f);
-
-        if (tracer != null)
-        {
-            Transform muzzle = body != null ? body.Muzzle : null;
-            Vector3 start = muzzle != null ? muzzle.position : EyePosition;
-            tracer.SetPosition(0, start);
-            tracer.SetPosition(1, tracerEnd);
-            tracer.enabled = true;
-            tracerHideTime = Time.time + 0.05f;
-        }
+            body.NotifyFired(true);
 
         if (config.fireSound != null)
             AudioSource.PlayClipAtPoint(config.fireSound, transform.position + Vector3.up * 1.4f, config.fireSoundVolume * 0.8f);
@@ -977,8 +954,6 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         deathTime = Time.time;
         brain.Kill();
         SetCollidersEnabled(false);
-        if (tracer != null)
-            tracer.enabled = false;
         float deathSpeed = lastPlanarSpeed;
         currentSpeed = 0f;
         lastPlanarSpeed = 0f;
@@ -1092,45 +1067,12 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         bodyHidden = !visible;
         Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
         for (int i = 0; i < renderers.Length; i++)
-        {
-            if (renderers[i] != tracer)
-                renderers[i].enabled = visible;
-        }
+            renderers[i].enabled = visible;
     }
 
     #endregion
 
     #region Visual props
-
-    private void BuildTracer()
-    {
-        var tracerObject = new GameObject("BotTracer");
-        tracerObject.transform.SetParent(transform, false);
-        tracer = tracerObject.AddComponent<LineRenderer>();
-        tracer.useWorldSpace = true;
-        tracer.positionCount = 2;
-        tracer.startWidth = 0.03f;
-        tracer.endWidth = 0.01f;
-        tracer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        tracer.receiveShadows = false;
-        tracerMaterial = CreateUnlitMaterial(new Color(1f, 0.85f, 0.4f));
-        tracer.sharedMaterial = tracerMaterial;
-        tracer.enabled = false;
-    }
-
-    private static Material CreateUnlitMaterial(Color color)
-    {
-        Shader shader = Shader.Find("Sprites/Default");
-        if (shader == null)
-            shader = Shader.Find("Unlit/Color");
-        if (shader == null)
-            shader = Shader.Find("Universal Render Pipeline/Unlit");
-        if (shader == null)
-            shader = Shader.Find("Standard");
-
-        var material = new Material(shader) { color = color };
-        return material;
-    }
 
     #endregion
 

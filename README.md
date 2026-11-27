@@ -56,6 +56,8 @@ Attachments are modelled as parts of the weapon models: scopes with mounting rin
 on the bolt-action sniper and the LMG. The karambit swings through `MeleeAttackResolver` (five short rays per slash)
 and plays an alternating forehand and backhand slash. Details are in [`Assets/Weapons/README.md`](Assets/Weapons/README.md).
 
+**Bullets and firing animation.** Every hitscan shot draws a pooled tracer streak from the muzzle to the hit point (or max range), one per shotgun pellet, plus a muzzle flash with a short light, ejected shell casings that fall and fade, and impact effects: sparks, dust and a bullet-hole decal on the world, a small non-gory hit puff on targets. The effects are visual only, so hit detection and the damage-only hitmarker are unchanged. They work from the first-person gun and from the held gun of bots and the player's own body (`Assets/Scripts/Weapons/Fx`, `ShotEffects`). Each gun kicks procedurally when fired (rifle, SMG, LMG, shotgun pump, bolt cycle on the bolt-action sniper, DMR, pistol), and the third-person soldier recoils and works the bolt or pump with the same fire event; the karambit swings the body's torso and arm.
+
 ### Weapon skins
 
 20 skins that work on any gun mesh through object-space triplanar projection (Built-in Render Pipeline shaders):

@@ -240,6 +240,10 @@ can replace materials with triplanar skins.
 Assign a `WeaponConfig` on the root `WeaponController` before play.
 Default body materials live in `Materials/` (Built-in Standard).
 
+Firing visuals come from the shared `ShotEffects` pool (`Assets/Scripts/Weapons/Fx`): `MuzzlePoint` is where the flash and
+tracer start, `ShellEjectPoint` where casings leave, and a part named `Bolt` (or `Slide`) is slid back by the bolt-action
+and DMR fire cycle. Per-type tuning (flash size, casing colour and delay, kick, bolt timing) is in `WeaponFxProfile`.
+
 ## Not verified
 
 Prefabs were authored as YAML outside the Unity editor. Open the project

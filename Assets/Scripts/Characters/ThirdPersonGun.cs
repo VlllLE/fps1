@@ -51,6 +51,11 @@ public sealed class ThirdPersonGun
     /// <summary>Barrel tip (tracer origin). Never null.</summary>
     public Transform Muzzle => muzzle;
 
+    private Transform ejectPoint;
+
+    /// <summary>Ejection port: casings leave from here towards the weapon's right. Never null.</summary>
+    public Transform EjectPoint => ejectPoint;
+
     public bool UsesImportedModel => usesModel;
 
     public bool IsDropped => drop != null;
@@ -129,8 +134,18 @@ public sealed class ThirdPersonGun
             muzzle.localRotation = Quaternion.identity;
         }
 
+        Transform eject = FindDescendant(model.transform, "ShellEjectPoint");
+        if (eject == null)
+        {
+            eject = new GameObject("ShellEject").transform;
+            eject.SetParent(model.transform, false);
+            eject.localPosition = new Vector3(profile.muzzle.x + 0.035f, profile.muzzle.y + 0.02f, profile.muzzle.z * 0.42f);
+            eject.localRotation = Quaternion.identity;
+        }
+
         SetLayer(rootObject, layer);
         var gun = new ThirdPersonGun(rootObject.transform, profile, magazine, bolt, muzzle, usesModel, material, weaponPrefab);
+        gun.ejectPoint = eject;
         gun.RefreshSkin();
         return gun;
     }
