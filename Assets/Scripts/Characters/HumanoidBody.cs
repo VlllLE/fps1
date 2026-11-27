@@ -169,10 +169,15 @@ public sealed class HumanoidBody : MonoBehaviour
         return bones[(int)bone];
     }
 
-    /// <summary>Parts that must not render in the local first-person camera (head, neck, torso arms).</summary>
+    /// <summary>
+    /// Everything of the body that must not render in the local first-person camera. The whole body root is
+    /// included (torso, legs, head, arms, gear, held gun): hiding only the head and shoulders left the torso
+    /// mesh in view whenever the eye dropped into it while crouching, sliding or leaning.
+    /// </summary>
     public Transform[] GetLocalHideTargets()
     {
-        var list = new List<Transform>(4);
+        var list = new List<Transform>(6);
+        AddIfNotNull(list, bodyRoot);
         AddIfNotNull(list, bones[(int)HumanoidBone.Neck]);
         AddIfNotNull(list, bones[(int)HumanoidBone.Head]);
         AddIfNotNull(list, bones[(int)HumanoidBone.ShoulderL]);

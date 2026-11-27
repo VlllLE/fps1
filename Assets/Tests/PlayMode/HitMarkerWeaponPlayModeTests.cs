@@ -18,7 +18,8 @@ public class HitMarkerWeaponPlayModeTests
     private GameObject projectileObject;
     private WeaponConfig runtimeConfig;
     private int markerCount;
-    private Vector3 sceneOffset;
+    private static readonly Vector3 FarAway = new Vector3(2000f, 0f, 2000f);
+    private Vector3 sceneOffset = FarAway;
 
     [TearDown]
     public void TearDown()
@@ -38,7 +39,7 @@ public class HitMarkerWeaponPlayModeTests
         }
 
         root = bridgeObject = wall = target = projectileObject = null;
-        sceneOffset = Vector3.zero;
+        sceneOffset = FarAway;
         markerCount = 0;
     }
 
@@ -171,7 +172,6 @@ public class HitMarkerWeaponPlayModeTests
     [UnityTest]
     public IEnumerator Projectile_IntoWorldGeometry_ShowsNoHitMarker()
     {
-        sceneOffset = new Vector3(500f, 0f, 500f);
         HitResult result = null;
         SpawnProjectile(r => result = r, Vector3.zero);
         SpawnWall(5f);
@@ -186,7 +186,6 @@ public class HitMarkerWeaponPlayModeTests
     [UnityTest]
     public IEnumerator Projectile_IntoADamageableTarget_ShowsAHitMarker()
     {
-        sceneOffset = new Vector3(500f, 0f, 500f);
         HitResult result = null;
         SpawnProjectile(r => result = r, Vector3.zero);
         SpawnTarget(5f, out MeleeTestReceiver receiver);
@@ -202,7 +201,6 @@ public class HitMarkerWeaponPlayModeTests
     [UnityTest]
     public IEnumerator Projectile_IntoTheShootersOwnBody_IsIgnored()
     {
-        sceneOffset = new Vector3(500f, 0f, 500f);
         HitResult result = null;
         root = new GameObject("Shooter");
         root.transform.position = sceneOffset;
@@ -247,6 +245,7 @@ public class HitMarkerWeaponPlayModeTests
     private WeaponController SpawnWeapon(string id)
     {
         root = new GameObject("WeaponTestRoot");
+        root.transform.position = sceneOffset;
         root.AddComponent<HitDetection>();
 
         var cameraObject = new GameObject("Camera");
