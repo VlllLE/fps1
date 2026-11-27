@@ -60,9 +60,52 @@ public sealed partial class HumanoidAnimator
 
     public float Recoil => recoil;
 
+    /// <summary>Length of one melee swing in seconds.</summary>
+    public const float SwingDuration = 0.45f;
+
+    private float fireCycleTime = 10f;
+    private float swingTime = 10f;
+
+    /// <summary>True while a melee swing is playing.</summary>
+    public bool IsSwinging => swingTime < SwingDuration;
+
+    /// <summary>0..1 through the current swing (1 once it is over).</summary>
+    public float SwingProgress => Mathf.Clamp01(swingTime / SwingDuration);
+
+    /// <summary>Seconds since the last shot started a bolt/pump/slide cycle.</summary>
+    public float FireCycleTime => fireCycleTime;
+
+    /// <summary>Starts the bolt/pump/slide cycle that follows a shot (the part moves via <see cref="BoltOffset"/>).</summary>
+    public void NotifyFireCycle()
+    {
+        fireCycleTime = 0f;
+    }
+
+    /// <summary>Starts a melee swing: wind-up, slash across the body with a lunge and torso twist, recovery.</summary>
+    public void NotifySwing()
+    {
+        swingTime = 0f;
+    }
+
+    private void SwingPose(out float yaw, out float pitch, out float roll, out float lunge)
+    {
+        float u = Mathf.Clamp01(swingTime / SwingDuration);
+        float wind = Segment(u, 0f, 0.28f);
+        float slash = Segment(u, 0.28f, 0.58f);
+        float back = Segment(u, 0.58f, 1f);
+        yaw = 42f * wind - 100f * slash + 58f * back;
+        pitch = -18f * wind + 48f * slash - 30f * back;
+        roll = 25f * wind - 70f * slash + 45f * back;
+        lunge = -0.04f * wind + 0.16f * slash - 0.12f * back;
+    }
+
+    private bool SwingActive => IsSwinging && profile != null && profile.category == HoldCategory.Melee;
+
     /// <summary>Kicks the weapon (and the hands holding it) for one shot. Strength 1 is a rifle round.</summary>
     public void NotifyShot(float strength = 1f)
     {
+        if (profile != null && profile.category == HoldCategory.Melee)
+            return;
         float scale = profile != null ? profile.recoilKick : 1f;
         recoilVelocity = Mathf.Min(recoilVelocity + RecoilImpulse * Mathf.Clamp(strength, 0f, 2f) * scale, RecoilImpulse * 3f);
     }
@@ -130,6 +173,8 @@ public sealed partial class HumanoidAnimator
         stanceT = Approach(stanceT, (float)input.holdStance, dt, 7f);
         aimYaw = Approach(aimYaw, Mathf.Clamp(input.aimYawDegrees, -120f, 120f), dt, 14f);
         TickRecoil(dt);
+        fireCycleTime += dt;
+        swingTime += dt;
         reloading = input.reloading;
         reloadProgress = Mathf.Clamp01(input.reloadProgress);
         reloadCycles = Mathf.Max(1, input.reloadCycles);
@@ -150,6 +195,14 @@ public sealed partial class HumanoidAnimator
 
         float spineYaw = -hipsYaw * 0.9f + w * (pose.blade * 0.5f + aimYaw * 0.25f);
         float chestYaw = -hipsYaw * 0.5f + w * (pose.blade * 0.5f + aimYaw * 0.35f);
+        if (SwingActive)
+        {
+            SwingPose(out float swingYaw, out float swingPitch, out _, out _);
+            spineYaw += w * swingYaw * 0.18f;
+            chestYaw += w * swingYaw * 0.32f;
+            lean += swingPitch * 0.12f;
+        }
+
         localRot[(int)HumanoidBone.Spine] = Quaternion.Euler(spinePitch + w * (lookPitch * 0.10f + lean), spineYaw, 0f);
         localRot[(int)HumanoidBone.Chest] = Quaternion.Euler(chestPitch + lookPitch * (0.2f + 0.1f * w) - 1.6f * recoil * w, chestYaw, flinchRoll);
 
@@ -231,6 +284,13 @@ public sealed partial class HumanoidAnimator
         gunRotation = Quaternion.Euler(pitch, aimYaw + pose.yawOffset, 0f);
         Vector3 reference = chestPosition + chestRotation * pose.anchor;
         reference += gunRotation * new Vector3(0f, 0.008f * recoil, -0.065f * recoil);
+        if (SwingActive)
+        {
+            SwingPose(out float swingYaw, out float swingPitch, out float swingRoll, out float swingLunge);
+            Quaternion facing = Quaternion.Euler(0f, aimYaw + pose.yawOffset, 0f);
+            reference += facing * Vector3.forward * swingLunge;
+            gunRotation *= Quaternion.Euler(swingPitch, swingYaw, swingRoll);
+        }
         gunPosition = reference - gunRotation * profile.ReferencePoint;
 
         Quaternion leftFrame = GunHoldCatalog.HandRotation(false, profile.leftFingers, profile.leftPalmNormal);
@@ -301,8 +361,49 @@ public sealed partial class HumanoidAnimator
             }
         }
 
+        if (!reloading)
+            ApplyFireCycle(ref rightPalm, ref leftPalm);
+
         SetHoldTarget(RightIndex, rightPalm, rightFrameGun, 1f);
         SetHoldTarget(LeftIndex, leftPalm, leftFrameGun, supportWeight);
+    }
+
+    /// <summary>The weapon type whose <see cref="WeaponFxProfile"/> times the cycle of this hold profile.</summary>
+    private static WeaponFxProfile CycleProfile(GunHoldProfile hold)
+    {
+        switch (hold.category)
+        {
+            case HoldCategory.Smg: return WeaponFxProfile.For(WeaponType.SMG, 900f);
+            case HoldCategory.Lmg: return WeaponFxProfile.For(WeaponType.LMG, 700f);
+            case HoldCategory.Shotgun: return WeaponFxProfile.For(WeaponType.Shotgun, 75f);
+            case HoldCategory.Sniper: return WeaponFxProfile.For(WeaponType.Sniper, hold.boltRack ? 55f : 200f);
+            case HoldCategory.Pistol: return WeaponFxProfile.For(WeaponType.Pistol, 400f);
+            default: return WeaponFxProfile.For(WeaponType.AssaultRifle, 700f);
+        }
+    }
+
+    /// <summary>
+    /// After a shot the bolt/slide/pump of the held gun cycles (<see cref="BoltOffset"/>); a bolt-action's right hand
+    /// works the bolt handle and a pump-action's support hand pumps the fore-end.
+    /// </summary>
+    private void ApplyFireCycle(ref Vector3 rightPalm, ref Vector3 leftPalm)
+    {
+        if (profile.category == HoldCategory.Melee)
+            return;
+
+        WeaponFxProfile fx = CycleProfile(profile);
+        float t = fireCycleTime - fx.cycleDelay;
+        if (t < 0f || t >= fx.cycleDuration)
+            return;
+
+        float p = t / Mathf.Max(0.0001f, fx.cycleDuration);
+        float pulse = p < 0.35f ? Ease(p / 0.35f) : (p < 0.55f ? 1f : 1f - Ease((p - 0.55f) / 0.45f));
+        Vector3 offset = new Vector3(0f, 0f, -fx.cycleTravel * pulse);
+        boltOffset = offset;
+        if (fx.boltAction && profile.boltRack)
+            rightPalm = Vector3.Lerp(profile.rightGrip, profile.boltHandle + offset, pulse);
+        else if (profile.category == HoldCategory.Shotgun && SupportWeight() > 0.01f)
+            leftPalm += offset;
     }
 
     private void SetHoldTarget(int index, Vector3 palmGun, Quaternion handGun, float weight)

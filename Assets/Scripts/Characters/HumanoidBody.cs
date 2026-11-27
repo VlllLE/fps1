@@ -288,6 +288,39 @@ public sealed class HumanoidBody : MonoBehaviour
             animator.NotifyShot(strength);
     }
 
+    /// <summary>
+    /// Everything a third-person shot shows: the weapon kicks, the bolt/pump/slide cycles, the muzzle flashes and a
+    /// casing leaves the gun. A melee weapon swings instead. <paramref name="muzzleLight"/> adds the flash's point
+    /// light (the local player's own body leaves it off: its gun is hidden from the first-person camera).
+    /// </summary>
+    public void NotifyFired(bool muzzleLight)
+    {
+        if (death != null || heldConfig == null)
+            return;
+
+        if (heldConfig.IsMelee)
+        {
+            NotifySwing();
+            return;
+        }
+
+        NotifyShot(1f);
+        if (animator != null)
+            animator.NotifyFireCycle();
+        if (gun != null)
+        {
+            ShotEffects.PlayMuzzleFlash(gun.Muzzle, heldConfig, muzzleLight);
+            ShotEffects.PlayCasing(gun.EjectPoint, heldConfig);
+        }
+    }
+
+    /// <summary>Starts the melee swing of the held knife (arm sweep, torso twist, lunge).</summary>
+    public void NotifySwing()
+    {
+        if (animator != null && death == null)
+            animator.NotifySwing();
+    }
+
     /// <summary>Feeds reload state to the hands (magazine swap, bolt cycling).</summary>
     public void SetReloadState(bool reloading, float progress, int cycles = 1)
     {

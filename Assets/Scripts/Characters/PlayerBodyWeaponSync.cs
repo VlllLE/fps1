@@ -106,13 +106,16 @@ public sealed class PlayerBodyWeaponSync : MonoBehaviour
 
     private void HandleFired()
     {
-        if (body != null)
-            body.NotifyShot(1f);
+        if (body == null || (current != null && current.IsMelee))
+            return;
+
+        // The body's gun sits on the hidden-from-first-person layer, so its flash and casings never show in the player's own view.
+        body.NotifyFired(false);
     }
 
     private void HandleSwing()
     {
         if (body != null)
-            body.NotifyShot(1.6f);
+            body.NotifySwing();
     }
 }

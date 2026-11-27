@@ -64,6 +64,9 @@ public class WeaponController : MonoBehaviour
     private Vector3 boltInitialLocalPos;
     private Quaternion boltInitialLocalRot;
 
+    private readonly WeaponFireKick fireKick = new WeaponFireKick();
+    private float boltCycleStart = -100f;
+
     private static AudioClip proceduralMagOutClip;
     private static AudioClip proceduralMagInClip;
     private static AudioClip proceduralBoltRackClip;
@@ -157,6 +160,8 @@ public class WeaponController : MonoBehaviour
         isReloading = false;
         reloadProgress = 0f;
         meleeCoroutine = null;
+        fireKick.Reset();
+        boltCycleStart = -100f;
         ResetReloadVisuals();
     }
     
@@ -168,7 +173,65 @@ public class WeaponController : MonoBehaviour
         ApplyReloadAnimation();
         UpdateSway();
         UpdateBob();
+        ApplyFireKick();
+        ApplyFireBoltCycle();
         UpdateSpreadRecovery();
+    }
+
+    /// <summary>Current first-person kick spring (0 at rest, about 0.7 at the peak of one shot). Visual only.</summary>
+    public float FireKickDisplacement => fireKick.Displacement;
+    public Vector3 FireKickPositionOffset => fireKick.PositionOffset;
+    public Quaternion FireKickRotationOffset => fireKick.RotationOffset;
+
+    /// <summary>The transform the shot's muzzle effects are anchored to.</summary>
+    public Transform MuzzleTransform => muzzlePoint != null ? muzzlePoint : (firePoint != null ? firePoint : transform);
+
+    private void ApplyFireKick()
+    {
+        if (!fireKick.IsMoving)
+            return;
+
+        fireKick.Tick(Time.deltaTime);
+        transform.localPosition += fireKick.PositionOffset;
+        transform.localRotation *= fireKick.RotationOffset;
+    }
+
+    private void StartFireVisuals()
+    {
+        if (config == null || IsMelee)
+            return;
+
+        fireKick.Kick(config, isAiming, UnityEngine.Random.Range(-1f, 1f));
+        if (boltTransform != null && !isReloading)
+            boltCycleStart = Time.time;
+    }
+
+    private void ApplyFireBoltCycle()
+    {
+        if (boltTransform == null || isReloading || boltCycleStart < 0f)
+            return;
+
+        WeaponFxProfile profile = WeaponFxProfile.For(config);
+        float t = Time.time - boltCycleStart - profile.cycleDelay;
+        if (t < 0f)
+            return;
+
+        if (t >= profile.cycleDuration)
+        {
+            boltCycleStart = -100f;
+            boltTransform.localPosition = boltInitialLocalPos;
+            boltTransform.localRotation = boltInitialLocalRot;
+            return;
+        }
+
+        float p = t / Mathf.Max(0.0001f, profile.cycleDuration);
+        float pulse = p < 0.35f
+            ? SmoothStep01(p / 0.35f)
+            : (p < 0.55f ? 1f : 1f - SmoothStep01((p - 0.55f) / 0.45f));
+        boltTransform.localPosition = boltInitialLocalPos + new Vector3(0f, 0f, -profile.cycleTravel * pulse);
+        boltTransform.localRotation = profile.boltAction
+            ? boltInitialLocalRot * Quaternion.Euler(0f, 0f, -50f * pulse)
+            : boltInitialLocalRot;
     }
     
     public void Initialize(WeaponConfig weaponConfig)
@@ -293,6 +356,7 @@ public class WeaponController : MonoBehaviour
         recoilSystem?.ApplyRecoilShot(isAiming);
         
         PlayFireEffects();
+        StartFireVisuals();
         
         if (animator != null)
             animator.SetTrigger("Fire");
@@ -345,6 +409,7 @@ public class WeaponController : MonoBehaviour
     {
         HitRequest request = CreateHitRequest(origin, direction);
         HitResult result = hitDetection.Resolve(request);
+        ShotEffects.PlayHitscan(MuzzleTransform.position, result, config);
         OnHitResolved?.Invoke(result);
     }
     
@@ -360,6 +425,7 @@ public class WeaponController : MonoBehaviour
             HitRequest request = CreateHitRequest(origin, pelletDirection);
             HitResult result = hitDetection.Resolve(request);
             results.Add(result);
+            ShotEffects.PlayHitscan(MuzzleTransform.position, result, config);
         }
         
         OnShotgunHitsResolved?.Invoke(results);
@@ -464,8 +530,16 @@ public class WeaponController : MonoBehaviour
             GameObject flash = Instantiate(config.muzzleFlashPrefab, muzzlePoint.position, muzzlePoint.rotation, muzzlePoint);
             Destroy(flash, 0.1f);
         }
-        
-        if (config.shellEjectPrefab != null && shellEjectPoint != null)
+        else
+        {
+            ShotEffects.PlayMuzzleFlash(MuzzleTransform, config, true);
+        }
+
+        if (config.shellEjectPrefab == null)
+        {
+            ShotEffects.PlayCasing(shellEjectPoint, config);
+        }
+        else if (shellEjectPoint != null)
         {
             GameObject shell = Instantiate(config.shellEjectPrefab, shellEjectPoint.position, shellEjectPoint.rotation);
             Rigidbody shellRb = shell.GetComponent<Rigidbody>();
@@ -743,7 +817,7 @@ public class WeaponController : MonoBehaviour
             magazineInitialLocalScale = magazineTransform.localScale;
         }
 
-        boltTransform = FindDescendantByName(transform, "Bolt");
+        boltTransform = FindDescendantByName(transform, "Bolt") ?? FindDescendantByName(transform, "Slide");
         if (boltTransform != null)
         {
             boltInitialLocalPos = boltTransform.localPosition;
