@@ -132,6 +132,24 @@ public class DomeSmokeTests
     }
 
     [UnityTest]
+    public IEnumerator Targets_WearAMixOfCharacterLooksWithHitZones()
+    {
+        var looks = new System.Collections.Generic.HashSet<string>();
+        foreach (Target target in Object.FindObjectsByType<Target>(FindObjectsSortMode.None))
+        {
+            var body = target.GetComponent<HumanoidBody>();
+            Assert.IsNotNull(body, target.name + " has a humanoid body");
+            Assert.IsFalse(string.IsNullOrEmpty(body.ActiveLookId), target.name + " wears a character look: " + body.LookFallbackReason);
+            looks.Add(body.ActiveLookId);
+            Assert.IsNotNull(target.transform.Find("Head")?.GetComponent<HitZone>(), target.name + " keeps its head zone");
+            Assert.IsNotNull(target.transform.Find("Body")?.GetComponent<HitZone>(), target.name + " keeps its body zone");
+        }
+
+        Assert.AreEqual(3, looks.Count, "Soldier, Operator and Ghillie are all in use");
+        yield return null;
+    }
+
+    [UnityTest]
     public IEnumerator CatwalkTop_IsReachableByRaycastFromAbove()
     {
         Vector3 onCatwalk = DomeLayout.Direction(60f) * DomeLayout.CatwalkRadius;

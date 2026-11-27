@@ -124,6 +124,18 @@ public class Target : MonoBehaviour, IDamageable, IHitDamageReceiver
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
     
+    /// <summary>Turns the target (yaw only) to face a point and makes that the pose it respawns in.</summary>
+    public void FaceTowards(Vector3 worldPoint)
+    {
+        Vector3 direction = worldPoint - transform.position;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 1e-4f)
+            return;
+
+        transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        startRotation = transform.rotation;
+    }
+
     public void ResetTarget()
     {
         CancelInvoke();

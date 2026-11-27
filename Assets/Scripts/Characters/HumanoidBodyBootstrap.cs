@@ -12,6 +12,7 @@ public static class HumanoidBodyBootstrap
 {
     private const string LegacyPlayerBodyName = "BodyRoot";
     private const string LegacyArmsName = "FirstPersonArms";
+    private const string PlayerSpawnName = "PlayerSpawn";
 
     private static bool installed;
 
@@ -44,14 +45,38 @@ public static class HumanoidBodyBootstrap
                 changed++;
         }
 
-        var targets = Object.FindObjectsByType<Target>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        Target[] targets = Object.FindObjectsByType<Target>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        System.Array.Sort(targets, (a, b) => string.CompareOrdinal(a.name, b.name));
+        GameObject spawn = GameObject.Find(PlayerSpawnName);
         for (int i = 0; i < targets.Length; i++)
         {
-            if (UpgradeTarget(targets[i]))
+            string look = CharacterLooks.ForDummy(i);
+            if (UpgradeTarget(targets[i], look))
                 changed++;
+            if (ApplyDummyLook(targets[i], look))
+                changed++;
+            if (spawn != null)
+                targets[i].FaceTowards(spawn.transform.position);
         }
 
         return changed;
+    }
+
+    /// <summary>
+    /// Dresses a training dummy that still wears the classic soldier in a character look. Dummies that already name
+    /// a look (set by a map or a test) are left alone, so this is idempotent. The dummy's colour stays as a subtle tint.
+    /// </summary>
+    public static bool ApplyDummyLook(Target target, string look)
+    {
+        if (target == null || string.IsNullOrEmpty(look))
+            return false;
+
+        HumanoidBody body = target.GetComponent<HumanoidBody>();
+        if (body == null || !string.IsNullOrEmpty(body.LookId))
+            return false;
+
+        body.SetLook(look, CharacterLooks.DummyLookTint);
+        return true;
     }
 
     /// <summary>
@@ -86,7 +111,7 @@ public static class HumanoidBodyBootstrap
     /// Replaces the legacy cylinder "Body" and sphere "Head" of a target with the humanoid, keeping direct
     /// "Head"/"Body" hit volumes. The legacy body colour tints the new suit.
     /// </summary>
-    public static bool UpgradeTarget(Target target)
+    public static bool UpgradeTarget(Target target, string look = null)
     {
         if (target == null || target.GetComponent<HumanoidBody>() != null)
             return false;
@@ -118,7 +143,14 @@ public static class HumanoidBodyBootstrap
         if (headIsPrimitive)
             RetireLegacyObject(legacyHead.gameObject);
 
-        HumanoidBody.AddTo(target.gameObject, HumanoidBodySettings.Target(tint, scale));
+        HumanoidBodySettings settings = HumanoidBodySettings.Target(tint, scale);
+        if (!string.IsNullOrEmpty(look))
+        {
+            settings.look = look;
+            settings.lookTint = CharacterLooks.DummyLookTint;
+        }
+
+        HumanoidBody.AddTo(target.gameObject, settings);
         return true;
     }
 
