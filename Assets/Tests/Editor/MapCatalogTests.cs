@@ -10,15 +10,29 @@ public class MapCatalogTests
     };
 
     [Test]
-    public void Catalog_ListsTestRangeShipmentDome_WithDistinctHotkeys()
+    public void Catalog_ListsTestRangeShipmentDomeTriad_WithDistinctHotkeys()
     {
-        Assert.AreEqual(3, MapCatalog.Count);
+        Assert.AreEqual(4, MapCatalog.Count);
         Assert.AreEqual("TestRange", MapCatalog.Maps[0].SceneName);
         Assert.AreEqual("Shipment", MapCatalog.Maps[1].SceneName);
         Assert.AreEqual("Dome", MapCatalog.Maps[2].SceneName);
         Assert.AreEqual(KeyCode.F5, MapCatalog.Maps[0].HotKey);
         Assert.AreEqual(KeyCode.F6, MapCatalog.Maps[1].HotKey);
         Assert.AreEqual(KeyCode.F7, MapCatalog.Maps[2].HotKey);
+        Assert.AreEqual("Triad", MapCatalog.Maps[3].SceneName);
+        Assert.AreEqual(KeyCode.Home, MapCatalog.Maps[3].HotKey);
+
+        var keys = new System.Collections.Generic.HashSet<KeyCode>();
+        foreach (var map in MapCatalog.Maps)
+            Assert.IsTrue(keys.Add(map.HotKey), "Duplicate hotkey " + map.HotKey);
+    }
+
+    [Test]
+    public void HotKeySummary_ListsEveryMapWithItsKey()
+    {
+        string summary = MapCatalog.HotKeySummary();
+        foreach (var map in MapCatalog.Maps)
+            StringAssert.Contains(map.HotKey + " " + map.DisplayName, summary);
     }
 
     [Test]

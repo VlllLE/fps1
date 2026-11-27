@@ -61,7 +61,7 @@ Re-sync scene player: **Tools → Sync Test Range Player (Character + Classes)**
 - The catalog also offers the **Pump Shotgun** (9 pellets, short range, per-shell reload) and the **LMG** (100-round belt, slow reload, heavy recoil) as primary or secondary.
 - The weapon/skin/class lists come from `Assets/Resources/WeaponLoadoutCatalog.asset`; after adding a weapon prefab, skin or class run **Tools → Loadout → Rebuild Weapon Catalog**.
 
-### Enemy bots (TestRange, Shipment, Dome)
+### Enemy bots (TestRange, Shipment, Dome, Triad)
 
 Armed AI soldiers spawn automatically in every map: **3 bots at Normal difficulty** shortly after the scene loads. They patrol, spot you through a view cone with a line-of-sight check, chase or strafe at a preferred range, shoot with real weapon configs (`HitDetection`, fire rate, bursts, reload), duck behind cover when hurt, die and respawn. You get a health bar, red damage-direction wedges, a vignette and a "YOU DIED" screen, then respawn at your start after about 3 s. Health regenerates after ~5 s without damage. The static training targets are unchanged.
 

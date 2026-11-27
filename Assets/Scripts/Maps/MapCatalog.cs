@@ -28,9 +28,25 @@ public static class MapCatalog
         new MapEntry("TestRange", "TestRange", "Assets/Scenes/TestRange.unity", KeyCode.F5),
         new MapEntry("Shipment", "Shipment", "Assets/Scenes/Shipment.unity", KeyCode.F6),
         new MapEntry("Dome", "Dome", "Assets/Scenes/Dome.unity", KeyCode.F7),
+        new MapEntry("Triad", "Triad", "Assets/Scenes/Triad.unity", KeyCode.Home),
     };
 
     public static int Count => Maps.Length;
+
+    /// <summary>Short key name for on-screen hints (F5, Home, ...).</summary>
+    public static string HotKeyLabel(KeyCode key)
+    {
+        return key.ToString();
+    }
+
+    /// <summary>"F5 TestRange · F6 Shipment · ..." built from the catalog, so new maps show up automatically.</summary>
+    public static string HotKeySummary()
+    {
+        var parts = new string[Maps.Length];
+        for (int i = 0; i < Maps.Length; i++)
+            parts[i] = HotKeyLabel(Maps[i].HotKey) + " " + Maps[i].DisplayName;
+        return string.Join(" · ", parts);
+    }
 
     public static int IndexOfScene(string sceneName)
     {

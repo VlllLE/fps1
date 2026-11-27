@@ -85,7 +85,8 @@ public class HumanoidPlayModeTests
         Assert.IsNotNull(targetObject, "Target_Near should exist");
         var body = targetObject.GetComponent<HumanoidBody>();
         Assert.IsNotNull(body, "Target_Near should have a humanoid body");
-        Assert.GreaterOrEqual(body.BodyRoot.GetComponentsInChildren<Renderer>().Length, body.UsesImportedModel ? 4 : HumanoidParts.BoneCount);
+        Assert.GreaterOrEqual(body.BodyRoot.GetComponentsInChildren<Renderer>().Length,
+            !string.IsNullOrEmpty(body.ActiveLookId) ? 1 : body.UsesImportedModel ? 4 : HumanoidParts.BoneCount);
 
         Transform head = targetObject.transform.Find("Head");
         Assert.IsNotNull(head);
@@ -94,6 +95,64 @@ public class HumanoidPlayModeTests
         Assert.AreEqual(HitZoneType.Head, head.GetComponent<HitZone>().ZoneType);
         Assert.IsNotNull(targetObject.transform.Find("Body")?.GetComponent<HitZone>());
         yield return null;
+    }
+
+    [UnityTest]
+    public IEnumerator Dummies_WearAMixOfLooksAndFaceThePlayerSpawn()
+    {
+        Target[] dummies = Object.FindObjectsByType<Target>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        Assert.GreaterOrEqual(dummies.Length, 3, "TestRange has several dummies");
+        GameObject spawn = GameObject.Find("PlayerSpawn");
+        Assert.IsNotNull(spawn);
+
+        var looks = new System.Collections.Generic.HashSet<string>();
+        foreach (Target dummy in dummies)
+        {
+            var body = dummy.GetComponent<HumanoidBody>();
+            Assert.IsNotNull(body, dummy.name + " has a humanoid body");
+            Assert.IsTrue(CharacterLooks.AllIds.Contains(body.ActiveLookId), dummy.name + " wears a look: " + body.LookFallbackReason);
+            looks.Add(body.ActiveLookId);
+
+            Vector3 toSpawn = spawn.transform.position - dummy.transform.position;
+            toSpawn.y = 0f;
+            Assert.Greater(Vector3.Dot(dummy.transform.forward, toSpawn.normalized), 0.99f, dummy.name + " faces the spawn");
+        }
+
+        Assert.AreEqual(CharacterLooks.AllIds.Length, looks.Count, "the dummies show all three looks");
+        yield return null;
+    }
+
+    [UnityTest]
+    public IEnumerator Dummy_KeepsHitZonesDamageAndLookThroughDeathAndRespawn()
+    {
+        GameObject targetObject = GameObject.Find("Target_Near");
+        Assert.IsNotNull(targetObject);
+        var target = targetObject.GetComponent<Target>();
+        var body = targetObject.GetComponent<HumanoidBody>();
+        string look = body.ActiveLookId;
+        Assert.IsNotEmpty(look);
+        Quaternion pose = targetObject.transform.rotation;
+
+        Transform head = targetObject.transform.Find("Head");
+        Vector3 front = targetObject.transform.forward;
+        Physics.SyncTransforms();
+        Assert.IsTrue(Physics.Raycast(head.position + front * 3f, -front, out RaycastHit hit, 6f, ~0, QueryTriggerInteraction.Ignore));
+        Assert.AreEqual("Head", hit.collider.name, "a shot at the head still lands in the head zone");
+        Assert.AreEqual(HitZoneType.Head, hit.collider.GetComponent<HitZone>().ZoneType);
+
+        target.TakeDamage(new DamageInfo { damage = 10f, hitPoint = head.position, hitNormal = Vector3.up, isHeadshot = true });
+        Assert.AreEqual(target.MaxHealth - 10f, target.CurrentHealth, 0.001f);
+
+        target.TakeDamage(new DamageInfo { damage = target.MaxHealth, hitPoint = head.position, hitNormal = Vector3.up });
+        Assert.IsFalse(targetObject.activeSelf, "a killed dummy hides until it respawns");
+
+        target.ResetTarget();
+        yield return null;
+        Assert.IsTrue(targetObject.activeSelf);
+        Assert.AreEqual(target.MaxHealth, target.CurrentHealth, 0.001f);
+        Assert.AreEqual(look, body.ActiveLookId, "the dummy respawns in the same look");
+        Assert.Greater(Quaternion.Dot(pose, targetObject.transform.rotation), 0.9999f, "and facing the same way");
+        Assert.IsNotNull(targetObject.transform.Find("Head")?.GetComponent<HitZone>());
     }
 
     [UnityTest]
