@@ -38,6 +38,31 @@ public static class LoadoutMenuPages
         }
     }
 
+    private static ILoadoutMenuPage movementPage;
+
+    /// <summary>The page shown on the menu's MOVEMENT tab, or null when none is registered.</summary>
+    public static ILoadoutMenuPage MovementPage
+    {
+        get
+        {
+            if (movementPage is Object unityObject && unityObject == null)
+                movementPage = null;
+            return movementPage;
+        }
+    }
+
+    public static void RegisterMovement(ILoadoutMenuPage page)
+    {
+        if (page != null)
+            movementPage = page;
+    }
+
+    public static void UnregisterMovement(ILoadoutMenuPage page)
+    {
+        if (ReferenceEquals(movementPage, page))
+            movementPage = null;
+    }
+
     public static int Count
     {
         get

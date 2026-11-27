@@ -11,8 +11,12 @@ public class LoadoutPauseMenu : MonoBehaviour
     public enum MenuTab
     {
         Loadout = 0,
-        Map = 1
+        Map = 1,
+        Movement = 2
     }
+
+    // Toolbar order on screen; the enum keeps its original numbering so saved references stay valid.
+    private static readonly MenuTab[] ToolbarOrder = { MenuTab.Loadout, MenuTab.Movement, MenuTab.Map };
 
     [SerializeField] private ClassLoadoutApplier loadoutApplier;
     [SerializeField] private TestRangeClassSelector classSelector;
@@ -20,6 +24,7 @@ public class LoadoutPauseMenu : MonoBehaviour
     [SerializeField] private FirstPersonCamera firstPersonCamera;
     [SerializeField] private bool pauseTimeScale = false;
     [SerializeField] private KeyCode loadoutHotkey = KeyCode.L;
+    [SerializeField] private KeyCode movementHotkey = KeyCode.M;
 
     private PlayerWeaponBridge weaponBridge;
     private bool open;
@@ -35,6 +40,7 @@ public class LoadoutPauseMenu : MonoBehaviour
     public bool IsOpen => open;
     public MenuTab CurrentTab => tab;
     public KeyCode LoadoutHotkey => loadoutHotkey;
+    public KeyCode MovementHotkey => movementHotkey;
 
     private void Awake()
     {
@@ -62,6 +68,8 @@ public class LoadoutPauseMenu : MonoBehaviour
             SetOpen(!open);
         else if (Input.GetKeyDown(loadoutHotkey))
             ToggleTab(MenuTab.Loadout);
+        else if (Input.GetKeyDown(movementHotkey))
+            ToggleTab(MenuTab.Movement);
     }
 
     /// <summary>
@@ -116,7 +124,11 @@ public class LoadoutPauseMenu : MonoBehaviour
 
     private void RefreshShownPage()
     {
-        ILoadoutMenuPage wanted = open && tab == MenuTab.Loadout ? LoadoutMenuPages.Primary : null;
+        ILoadoutMenuPage wanted = null;
+        if (open && tab == MenuTab.Loadout)
+            wanted = LoadoutMenuPages.Primary;
+        else if (open && tab == MenuTab.Movement)
+            wanted = LoadoutMenuPages.MovementPage;
         if (ReferenceEquals(wanted, shownPage))
             return;
 
@@ -162,8 +174,8 @@ public class LoadoutPauseMenu : MonoBehaviour
 
         EnsureStyles();
 
-        ILoadoutMenuPage page = LoadoutMenuPages.Primary;
-        bool wide = page != null && tab == MenuTab.Loadout;
+        ILoadoutMenuPage page = tab == MenuTab.Movement ? LoadoutMenuPages.MovementPage : LoadoutMenuPages.Primary;
+        bool wide = page != null && tab != MenuTab.Map;
 
         float w = wide ? Mathf.Min(1040f, Screen.width - 30f) : Mathf.Min(460f, Screen.width - 20f);
         float h = Mathf.Min(wide ? 680f : 560f, Screen.height - 20f);
@@ -177,9 +189,11 @@ public class LoadoutPauseMenu : MonoBehaviour
         GUILayout.Space(6f);
 
         string loadoutLabel = $"LOADOUT ({loadoutHotkey})";
-        int picked = GUILayout.Toolbar((int)tab, new[] { loadoutLabel, "MAP" }, buttonStyle, GUILayout.Height(30f));
-        if ((MenuTab)picked != tab)
-            pendingTab = picked;
+        string movementLabel = $"MOVEMENT ({movementHotkey})";
+        int shownIndex = System.Array.IndexOf(ToolbarOrder, tab);
+        int picked = GUILayout.Toolbar(shownIndex, new[] { loadoutLabel, movementLabel, "MAP" }, buttonStyle, GUILayout.Height(30f));
+        if (picked != shownIndex && picked >= 0 && picked < ToolbarOrder.Length)
+            pendingTab = (int)ToolbarOrder[picked];
         GUILayout.Space(8f);
 
         float footerH = 74f;
@@ -194,13 +208,17 @@ public class LoadoutPauseMenu : MonoBehaviour
             page.DrawPage(innerW, contentH);
             GUILayout.EndVertical();
         }
+        else if (tab == MenuTab.Movement)
+        {
+            GUILayout.Label("Movement archetypes are unavailable in this scene (no player movement found).", labelStyle);
+        }
         else
         {
             DrawLegacyLoadout();
         }
 
         GUILayout.FlexibleSpace();
-        GUILayout.Label($"Movement: Shift+W then C = slide · hold Space = bhop · hold C = crouch · {loadoutHotkey} = loadout", labelStyle);
+        GUILayout.Label($"Movement: Shift+W then C = slide · hold Space = bhop · hold C = crouch · {loadoutHotkey} = loadout · {movementHotkey} = movement", labelStyle);
         if (GUILayout.Button("Resume (Esc)", buttonStyle, GUILayout.Height(34f)))
             SetOpen(false);
         GUILayout.EndArea();

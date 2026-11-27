@@ -27,6 +27,8 @@ public static class LoadoutBootstrap
     /// </summary>
     public static WeaponLoadoutService EnsureInScene()
     {
+        EnsureMovementInScene();
+
         ClassLoadoutApplier applier = Object.FindAnyObjectByType<ClassLoadoutApplier>();
         if (applier == null)
             return null;
@@ -40,6 +42,29 @@ public static class LoadoutBootstrap
             menu = Object.FindAnyObjectByType<LoadoutPauseMenu>();
         if (menu != null && menu.GetComponent<WeaponSelectionPage>() == null)
             menu.gameObject.AddComponent<WeaponSelectionPage>();
+
+        return service;
+    }
+
+    /// <summary>
+    /// Adds <see cref="MovementSelectionService"/> to the local player and <see cref="MovementSelectionPage"/> next to the
+    /// pause menu. Returns the service, or null when the scene has no player <see cref="MovementController"/>.
+    /// </summary>
+    public static MovementSelectionService EnsureMovementInScene()
+    {
+        MovementController movement = Object.FindAnyObjectByType<MovementController>();
+        if (movement == null)
+            return null;
+
+        MovementSelectionService service = movement.GetComponent<MovementSelectionService>();
+        if (service == null)
+            service = movement.gameObject.AddComponent<MovementSelectionService>();
+
+        LoadoutPauseMenu menu = movement.GetComponent<LoadoutPauseMenu>();
+        if (menu == null)
+            menu = Object.FindAnyObjectByType<LoadoutPauseMenu>();
+        if (menu != null && menu.GetComponent<MovementSelectionPage>() == null)
+            menu.gameObject.AddComponent<MovementSelectionPage>();
 
         return service;
     }

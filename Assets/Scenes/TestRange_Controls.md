@@ -19,6 +19,7 @@
 | Reload | R (Pump Shotgun loads one shell at a time; pull the trigger to interrupt) |
 | Class loadout | `F1` Assault · `F2` SMG · `F3` Sniper · `F4` Hybrid |
 | Loadout menu | `Esc` (pause menu) or `L` (straight to the Loadout tab) — class, primary, secondary (incl. Karambit), skin per weapon, live preview |
+| Movement menu | `M` — movement archetype (Default / Scout / Heavy / Acrobat / Marksman), stats and class speed multiplier |
 | Weapon slot | `1` Primary · `2` Secondary (per class) |
 | Cycle weapons | Mouse scroll (when slots filled) |
 | Last weapon | Q |
@@ -54,8 +55,9 @@ Re-sync scene player: **Tools → Sync Test Range Player (Character + Classes)**
 
 - **LOADOUT** tab: pick a **class**, then override the **primary** and **secondary** (the Karambit is secondary-only) and choose a **skin per weapon**. The preview on the right turns the focused weapon; hover a skin to preview it before picking.
 - Choices apply to the player immediately and are saved in `PlayerPrefs` (key `FPS.Loadout.v1`), so they survive scene / map changes and restarts. `F1`–`F4` class picks are saved too. **Reset loadout to defaults** clears the save.
+- **MOVEMENT** tab (`M`): pick a movement archetype (Default, Scout, Heavy, Acrobat, Marksman) with stat bars, hover-to-compare, click or `1`–`5` to switch. Applies live and is saved in `PlayerPrefs` (key `FPS.Movement.v1`). The class speed multiplier still stacks on top. See `Assets/Configs/Movement/README.md`.
 - **MAP** tab: the map selector (unchanged).
-- `Esc` closes the menu, `L` toggles it on the Loadout tab. Closing always re-locks the cursor and restores the time scale; firing / weapon switching are suppressed while it is open.
+- `Esc` closes the menu, `L` toggles it on the Loadout tab, `M` toggles it on the Movement tab. Closing always re-locks the cursor and restores the time scale; firing / weapon switching are suppressed while it is open.
 - The catalog also offers the **Pump Shotgun** (9 pellets, short range, per-shell reload) and the **LMG** (100-round belt, slow reload, heavy recoil) as primary or secondary.
 - The weapon/skin/class lists come from `Assets/Resources/WeaponLoadoutCatalog.asset`; after adding a weapon prefab, skin or class run **Tools → Loadout → Rebuild Weapon Catalog**.
 
