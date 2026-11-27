@@ -127,6 +127,24 @@ public class BotPlayModeTests
     }
 
     [UnityTest]
+    public IEnumerator Bots_WearDownloadedCharacterLooks()
+    {
+        var looks = new HashSet<string>();
+        for (int i = 0; i < 6; i++)
+        {
+            BotController bot = manager.SpawnBot(new Vector3(-25f + i * 10f, 0f, 25f));
+            yield return null;
+
+            Assert.That(bot.Body.UsesImportedModel, Is.True);
+            Assert.That(bot.Body.ActiveLookId, Is.Not.Null.And.Not.Empty, "bot " + i + ": " + bot.Body.LookFallbackReason);
+            Assert.That(bot.Body.LookFallbackReason, Is.Null.Or.Empty);
+            looks.Add(bot.Body.ActiveLookId);
+        }
+
+        Assert.That(looks.Count, Is.GreaterThan(1), "bots with the same rifle still get different looks");
+    }
+
+    [UnityTest]
     public IEnumerator Bot_HasAHumanoidBodyWithHitboxes()
     {
         BotController bot = manager.SpawnBot(new Vector3(20f, 0f, 20f));

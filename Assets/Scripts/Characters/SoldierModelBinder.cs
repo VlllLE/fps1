@@ -9,6 +9,12 @@ public sealed class SoldierBuildResult
     public readonly List<SkinnedMeshRenderer> renderers = new List<SkinnedMeshRenderer>();
     public readonly List<Object> ownedObjects = new List<Object>();
     public Material[] soldierMaterials;
+    /// <summary>Id of the downloaded character look this body was built from, or null for the classic Blender soldier.</summary>
+    public string lookId;
+    /// <summary>Materials of a character look (one per distinct imported material) and their authored colours.</summary>
+    public Material[] lookMaterials;
+    public Color[] lookBaseColors;
+    public bool IsLook => lookId != null;
     /// <summary>Factor applied to the imported vertices so the model has its authored height (1 when the import scale is right).</summary>
     public float importScale = 1f;
     /// <summary>True when the model was imported facing backwards and was turned around.</summary>
@@ -33,6 +39,8 @@ public sealed class SoldierBuildResult
         renderers.Clear();
         ownedObjects.Clear();
         soldierMaterials = null;
+        lookMaterials = null;
+        lookBaseColors = null;
     }
 
     private static void DestroyObject(Object obj)
@@ -66,6 +74,7 @@ public static class SoldierModelBinder
         public BoneWeight[] weights;
         public int[][] triangles;
         public SoldierMaterialSlot[] slots;
+        public Material[] sourceMaterials;
         public bool hasNormals;
     }
 
@@ -75,7 +84,19 @@ public static class SoldierModelBinder
     {
         var skeleton = new List<HumanoidBone>(HumanoidParts.AllBones);
         return TryBuild(set != null ? set.bodyModel : null, set, skeleton, bones, bodyRoot, scale, palette, layer,
-            set != null ? set.bodyHeight : 0f, true, false, out result, out error);
+            set != null ? set.bodyHeight : 0f, true, false, null, 0f, out result, out error);
+    }
+
+    /// <summary>
+    /// Binds a downloaded character look (see <see cref="CharacterLookEntry"/>) to the 19 humanoid bones. Its own imported
+    /// materials and textures are kept; <paramref name="tintStrength"/> pulls them towards the palette's suit colour.
+    /// </summary>
+    public static bool TryBuildLook(SoldierModelSet set, CharacterLookEntry look, Transform[] bones, Transform bodyRoot,
+        float scale, HumanoidPalette palette, float tintStrength, int layer, out SoldierBuildResult result, out string error)
+    {
+        var skeleton = new List<HumanoidBone>(HumanoidParts.AllBones);
+        return TryBuild(look != null ? look.model : null, set, skeleton, bones, bodyRoot, scale, palette, layer,
+            look != null ? look.height : 0f, true, false, look, tintStrength, out result, out error);
     }
 
     /// <summary>
@@ -91,7 +112,7 @@ public static class SoldierModelBinder
             HumanoidBone.HandL, HumanoidBone.HandR
         };
         return TryBuild(set != null ? set.armsModel : null, set, skeleton, bones, armsRoot, scale, palette, layer,
-            set != null ? set.armsHeight : 0f, false, true, out result, out error);
+            set != null ? set.armsHeight : 0f, false, true, null, 0f, out result, out error);
     }
 
     /// <summary>Rest position of a bone relative to the body root, unscaled.</summary>
@@ -110,7 +131,7 @@ public static class SoldierModelBinder
 
     private static bool TryBuild(GameObject model, SoldierModelSet set, List<HumanoidBone> skeleton, Transform[] bones,
         Transform root, float scale, HumanoidPalette palette, int layer, float expectedHeight, bool upright,
-        bool isArms, out SoldierBuildResult result, out string error)
+        bool isArms, CharacterLookEntry look, float lookTint, out SoldierBuildResult result, out string error)
     {
         result = null;
         error = null;
@@ -133,7 +154,7 @@ public static class SoldierModelBinder
             if (instance == null)
                 throw new InvalidOperationException("model could not be instantiated");
 
-            List<RestMesh> meshes = Harvest(instance);
+            List<RestMesh> meshes = Harvest(instance, look != null);
             if (meshes.Count == 0)
                 throw new InvalidOperationException("model has no skinned meshes");
 
@@ -154,9 +175,40 @@ public static class SoldierModelBinder
                 bindPoses[i] = Matrix4x4.Translate(-RestWorldPosition(bone) * scale);
             }
 
-            build.soldierMaterials = SoldierMaterials.Create(set, palette, isArms ? set.armsAmbientOcclusion : set.ambientOcclusion);
-            for (int i = 0; i < build.soldierMaterials.Length; i++)
-                build.ownedObjects.Add(build.soldierMaterials[i]);
+            var lookSlotMaterials = new Dictionary<RestMesh, Material[]>();
+            if (look != null)
+            {
+                build.lookId = look.id;
+                var sources = new List<Material>();
+                for (int i = 0; i < meshes.Count; i++)
+                    sources.AddRange(meshes[i].sourceMaterials);
+                Material[] created = SoldierMaterials.CreateLookMaterials(set, sources.ToArray(), out Color[] baseColors);
+                build.lookMaterials = created;
+                build.lookBaseColors = baseColors;
+                var distinct = new HashSet<Material>();
+                int cursor = 0;
+                for (int i = 0; i < meshes.Count; i++)
+                {
+                    var perMesh = new Material[meshes[i].sourceMaterials.Length];
+                    for (int s = 0; s < perMesh.Length; s++)
+                        perMesh[s] = created[cursor++];
+                    lookSlotMaterials[meshes[i]] = perMesh;
+                }
+
+                foreach (Material m in created)
+                {
+                    if (distinct.Add(m))
+                        build.ownedObjects.Add(m);
+                }
+
+                SoldierMaterials.ApplyLookTint(created, baseColors, palette.suit, lookTint);
+            }
+            else
+            {
+                build.soldierMaterials = SoldierMaterials.Create(set, palette, isArms ? set.armsAmbientOcclusion : set.ambientOcclusion);
+                for (int i = 0; i < build.soldierMaterials.Length; i++)
+                    build.ownedObjects.Add(build.soldierMaterials[i]);
+            }
 
             Vector3 hipsRest = RestWorldPosition(HumanoidBone.Hips) * scale;
             Bounds total = new Bounds();
@@ -184,9 +236,18 @@ public static class SoldierModelBinder
                 smr.receiveShadows = !isArms;
                 smr.updateWhenOffscreen = isArms;
 
-                var slotMaterials = new Material[rest.slots.Length];
-                for (int s = 0; s < slotMaterials.Length; s++)
-                    slotMaterials[s] = build.soldierMaterials[(int)rest.slots[s]];
+                Material[] slotMaterials;
+                if (look != null)
+                {
+                    slotMaterials = lookSlotMaterials[rest];
+                }
+                else
+                {
+                    slotMaterials = new Material[rest.slots.Length];
+                    for (int s = 0; s < slotMaterials.Length; s++)
+                        slotMaterials[s] = build.soldierMaterials[(int)rest.slots[s]];
+                }
+
                 smr.sharedMaterials = slotMaterials;
 
                 Bounds meshBounds = mesh.bounds;
@@ -240,7 +301,7 @@ public static class SoldierModelBinder
         return parent != null ? parent : root;
     }
 
-    private static List<RestMesh> Harvest(GameObject instance)
+    private static List<RestMesh> Harvest(GameObject instance, bool keepSourceMaterials)
     {
         var list = new List<RestMesh>();
         Matrix4x4 toRoot = instance.transform.worldToLocalMatrix;
@@ -332,10 +393,14 @@ public static class SoldierModelBinder
             Material[] sharedMaterials = smr.sharedMaterials;
             rest.triangles = new int[mesh.subMeshCount][];
             rest.slots = new SoldierMaterialSlot[mesh.subMeshCount];
+            rest.sourceMaterials = new Material[mesh.subMeshCount];
             for (int s = 0; s < mesh.subMeshCount; s++)
             {
                 rest.triangles[s] = mesh.GetTriangles(s);
                 Material source = s < sharedMaterials.Length ? sharedMaterials[s] : null;
+                rest.sourceMaterials[s] = source;
+                if (keepSourceMaterials)
+                    continue;
                 if (!SoldierMaterials.TryGetSlot(source, out rest.slots[s]))
                     throw new InvalidOperationException(mesh.name + " submesh " + s + " uses unknown material '" + (source != null ? source.name : "null") + "'");
             }

@@ -13,6 +13,11 @@ public sealed class PlayerBodyWeaponSync : MonoBehaviour
     private WeaponSwitcher switcher;
     private MovementController movement;
     private WeaponController current;
+    private ProceduralFirstPersonArms arms;
+    private bool lookFollowsPrimary = true;
+
+    /// <summary>When false the body keeps whatever look it was given (tests and tools that pin a look).</summary>
+    public bool LookFollowsPrimary { get => lookFollowsPrimary; set => lookFollowsPrimary = value; }
 
     private void OnEnable()
     {
@@ -34,6 +39,8 @@ public sealed class PlayerBodyWeaponSync : MonoBehaviour
         if (switcher == null)
             switcher = GetComponentInChildren<WeaponSwitcher>(true);
 
+        UpdateLook();
+
         WeaponController weapon = switcher != null ? switcher.CurrentWeapon : null;
         if (weapon != current)
             SetWeapon(weapon);
@@ -52,6 +59,25 @@ public sealed class PlayerBodyWeaponSync : MonoBehaviour
         if (current.Config != null && current.Config.perShellReload)
             cycles = Mathf.Clamp(current.Config.magazineSize - Mathf.Max(0, current.CurrentAmmo), 1, 12);
         body.SetReloadState(current.IsReloading, current.ReloadProgress, cycles);
+    }
+
+    /// <summary>Wears the look of the primary weapon (see <see cref="CharacterLooks.ForWeapon"/>) and matches the first-person sleeves to it.</summary>
+    private void UpdateLook()
+    {
+        if (switcher == null || !lookFollowsPrimary)
+            return;
+
+        WeaponController primary = switcher.GetWeaponOfType(SlotType.Primary);
+        string wanted = primary != null && primary.Config != null ? CharacterLooks.ForWeapon(primary.Config) : CharacterLooks.Soldier;
+        if (wanted == body.LookId)
+            return;
+
+        body.SetLook(wanted, 0f);
+        if (arms == null)
+            arms = GetComponentInChildren<ProceduralFirstPersonArms>(true);
+        if (arms != null && arms.IsBuilt)
+            arms.SetPalette(CharacterLooks.GetArmsPalette(wanted));
+        current = null;
     }
 
     private void SetWeapon(WeaponController weapon)

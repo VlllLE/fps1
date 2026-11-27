@@ -38,8 +38,23 @@ public sealed class SoldierModelSet : ScriptableObject
     public float bodyHeight = 1.915f;
     [Tooltip("Height of the first-person arm model in metres.")]
     public float armsHeight = 0.737f;
+    [Tooltip("Downloaded character models (S.W.A.T. operator, soldier, ghillie suit); see Assets/Characters/Looks/CREDITS.md.")]
+    public CharacterLookEntry[] looks = new CharacterLookEntry[0];
 
     private static SoldierModelSet cached;
+
+    public CharacterLookEntry GetLook(string id)
+    {
+        if (string.IsNullOrEmpty(id) || looks == null)
+            return null;
+        for (int i = 0; i < looks.Length; i++)
+        {
+            if (looks[i] != null && looks[i].id == id)
+                return looks[i];
+        }
+
+        return null;
+    }
 
     /// <summary>Loads the model set from Resources, or null when it is not present.</summary>
     public static SoldierModelSet Load()

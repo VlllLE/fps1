@@ -72,6 +72,17 @@ public sealed class ProceduralFirstPersonArms : MonoBehaviour
     public bool UsesImportedModel => soldierBuild != null;
     public string ImportFallbackReason => importFallbackReason;
     public bool ForceProcedural { get => forceProcedural; set => forceProcedural = value; }
+    public HumanoidPalette Palette => palette;
+
+    /// <summary>Re-colours the sleeves and gloves (used to match the arms to the worn character look).</summary>
+    public void SetPalette(HumanoidPalette newPalette)
+    {
+        palette = newPalette;
+        if (soldierBuild != null && soldierBuild.soldierMaterials != null)
+            SoldierMaterials.ApplyPalette(soldierBuild.soldierMaterials, newPalette);
+        else if (IsBuilt)
+            Build();
+    }
     public IReadOnlyList<SkinnedMeshRenderer> SoldierRenderers
         => soldierBuild != null ? (IReadOnlyList<SkinnedMeshRenderer>)soldierBuild.renderers : System.Array.Empty<SkinnedMeshRenderer>();
     public Transform ArmsRoot => armsRoot;

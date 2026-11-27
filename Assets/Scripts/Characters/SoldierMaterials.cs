@@ -27,6 +27,70 @@ public static class SoldierMaterials
         return materials;
     }
 
+    private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
+    private static readonly int GlossinessId = Shader.PropertyToID("_Glossiness");
+    private static readonly int MetallicId = Shader.PropertyToID("_Metallic");
+
+    /// <summary>
+    /// Runtime copies of the materials a downloaded character model was imported with (colour and albedo texture are
+    /// kept), one per distinct source material. <paramref name="sources"/> may contain nulls.
+    /// </summary>
+    public static Material[] CreateLookMaterials(SoldierModelSet set, Material[] sources, out Color[] baseColors)
+    {
+        Material template = set != null ? set.GetTemplate(SoldierMaterialSlot.Cloth) : null;
+        var created = new Material[sources.Length];
+        baseColors = new Color[sources.Length];
+        var cache = new System.Collections.Generic.Dictionary<Material, int>();
+        for (int i = 0; i < sources.Length; i++)
+        {
+            Material source = sources[i];
+            if (source != null && cache.TryGetValue(source, out int existing))
+            {
+                created[i] = created[existing];
+                baseColors[i] = baseColors[existing];
+                continue;
+            }
+
+            Material m = template != null ? new Material(template) : CreateFallback(SoldierMaterialSlot.Cloth);
+            m.name = "Look_" + (source != null ? source.name : "Default");
+            Color color = source != null && source.HasProperty("_Color") ? source.color : new Color(0.5f, 0.5f, 0.5f);
+            color.a = 1f;
+            m.color = color;
+            m.SetTexture(MainTexId, source != null ? source.mainTexture : null);
+            if (m.HasProperty(GlossinessId))
+                m.SetFloat(GlossinessId, 0.12f);
+            if (m.HasProperty(MetallicId))
+                m.SetFloat(MetallicId, 0f);
+            created[i] = m;
+            baseColors[i] = color;
+            if (source != null)
+                cache[source] = i;
+        }
+
+        return created;
+    }
+
+    /// <summary>
+    /// Pulls the look's materials towards a palette colour (team/bot tint). <paramref name="strength"/> 0 keeps the
+    /// authored colours; the tint is normalised to full brightness so it only shifts the hue.
+    /// </summary>
+    public static void ApplyLookTint(Material[] materials, Color[] baseColors, Color tint, float strength)
+    {
+        if (materials == null || baseColors == null)
+            return;
+
+        Color.RGBToHSV(tint, out float h, out float s, out _);
+        Color multiplier = Color.Lerp(Color.white, Color.HSVToRGB(h, Mathf.Clamp01(s), 1f), Mathf.Clamp01(strength));
+        for (int i = 0; i < materials.Length && i < baseColors.Length; i++)
+        {
+            if (materials[i] == null)
+                continue;
+            Color c = baseColors[i] * multiplier;
+            c.a = 1f;
+            materials[i].color = c;
+        }
+    }
+
     /// <summary>The soldier slot that renders the given <see cref="HumanoidSlot"/> colour.</summary>
     public static SoldierMaterialSlot ForHumanoidSlot(HumanoidSlot slot)
     {

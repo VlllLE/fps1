@@ -168,7 +168,9 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
             feetOffset = Vector3.zero,
             useFeetOffset = true,
             createHitboxes = true,
-            armPose = HumanoidArmPose.Relaxed
+            armPose = HumanoidArmPose.Relaxed,
+            look = CharacterLooks.ForBot(weapon, seed),
+            lookTint = 0.3f
         };
         HumanoidBody humanoid = HumanoidBody.AddTo(go, bodySettings);
 
