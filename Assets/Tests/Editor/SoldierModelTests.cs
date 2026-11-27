@@ -136,7 +136,7 @@ public class SoldierModelTests
     }
 
     [Test]
-    public void Body_HeadArmsAndPadsHangUnderTheLocalHideTargets()
+    public void Body_EveryMeshHangsUnderTheLocalHideTargets()
     {
         GameObject player = CreatePlayer(2f);
         var visibility = player.AddComponent<LocalPlayerBodyVisibility>();
@@ -155,8 +155,7 @@ public class SoldierModelTests
                 visible.Add(smr.name);
         }
 
-        Assert.That(visible.Count, Is.EqualTo(1), "only the torso/legs mesh stays visible to the first-person camera: " + string.Join(",", visible));
-        Assert.That(visible[0], Does.Contain("Body"));
+        Assert.That(visible, Is.Empty, "no soldier mesh (torso and legs included) stays visible to the first-person camera: " + string.Join(",", visible));
     }
 
     [Test]

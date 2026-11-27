@@ -389,7 +389,7 @@ public class HumanoidBodyTests
     }
 
     [Test]
-    public void Build_RegistersHeadNeckAndArmsAsLocalHideTargets()
+    public void Build_RegistersTheWholeBodyAndHeadNeckAndArmsAsLocalHideTargets()
     {
         GameObject player = CreatePlayerObject(2f);
         var visibility = player.AddComponent<LocalPlayerBodyVisibility>();
@@ -400,8 +400,8 @@ public class HumanoidBodyTests
         foreach (Transform t in visibility.HideTargets)
             names.Add(t.name);
 
-        Assert.That(visibility.HideTargets.Length, Is.EqualTo(4));
-        Assert.That(names, Is.SupersetOf(new[] { "Head", "Neck", "ShoulderL", "ShoulderR" }));
+        Assert.That(visibility.HideTargets.Length, Is.EqualTo(5));
+        Assert.That(names, Is.SupersetOf(new[] { HumanoidBody.BodyRootName, "Head", "Neck", "ShoulderL", "ShoulderR" }));
         Assert.That(body.GetLocalHideTargets()[0], Is.Not.Null);
     }
 
