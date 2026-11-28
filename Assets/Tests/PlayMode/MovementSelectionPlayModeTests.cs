@@ -203,7 +203,7 @@ public class MovementSelectionPlayModeTests
         }
 
         if (other < 0)
-            Assert.Ignore("Only TestRange is in Build Settings; generate Shipment/Dome/Triad via Tools > Maps.");
+            Assert.Ignore("Only TestRange is in Build Settings; generate Shipment/Dome/Triad/Bazaar via Tools > Maps.");
 
         Assert.That(selector.TryLoadMap(other), Is.True);
         float deadline = Time.realtimeSinceStartup + 20f;

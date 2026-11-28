@@ -12,7 +12,7 @@ using UnityEngine.TestTools;
 /// </summary>
 public class PlayerShadowPlayModeTests
 {
-    private static readonly string[] AllMaps = { "TestRange", "Shipment", "Dome", "Triad" };
+    private static readonly string[] AllMaps = { "TestRange", "Shipment", "Dome", "Triad", "Bazaar" };
 
     private GameObject player;
     private Camera playerCamera;
