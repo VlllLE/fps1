@@ -9,7 +9,7 @@ using UnityEngine;
 /// Build bots with <see cref="Create"/>.
 /// </summary>
 [DisallowMultipleComponent]
-public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageable
+public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageable, IBotTarget
 {
     private const float ArriveDistance = 0.9f;
     private const float CornerDistance = 0.45f;
@@ -76,7 +76,63 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     private bool bodyHidden;
     private float lastPlanarSpeed;
 
+    private IBotTarget currentTarget;
+    private float targetScanTimer;
+    private bool seesCurrentTarget;
+    private bool hasObjective;
+    private Vector3 objective;
+    private float objectiveRadius = 1.5f;
+    private float objectiveSpeedFactor = 0.9f;
+    private float? objectiveLookYaw;
+    private const float BotVersusBotDamage = 0.6f;
+
     public static IReadOnlyList<BotController> All => Registry;
+
+    /// <summary>Side the bot fights on; <see cref="CombatTeam.None"/> keeps the classic practice behaviour.</summary>
+    public CombatTeam Team { get; set; }
+
+    /// <summary>When false a dead bot stays dead until a mode calls <see cref="Respawn(Vector3)"/> (tactical rounds).</summary>
+    public bool AutoRespawn { get; set; } = true;
+
+    public Transform TargetTransform => transform;
+    public Vector3 AimPoint => transform.position + Vector3.up * 1.2f;
+    public Vector3 HeadPoint => transform.position + Vector3.up * 1.65f;
+    public float Speed => lastPlanarSpeed;
+
+    /// <summary>Enemy the bot is currently tracking (seen or merely heard), or null.</summary>
+    public IBotTarget CurrentTarget => currentTarget;
+
+    /// <summary>True while the tracked enemy is in sight this frame.</summary>
+    public bool SeesEnemy => seesCurrentTarget;
+
+    public bool HasObjective => hasObjective;
+    public Vector3 ObjectivePosition => objective;
+
+    /// <summary>True when an objective is set and the bot stands within its radius.</summary>
+    public bool AtObjective => hasObjective && PlanarDistance(transform.position, objective) <= objectiveRadius;
+
+    /// <summary>
+    /// Sends the bot to <paramref name="position"/> whenever it is not busy with an enemy; on arrival it holds there and
+    /// scans around <paramref name="lookYaw"/> if given. Replaces patrolling until <see cref="ClearObjective"/>.
+    /// </summary>
+    public void SetObjective(Vector3 position, float radius = 1.5f, float speedFactor = 0.9f, float? lookYaw = null)
+    {
+        Vector3 snapped = BotNavigation.IsReady ? BotNavigation.Snap(position, transform) : position;
+        if (!hasObjective || PlanarDistance(objective, snapped) > 0.75f)
+            hasPath = false;
+        hasObjective = true;
+        objective = snapped;
+        objectiveRadius = Mathf.Max(ArriveDistance + 0.1f, radius);
+        objectiveSpeedFactor = speedFactor;
+        objectiveLookYaw = lookYaw;
+    }
+
+    public void ClearObjective()
+    {
+        hasObjective = false;
+        objectiveLookYaw = null;
+        hasPath = false;
+    }
 
     public BotBrain Brain => brain;
     public BotAimModel Aim => aim;
@@ -270,7 +326,9 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
             hasCoverPoint = coverValid
         };
 
-        PlayerHealth target = PlayerHealth.Local;
+        IBotTarget target = SelectTarget(Time.deltaTime);
+        currentTarget = target;
+        seesCurrentTarget = false;
         senses.targetValid = target != null && !target.IsDead;
         if (brain.HasLastKnownPosition)
             senses.atDestination = PlanarDistance(transform.position, brain.LastKnownPosition) < ArriveDistance + 0.4f;
@@ -283,14 +341,15 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
 
         Vector3 eyePosition = EyePosition;
         Vector3 aimPoint = target.AimPoint;
-        senses.targetPosition = target.transform.position;
+        senses.targetPosition = target.TargetTransform.position;
         senses.targetDistance = Vector3.Distance(eyePosition, aimPoint);
 
         bool inCone = BotPerception.IsInViewCone(eyePosition, transform.forward, aimPoint,
             settings.fieldOfView, settings.viewDistance, settings.closeAwarenessRadius);
         senses.seesTarget = inCone
-            && (BotPerception.HasLineOfSight(eyePosition, aimPoint, transform, target.transform)
-                || BotPerception.HasLineOfSight(eyePosition, target.HeadPoint, transform, target.transform));
+            && (BotPerception.HasLineOfSight(eyePosition, aimPoint, transform, target.TargetTransform)
+                || BotPerception.HasLineOfSight(eyePosition, target.HeadPoint, transform, target.TargetTransform));
+        seesCurrentTarget = senses.seesTarget;
 
         if (!senses.seesTarget)
         {
@@ -298,7 +357,7 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
             if (senses.targetDistance <= heardRadius)
             {
                 senses.heardSomething = true;
-                senses.heardPosition = target.transform.position;
+                senses.heardPosition = target.TargetTransform.position;
             }
         }
 
@@ -308,11 +367,67 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
             if (!senses.seesTarget)
             {
                 senses.heardSomething = true;
-                senses.heardPosition = target.transform.position;
+                senses.heardPosition = target.TargetTransform.position;
             }
         }
 
         return senses;
+    }
+
+    private IBotTarget SelectTarget(float dt)
+    {
+        if (Team == CombatTeam.None)
+        {
+            PlayerHealth local = PlayerHealth.Local;
+            return local != null && !local.IsDead ? local : null;
+        }
+
+        targetScanTimer -= dt;
+        if (currentTarget != null && !currentTarget.IsDead && targetScanTimer > 0f)
+            return currentTarget;
+
+        targetScanTimer = 0.25f;
+        IBotTarget best = null;
+        bool bestVisible = false;
+        float bestDistance = float.MaxValue;
+        Vector3 eyePosition = EyePosition;
+
+        PlayerHealth player = PlayerHealth.Local;
+        if (player != null && !player.IsDead && CombatTeams.AreEnemies(Team, player.Team))
+            ConsiderTarget(player, eyePosition, ref best, ref bestVisible, ref bestDistance);
+
+        for (int i = 0; i < Registry.Count; i++)
+        {
+            BotController other = Registry[i];
+            if (other == null || other == this || other.brain == null || other.IsDead || !CombatTeams.AreEnemies(Team, other.Team))
+                continue;
+            ConsiderTarget(other, eyePosition, ref best, ref bestVisible, ref bestDistance);
+        }
+
+        return best;
+    }
+
+    private void ConsiderTarget(IBotTarget candidate, Vector3 eyePosition, ref IBotTarget best, ref bool bestVisible, ref float bestDistance)
+    {
+        float distance = Vector3.Distance(eyePosition, candidate.AimPoint);
+        bool visible = BotPerception.IsInViewCone(eyePosition, transform.forward, candidate.AimPoint,
+                settings.fieldOfView, settings.viewDistance, settings.closeAwarenessRadius)
+            && (BotPerception.HasLineOfSight(eyePosition, candidate.AimPoint, transform, candidate.TargetTransform)
+                || BotPerception.HasLineOfSight(eyePosition, candidate.HeadPoint, transform, candidate.TargetTransform));
+
+        bool better;
+        if (best == null)
+            better = true;
+        else if (visible != bestVisible)
+            better = visible;
+        else
+            better = distance < bestDistance * (candidate == currentTarget ? 1.25f : 1f);
+
+        if (!better)
+            return;
+        best = candidate;
+        bestVisible = visible;
+        bestDistance = distance;
     }
 
     #endregion
@@ -321,7 +436,7 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
 
     private void Act(float dt, float now, BotSenses senses)
     {
-        PlayerHealth target = PlayerHealth.Local;
+        IBotTarget target = currentTarget;
         bool sees = senses.targetValid && senses.seesTarget;
         Vector3 desiredAim = sees
             ? target.AimPoint - EyePosition
@@ -387,6 +502,18 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         Vector3 facing = engaged && sees ? Flatten(aim.AimDirection) : lastMoveDirection;
         if (brain.State == BotState.Investigate && senses.atDestination)
             facing = Flatten(Quaternion.Euler(0f, scanYaw, 0f) * Vector3.forward);
+        else if (brain.State == BotState.Patrol && hasObjective && !moved && objectiveLookYaw.HasValue && AtObjective)
+        {
+            scanTimer -= dt;
+            if (scanTimer <= 0f)
+            {
+                scanTimer = 1f + (float)rng.NextDouble();
+                scanYaw = objectiveLookYaw.Value + (float)(rng.NextDouble() * 80.0 - 40.0);
+            }
+
+            facing = Flatten(Quaternion.Euler(0f, scanYaw, 0f) * Vector3.forward);
+        }
+
         FaceToward(facing, dt);
 
         bool fired = false;
@@ -399,8 +526,25 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         UpdateArmPose();
     }
 
+    private bool DoObjective(float dt)
+    {
+        if (AtObjective)
+        {
+            hasPath = false;
+            return false;
+        }
+
+        bool arrived = MoveAlongPath(objective, settings.runSpeed * objectiveSpeedFactor, dt, out bool gaveUp);
+        if (gaveUp)
+            hasPath = false;
+        return !arrived && !gaveUp;
+    }
+
     private bool DoPatrol(float dt)
     {
+        if (hasObjective)
+            return DoObjective(dt);
+
         EnsureWaypoints();
         if (waypoints.Count == 0)
             return false;
@@ -418,7 +562,8 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         else if (gaveUp && ++patrolGiveUps >= MaxPatrolGiveUps)
         {
             patrolGiveUps = 0;
-            Respawn(BotManager.FindRespawnPosition(this, spawnPoint));
+            if (Team == CombatTeam.None)
+                Respawn(BotManager.FindRespawnPosition(this, spawnPoint));
             return false;
         }
 
@@ -463,7 +608,7 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         return !arrived && !gaveUp;
     }
 
-    private bool DoAttack(float dt, PlayerHealth target, bool sees)
+    private bool DoAttack(float dt, IBotTarget target, bool sees)
     {
         if (target == null)
             return false;
@@ -476,7 +621,7 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
             return !peeking && !peekGaveUp;
         }
 
-        Vector3 toTarget = Flatten(target.transform.position - transform.position);
+        Vector3 toTarget = Flatten(target.TargetTransform.position - transform.position);
         float distance = toTarget.magnitude;
         if (distance < 0.01f)
             return false;
@@ -551,12 +696,12 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
             return;
 
         coverSearchTimer = 1f;
-        PlayerHealth target = PlayerHealth.Local;
+        IBotTarget target = currentTarget;
         if (target == null)
             return;
 
         coverValid = BotNavigation.TryFindCover(transform.position, target.AimPoint, 14f, 10, rng,
-            transform, target.transform, scratchPath, out coverPoint);
+            transform, target.TargetTransform, scratchPath, out coverPoint);
     }
 
     private void EnsureWaypoints()
@@ -725,7 +870,10 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
                 break;
 
             case BotStuckAction.Respawn:
-                Respawn(BotManager.FindRespawnPosition(this, spawnPoint));
+                if (Team == CombatTeam.None)
+                    Respawn(BotManager.FindRespawnPosition(this, spawnPoint));
+                else
+                    StartReposition(now);
                 break;
         }
     }
@@ -857,7 +1005,7 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
 
     #region Shooting
 
-    private bool TryShoot(float now, PlayerHealth target)
+    private bool TryShoot(float now, IBotTarget target)
     {
         float weaponSpread = gun.CurrentSpreadDegrees;
         if (!gun.TryFire(now))
@@ -881,8 +1029,9 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
                     ? BotAimModel.ApplyInaccuracy(shotDirection, weaponSpread, rng)
                     : shotDirection;
                 shotCounter++;
+                float damageScale = target is BotController ? settings.damageMultiplier * BotVersusBotDamage : settings.damageMultiplier;
                 HitRequest request = BotGun.CreateHitRequest(config, origin, pelletDirection, shotCounter, SourceId, transform,
-                    settings.damageMultiplier);
+                    damageScale);
                 HitResult result = resolver.Resolve(request);
                 DamageDealt += result.TotalDamageApplied;
                 ShotEffects.PlayHitscan(muzzlePosition, result, config);
@@ -910,8 +1059,22 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
 
     public void ApplyHitDamage(HitDamageInfo damage)
     {
-        if (IsDead || IsBotSource(damage.SourceId))
+        if (IsDead)
             return;
+
+        if (TryGetBot(damage.SourceId, out BotController shooter))
+        {
+            if (shooter == this || (Team == CombatTeam.None && shooter.Team == CombatTeam.None))
+                return;
+            if (!CombatTeams.CanDamage(shooter.Team, Team))
+                return;
+        }
+        else
+        {
+            PlayerHealth local = PlayerHealth.Local;
+            if (local != null && !CombatTeams.CanDamage(local.Team, Team))
+                return;
+        }
 
         TakeDamage(damage.FinalDamage, damage.Direction, damage.Zone == HitZoneType.Head);
     }
@@ -995,7 +1158,7 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         if (!bodyHidden && elapsed >= settings.corpseTime)
             SetBodyVisible(false);
 
-        if (elapsed >= Mathf.Max(settings.respawnDelay, settings.corpseTime))
+        if (AutoRespawn && elapsed >= Mathf.Max(settings.respawnDelay, settings.corpseTime))
         {
             Vector3 position = BotManager.FindRespawnPosition(this, spawnPoint);
             Respawn(position);
@@ -1005,11 +1168,17 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     /// <summary>Brings the bot back with full health and ammo at <paramref name="position"/>.</summary>
     public void Respawn(Vector3 position)
     {
+        Respawn(position, (float)(rng.NextDouble() * 360.0));
+    }
+
+    /// <summary>Brings the bot back with full health and ammo at <paramref name="position"/>, facing <paramref name="yaw"/>.</summary>
+    public void Respawn(Vector3 position, float yaw)
+    {
         if (body != null)
             body.EndDeath();
         bodyDeath = false;
         transform.position = BotNavigation.Snap(position, transform);
-        transform.rotation = Quaternion.Euler(0f, (float)(rng.NextDouble() * 360.0), 0f);
+        transform.rotation = Quaternion.Euler(0f, yaw, 0f);
         spawnPoint = transform.position;
         spawnRotation = transform.rotation;
         health = settings.maxHealth;
@@ -1021,6 +1190,9 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         waypointIndex = 0;
         hasPath = false;
         coverValid = false;
+        currentTarget = null;
+        targetScanTimer = 0f;
+        seesCurrentTarget = false;
         damagedPending = false;
         stuckTimer = 0f;
         patrolPause = 0f;
