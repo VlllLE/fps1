@@ -3,8 +3,8 @@ using UnityEngine;
 /// <summary>
 /// Minimal FPS body hook: hides selected third-person meshes from the local
 /// first-person camera (typically the head) via layer culling so they do not
-/// clip the view, while remaining visible to other cameras / lights for shadows
-/// and third-person. Does not touch MovementController or CharacterController.
+/// clip the view, while remaining visible to other cameras and third-person views.
+/// Shadows come from <see cref="LocalBodyShadowProxies"/>, because culled layers cast no shadows. Does not touch MovementController or CharacterController.
 /// </summary>
 public class LocalPlayerBodyVisibility : MonoBehaviour
 {
@@ -62,6 +62,7 @@ public class LocalPlayerBodyVisibility : MonoBehaviour
         {
             ApplyLayerToTargets(hideLayer);
             CullHideLayerFromLocalCamera();
+            EnsureShadowProxies();
             return;
         }
 
@@ -97,6 +98,18 @@ public class LocalPlayerBodyVisibility : MonoBehaviour
         }
     }
 
+    // The camera's culling mask also culls shadow casters, so hidden parts get shadows-only twins.
+    private void EnsureShadowProxies()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        var proxies = GetComponent<LocalBodyShadowProxies>();
+        if (proxies == null)
+            proxies = gameObject.AddComponent<LocalBodyShadowProxies>();
+        proxies.Refresh();
+    }
+
     private void CullHideLayerFromLocalCamera()
     {
         if (playerCamera == null || hideLayer < 0)
@@ -124,6 +137,11 @@ public class LocalPlayerBodyVisibility : MonoBehaviour
         go.layer = layer;
         var transform = go.transform;
         for (int i = 0; i < transform.childCount; i++)
-            SetLayerRecursive(transform.GetChild(i).gameObject, layer);
+        {
+            GameObject child = transform.GetChild(i).gameObject;
+            if (child.name == LocalBodyShadowProxies.ProxyName)
+                continue;
+            SetLayerRecursive(child, layer);
+        }
     }
 }

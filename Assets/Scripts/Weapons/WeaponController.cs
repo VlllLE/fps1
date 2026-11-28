@@ -160,6 +160,7 @@ public class WeaponController : MonoBehaviour
         isReloading = false;
         reloadProgress = 0f;
         meleeCoroutine = null;
+        ClearFireState();
         fireKick.Reset();
         boltCycleStart = -100f;
         ResetReloadVisuals();
@@ -499,6 +500,21 @@ public class WeaponController : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// Drops any held-trigger and in-flight burst state so nothing can fire without fresh input
+    /// (holster, disable, respawn).
+    /// </summary>
+    private void ClearFireState()
+    {
+        isFiring = false;
+        burstShotsRemaining = 0;
+        if (burstCoroutine != null)
+        {
+            StopCoroutine(burstCoroutine);
+            burstCoroutine = null;
+        }
+    }
+
     private void StartBurst()
     {
         if (burstCoroutine != null) return;
@@ -509,7 +525,7 @@ public class WeaponController : MonoBehaviour
     {
         burstShotsRemaining = config.burstCount;
         
-        while (burstShotsRemaining > 0 && currentAmmo > 0)
+        while (burstShotsRemaining > 0 && currentAmmo > 0 && isEquipped)
         {
             if (Time.time >= lastFireTime + config.FireInterval)
             {
@@ -1160,7 +1176,7 @@ public class WeaponController : MonoBehaviour
     {
         isEquipped = false;
         isAiming = false;
-        isFiring = false;
+        ClearFireState();
         
         if (reloadCoroutine != null)
         {
@@ -1239,7 +1255,7 @@ public class WeaponController : MonoBehaviour
         isReloading = false;
         reloadProgress = 0f;
         isAiming = false;
-        isFiring = false;
+        ClearFireState();
         adsProgress = 0f;
         ResetReloadVisuals();
         
