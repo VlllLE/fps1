@@ -113,7 +113,10 @@ Bazaar (and any map that has plant zones plus attacker and defender spawns) runs
 - **Bomb**: one attacker (random, possibly you) carries it. Inside plant zone A or B, hold `E` for 3.2 s to plant it (the carrier has to stand still and the hold must not be interrupted). The fuse then burns for 40 s and the round clock stops. A defender holds `E` next to the bomb for 7 s to defuse it. A dead carrier drops the bomb and any living attacker walking over it picks it up.
 - **Win conditions**: eliminate the defenders, eliminate the attackers before a plant, the bomb explodes (attackers), the bomb is defused (defenders), or time runs out with no plant (defenders). If the defenders are wiped after the plant the attackers win. If the attackers are wiped after the plant the round plays on until the bomb goes off or is defused.
 - **Bots**: attacking bots pick a target site, the carrier walks to it and plants while the others ring around it, then guard the bomb. Defending bots hold posts at the sites (using the map's waypoints) and send the nearest defender to defuse after a plant.
-- **Code**: `Assets/Tactical` (`TacticalMatch` scene driver, `TacticalMatchModel` and `TacticalBombModel` pure rules, `TacticalBotDirector`, `TacticalBombProp`), shared team types in `Assets/Scripts/Tactical` (`CombatTeam`, `ITacticalZone`). A map opts in by providing `ITacticalZone` plant zones, `Respawn` tagged spawns (`Spawn_A##` attackers, `Spawn_D##` defenders) and `BotWaypoint` markers. Set the environment variable `FPS_TACTICAL=off` to disable the automatic start.
+- **HUD**: a top bar with the score, alive pips per side (you on the left), side names and the round timer (freeze time, round clock, or the fuse once the bomb is planted); a bomb chip ("YOU HAVE THE BOMB", "BOMB DROPPED", "BOMB PLANTED A 0:32", defused, exploded) with a fuse bar; a plant / defuse progress bar plus a "HOLD E TO PLANT / DEFUSE" prompt; ROUND n / GO / ROUND WON / ROUND LOST / SIDES SWAPPED / VICTORY / DEFEAT banners; a kill feed. Hold `Tab` for the scoreboard (kills, deaths, alive, bomb carrier); it also stays up when the match ends. The layout scales with the screen (`TacticalHudText.ResolveScale`) so it stays readable on a portrait phone-sized window.
+- **Class select**: during freeze time the loadout menu opens as a panel on screen (class, primary, secondary, skins). Pick a class, then click READY or press `Enter` to start early; the round goes live when the timer ends and your weapons are refilled. `Esc` still opens the normal menu.
+- **Spectating**: after you die the view stays on your body for about two seconds, then a third-person camera follows a living teammate (or an enemy once your squad is gone). Left click, `Space` or the right arrow picks the next player, right click or the left arrow the previous one, and the camera moves on by itself when the watched player dies.
+- **Code**: `Assets/Tactical` (`TacticalMatch` scene driver, `TacticalMatchModel` and `TacticalBombModel` pure rules, `TacticalBotDirector`, `TacticalBombProp`, `TacticalHud`, `TacticalHudText`, `TacticalStats`, `TacticalSpectator`), shared team types in `Assets/Scripts/Tactical` (`CombatTeam`, `ITacticalZone`). A map opts in by providing `ITacticalZone` plant zones, `Respawn` tagged spawns (`Spawn_A##` attackers, `Spawn_D##` defenders) and `BotWaypoint` markers. Set the environment variable `FPS_TACTICAL=off` to disable the automatic start.
 
 ### Characters
 
@@ -227,6 +230,9 @@ Legacy Input Manager. Source of truth: [`Assets/Scenes/TestRange_Controls.md`](A
 | Cycle weapons | Mouse wheel |
 | Last weapon | `Q` |
 | Plant / defuse the bomb (tactical mode) | Hold `E` inside a plant zone (carrier) or next to the planted bomb (defender) |
+| Scoreboard (tactical mode) | Hold `Tab` |
+| Ready up during class select (tactical mode) | `Enter` or the READY button |
+| Switch spectated player after dying (tactical mode) | Left / right click, `Space`, left / right arrow |
 
 ### Menus and cosmetics
 
