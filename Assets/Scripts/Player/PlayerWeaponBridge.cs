@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class PlayerWeaponBridge : MonoBehaviour
@@ -8,8 +9,64 @@ public class PlayerWeaponBridge : MonoBehaviour
     [SerializeField] private InputHandler inputHandler;
     [SerializeField] private LayerMask hitLayers = ~0;
     
+    [Tooltip("Only accept fire/aim input while the game has focus and the cursor is locked, so clicks that merely regain focus or relock the cursor never shoot.")]
+    [SerializeField] private bool requireLiveInput = true;
+
     private bool wasFiring;
     private bool wasAiming;
+    private bool waitForFireRelease = true;
+    private bool waitForAimRelease = true;
+    private WeaponController lastActive;
+    private Func<bool> fireInput = DefaultFireInput;
+    private Func<bool> aimInput = DefaultAimInput;
+    private Func<bool> reloadInput = DefaultReloadInput;
+
+    private static bool DefaultFireInput() => Input.GetMouseButton(0);
+    private static bool DefaultAimInput() => Input.GetMouseButton(1);
+    private static bool DefaultReloadInput() => Input.GetKeyDown(KeyCode.R);
+
+    /// <summary>Replaces the raw input readers (tests drive the bridge through these); null restores the mouse and keyboard.</summary>
+    public void SetInputSources(Func<bool> fire, Func<bool> aim, Func<bool> reload)
+    {
+        fireInput = fire ?? DefaultFireInput;
+        aimInput = aim ?? DefaultAimInput;
+        reloadInput = reload ?? DefaultReloadInput;
+    }
+
+    public bool RequireLiveInput
+    {
+        get => requireLiveInput;
+        set => requireLiveInput = value;
+    }
+
+    private bool InputLive =>
+        !requireLiveInput || (Application.isFocused && Cursor.lockState == CursorLockMode.Locked);
+
+    private void OnEnable()
+    {
+        wasFiring = false;
+        wasAiming = false;
+        waitForFireRelease = true;
+        waitForAimRelease = true;
+    }
+
+    private void OnDisable()
+    {
+        ReleaseHeldInput(lastActive != null ? lastActive : ActiveWeapon);
+    }
+
+    private void ReleaseHeldInput(WeaponController target)
+    {
+        if (target != null && (wasFiring || wasAiming))
+        {
+            target.StopFiring();
+            target.StopAiming();
+        }
+        wasFiring = false;
+        wasAiming = false;
+        waitForFireRelease = true;
+        waitForAimRelease = true;
+    }
 
     private WeaponController ActiveWeapon =>
         weaponSwitcher != null ? weaponSwitcher.CurrentWeapon : weapon;
@@ -58,8 +115,21 @@ public class PlayerWeaponBridge : MonoBehaviour
         var active = ActiveWeapon;
         if (active == null || cameraTransform == null) return;
         
-        bool isFiring = Input.GetMouseButton(0);
-        bool isAiming = Input.GetMouseButton(1);
+        if (lastActive != active)
+        {
+            if (lastActive != null)
+                ReleaseHeldInput(lastActive);
+            lastActive = active;
+        }
+
+        if (!InputLive)
+        {
+            ReleaseHeldInput(active);
+            return;
+        }
+
+        bool isFiring = ConsumeFreshPress(fireInput(), ref waitForFireRelease);
+        bool isAiming = ConsumeFreshPress(aimInput(), ref waitForAimRelease);
         
         if (isFiring && !wasFiring)
             active.StartFiring();
@@ -74,11 +144,24 @@ public class PlayerWeaponBridge : MonoBehaviour
         else if (!isAiming && wasAiming)
             active.StopAiming();
         
-        if (Input.GetKeyDown(KeyCode.R))
+        if (reloadInput())
             active.TryReload();
         
         wasFiring = isFiring;
         wasAiming = isAiming;
+    }
+
+    // A button already down when input becomes live (menu close, respawn, focus or lock regained,
+    // weapon swap) is ignored until it has been released once.
+    private static bool ConsumeFreshPress(bool raw, ref bool waitForRelease)
+    {
+        if (waitForRelease)
+        {
+            if (raw)
+                return false;
+            waitForRelease = false;
+        }
+        return raw;
     }
 
     private void WireWeaponCameras()

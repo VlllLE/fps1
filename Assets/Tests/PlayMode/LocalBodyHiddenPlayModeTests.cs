@@ -184,6 +184,8 @@ public class LocalBodyHiddenPlayModeTests
         Assert.That(body.BodyRoot.GetComponentsInChildren<Renderer>().Length, Is.GreaterThan(0));
         foreach (Renderer renderer in body.BodyRoot.GetComponentsInChildren<Renderer>())
         {
+            if (LocalBodyShadowProxies.IsShadowProxy(renderer))
+                continue;
             Assert.That(renderer.enabled, Is.True, renderer.name + " stays enabled so shadows and third-person views still work");
             Assert.That(renderer.gameObject.layer, Is.EqualTo(LayerMask.NameToLayer("PlayerLocalHide")), renderer.name);
         }
@@ -203,7 +205,7 @@ public class LocalBodyHiddenPlayModeTests
         {
             if (!renderer.enabled || !renderer.gameObject.activeInHierarchy)
                 continue;
-            if (renderer is ParticleSystemRenderer)
+            if (renderer is ParticleSystemRenderer || LocalBodyShadowProxies.IsShadowProxy(renderer))
                 continue;
             if (renderer.transform.IsChildOf(playerCamera.transform))
                 continue;

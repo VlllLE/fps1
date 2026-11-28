@@ -44,7 +44,7 @@ public class HumanoidPlayModeTests
         var body = player.GetComponent<HumanoidBody>();
         Assert.IsNotNull(body, "Player body should be upgraded to the humanoid");
         Assert.IsTrue(body.IsBuilt);
-        int bodyRenderers = body.BodyRoot.GetComponentsInChildren<Renderer>().Count(r => !IsUnderHeldGun(r.transform, body.BodyRoot));
+        int bodyRenderers = body.BodyRoot.GetComponentsInChildren<Renderer>().Count(r => !LocalBodyShadowProxies.IsShadowProxy(r) && !IsUnderHeldGun(r.transform, body.BodyRoot));
         if (!string.IsNullOrEmpty(body.ActiveLookId))
             Assert.GreaterOrEqual(bodyRenderers, 1, "the player wears the " + body.ActiveLookId + " look");
         else
