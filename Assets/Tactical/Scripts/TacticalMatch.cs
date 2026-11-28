@@ -41,6 +41,8 @@ namespace FpsTactical
         private Vector3 bombPosition;
         private ITacticalZone targetSite;
         private bool roundReady;
+        private TacticalHud hud;
+        private TacticalSpectator spectator;
 
         public static TacticalMatch Instance { get; private set; }
 
@@ -50,6 +52,15 @@ namespace FpsTactical
         public PlayerHealth Player => player;
         public IReadOnlyList<ITacticalZone> PlantZones => plantZones;
         public IReadOnlyList<Vector3> Waypoints => waypoints;
+
+        /// <summary>Kills, deaths and the kill feed of the running match.</summary>
+        public TacticalStats Stats { get; } = new TacticalStats();
+
+        public TacticalHud Hud => hud;
+        public TacticalSpectator Spectator => spectator;
+
+        /// <summary>Adds the HUD and the spectator camera when the match begins. Off for headless tests.</summary>
+        public bool ShowHud { get; set; } = true;
 
         /// <summary>Starts the match by itself once the bots are ready. Tests turn this off and call <see cref="Begin"/>.</summary>
         public bool AutoStart { get; set; } = true;
@@ -64,6 +75,7 @@ namespace FpsTactical
         public Func<bool> ActionInput { get; set; } = DefaultActionInput;
 
         public bool PlayerIsCarrier => playerCarries;
+        public bool PlayerHoldingAction => playerHoldingAction;
         public BotController CarrierBot => carrierBot;
         public ITacticalZone TargetSite => targetSite;
         public Vector3 BombPosition => bombPosition;
@@ -157,10 +169,13 @@ namespace FpsTactical
             botManager.AutoSpawnCount = 0;
             botManager.ClearBots();
 
+            Stats.Clear();
             ResolvePlayer();
             CombatTeams.FriendlyFire = Rules.friendlyFire;
 
             int playerSlots = player != null ? 1 : 0;
+            if (player != null)
+                Stats.Add("You", PlayerSquad, true, null);
             CreateSquad(0, Rules.playersPerSide - playerSlots);
             CreateSquad(1, Rules.playersPerSide);
 
@@ -173,6 +188,15 @@ namespace FpsTactical
 
             director = new TacticalBotDirector(this);
             started = true;
+
+            spectator = gameObject.AddComponent<TacticalSpectator>();
+            spectator.Bind(this);
+            if (ShowHud)
+            {
+                hud = gameObject.AddComponent<TacticalHud>();
+                hud.Bind(this);
+            }
+
             Model.Start();
             return true;
         }
@@ -260,6 +284,7 @@ namespace FpsTactical
             playerLoadout = player.GetComponent<WeaponLoadoutService>();
             player.AutoRespawn = false;
             player.RegenEnabled = false;
+            player.OnDied += OnPlayerDied;
         }
 
         private void CreateSquad(int squad, int count)
@@ -272,6 +297,9 @@ namespace FpsTactical
                 BotController bot = botManager.SpawnTeamBot(side, spawn.position, spawn.eulerAngles.y);
                 bot.Frozen = true;
                 squadBots[squad].Add(bot);
+                int number = i + 1 + (squad == PlayerSquad && player != null ? 1 : 0);
+                Stats.Add((squad == 0 ? "Alpha " : "Bravo ") + number, squad, false, bot);
+                bot.Died += OnBotDied;
             }
         }
 
@@ -285,8 +313,15 @@ namespace FpsTactical
                 playerInput.GameplayLocked = false;
             if (playerWeapons != null)
                 playerWeapons.FireLocked = false;
+            if (hud != null)
+                Destroy(hud);
+            if (spectator != null)
+                Destroy(spectator);
+            hud = null;
+            spectator = null;
             if (player != null)
             {
+                player.OnDied -= OnPlayerDied;
                 player.Team = CombatTeam.None;
                 player.AutoRespawn = true;
                 player.RegenEnabled = true;
@@ -301,7 +336,10 @@ namespace FpsTactical
                     for (int i = 0; i < squadBots[squad].Count; i++)
                     {
                         if (squadBots[squad][i] != null)
+                        {
+                            squadBots[squad][i].Died -= OnBotDied;
                             botManager.RemoveBot(squadBots[squad][i]);
+                        }
                     }
                 }
             }
@@ -518,16 +556,20 @@ namespace FpsTactical
             }
 
             UpdatePlayerLocks();
+            if (spectator != null)
+                spectator.Tick(dt);
 
             if (Model.MatchFinished && AutoRestart)
-                Model.Start();
+                Restart();
         }
 
         /// <summary>Restarts the match from round one.</summary>
         public void Restart()
         {
-            if (started)
-                Model.Start();
+            if (!started)
+                return;
+            Stats.ResetScores();
+            Model.Start();
         }
 
         public int AliveCount(CombatTeam side)
@@ -784,6 +826,69 @@ namespace FpsTactical
                 playerInput.GameplayLocked = freeze || acting;
             if (playerWeapons != null)
                 playerWeapons.FireLocked = fireOff || acting;
+        }
+
+        private void OnBotDied(BotController bot)
+        {
+            TacticalParticipant victim = Stats.FindBot(bot);
+            if (victim == null)
+                return;
+
+            TacticalParticipant killer = null;
+            if (bot.HasLastAttacker)
+                killer = ResolveKiller(bot.LastAttackerId);
+            Stats.RecordDeath(victim, killer, bot.LastHitWasHeadshot, Time.unscaledTime);
+        }
+
+        private void OnPlayerDied()
+        {
+            TacticalParticipant victim = Stats.FindPlayer();
+            if (victim == null)
+                return;
+
+            TacticalParticipant killer = null;
+            if (player.HasLastAttacker && BotController.TryGetBot(player.LastAttackerId, out BotController shooter))
+                killer = Stats.FindBot(shooter);
+            Stats.RecordDeath(victim, killer, false, Time.unscaledTime);
+        }
+
+        private TacticalParticipant ResolveKiller(int attackerId)
+        {
+            if (BotController.TryGetBot(attackerId, out BotController shooter))
+                return Stats.FindBot(shooter);
+            return Stats.FindPlayer();
+        }
+
+        public bool IsAlive(TacticalParticipant participant)
+        {
+            if (participant == null)
+                return false;
+            if (participant.IsPlayer)
+                return player != null && !player.IsDead;
+            return participant.Bot != null && !participant.Bot.IsDead;
+        }
+
+        public bool CarriesBomb(TacticalParticipant participant)
+        {
+            if (participant == null || Model == null || Model.Bomb.State != BombState.Carried)
+                return false;
+            return participant.IsPlayer ? playerCarries : participant.Bot != null && participant.Bot == carrierBot;
+        }
+
+        /// <summary>What the local player can do right now with the bomb ("HOLD E TO PLANT"), or null.</summary>
+        public string ActionPrompt
+        {
+            get
+            {
+                if (Model == null || Model.Phase != TacticalPhase.Live || player == null || player.IsDead || playerHoldingAction)
+                    return null;
+
+                TacticalBombModel bomb = Model.Bomb;
+                bool plantable = bomb.State == BombState.Carried && playerCarries && ZoneAt(player.transform.position) != null;
+                bool defusable = bomb.State == BombState.Planted && player.Team == CombatTeam.Defenders
+                    && TacticalObjectives.Planar(player.transform.position, bombPosition) <= Rules.bombReach;
+                return TacticalHudText.ActionHint(plantable, defusable);
+            }
         }
 
         /// <summary>Spawn point the sides' bots and the player start a round from, for tests and the HUD.</summary>

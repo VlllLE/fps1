@@ -33,6 +33,14 @@ public sealed class PlayerHealth : MonoBehaviour, IHitDamageReceiver, IDamageabl
     /// <summary>Side the player fights on. <see cref="CombatTeam.None"/> outside team modes.</summary>
     public CombatTeam Team { get; set; }
 
+    /// <summary>Source id of the shooter whose hit last damaged the player (valid while <see cref="HasLastAttacker"/>).</summary>
+    public int LastAttackerId { get; private set; }
+
+    /// <summary>True when the last damage came from a hit with a known shooter (not a direct <c>TakeDamage</c> call).</summary>
+    public bool HasLastAttacker { get; private set; }
+
+    private bool applyingHit;
+
     /// <summary>When false the player stays dead until a mode revives it (tactical rounds).</summary>
     public bool AutoRespawn { get; set; } = true;
 
@@ -139,7 +147,17 @@ public sealed class PlayerHealth : MonoBehaviour, IHitDamageReceiver, IDamageabl
         CombatTeam shooterTeam;
         if (BotManager.TryGetShooterTeam(damage.SourceId, out shooterTeam) && !CombatTeams.CanDamage(shooterTeam, Team))
             return;
-        TakeDamage(damage.FinalDamage, source);
+        applyingHit = true;
+        LastAttackerId = damage.SourceId;
+        HasLastAttacker = true;
+        try
+        {
+            TakeDamage(damage.FinalDamage, source);
+        }
+        finally
+        {
+            applyingHit = false;
+        }
     }
 
     public void TakeDamage(DamageInfo damageInfo)
@@ -154,6 +172,8 @@ public sealed class PlayerHealth : MonoBehaviour, IHitDamageReceiver, IDamageabl
         if (dead || amount <= 0f)
             return;
 
+        if (!applyingHit)
+            HasLastAttacker = false;
         lastDamageTime = Now;
         TotalDamageTaken += amount;
         bool fatal = false;

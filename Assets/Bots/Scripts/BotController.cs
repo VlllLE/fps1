@@ -91,6 +91,17 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     /// <summary>Side the bot fights on; <see cref="CombatTeam.None"/> keeps the classic practice behaviour.</summary>
     public CombatTeam Team { get; set; }
 
+    /// <summary>Source id of the shooter whose hit last damaged this bot (valid while <see cref="HasLastAttacker"/>).</summary>
+    public int LastAttackerId { get; private set; }
+
+    /// <summary>True when the last damage came from a hit with a known shooter (not a direct <c>TakeDamage</c> call).</summary>
+    public bool HasLastAttacker { get; private set; }
+
+    /// <summary>True when the last damaging hit was a headshot.</summary>
+    public bool LastHitWasHeadshot { get; private set; }
+
+    private bool applyingHit;
+
     /// <summary>When false a dead bot stays dead until a mode calls <see cref="Respawn(Vector3)"/> (tactical rounds).</summary>
     public bool AutoRespawn { get; set; } = true;
 
@@ -1076,7 +1087,17 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
                 return;
         }
 
-        TakeDamage(damage.FinalDamage, damage.Direction, damage.Zone == HitZoneType.Head);
+        applyingHit = true;
+        LastAttackerId = damage.SourceId;
+        HasLastAttacker = true;
+        try
+        {
+            TakeDamage(damage.FinalDamage, damage.Direction, damage.Zone == HitZoneType.Head);
+        }
+        finally
+        {
+            applyingHit = false;
+        }
     }
 
     public void TakeDamage(DamageInfo damageInfo)
@@ -1092,6 +1113,9 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         if (IsDead || amount <= 0f || brain == null)
             return;
 
+        if (!applyingHit)
+            HasLastAttacker = false;
+        LastHitWasHeadshot = headshot;
         health = Mathf.Max(0f, health - amount);
         damagedPending = true;
         Damaged?.Invoke(this, amount);
