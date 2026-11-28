@@ -39,6 +39,9 @@ public class PlayerWeaponBridge : MonoBehaviour
         set => requireLiveInput = value;
     }
 
+    /// <summary>When true the player cannot fire or aim (round freeze time, round end); button holds are released.</summary>
+    public bool FireLocked { get; set; }
+
     private bool InputLive =>
         !requireLiveInput || (Application.isFocused && Cursor.lockState == CursorLockMode.Locked);
 
@@ -122,7 +125,7 @@ public class PlayerWeaponBridge : MonoBehaviour
             lastActive = active;
         }
 
-        if (!InputLive)
+        if (!InputLive || FireLocked)
         {
             ReleaseHeldInput(active);
             return;

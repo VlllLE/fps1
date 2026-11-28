@@ -89,6 +89,7 @@ public class InputHandler : MonoBehaviour
     private void Update()
     {
         UpdateInputStates();
+        ApplyGameplayLock();
     }
     
     #endregion
@@ -96,6 +97,28 @@ public class InputHandler : MonoBehaviour
     #region Input Update
     
     private bool testInputLocked;
+
+    /// <summary>
+    /// Gameplay hold (round freeze time, round end): all movement, jump, crouch and sprint input reads as released
+    /// while mouse look stays free.
+    /// </summary>
+    public bool GameplayLocked { get; set; }
+
+    private void ApplyGameplayLock()
+    {
+        if (!GameplayLocked)
+            return;
+        MoveInput = Vector2.zero;
+        JumpHeld = false;
+        SprintHeld = false;
+        CrouchHeld = false;
+        JumpPressed = false;
+        JumpReleased = false;
+        SprintPressed = false;
+        CrouchPressed = false;
+        CrouchReleased = false;
+        DivePressed = false;
+    }
     
     private void UpdateInputStates()
     {

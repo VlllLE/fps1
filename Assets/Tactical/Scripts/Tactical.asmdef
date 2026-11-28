@@ -1,0 +1,19 @@
+{
+    "name": "Tactical",
+    "rootNamespace": "FpsTactical",
+    "references": [
+        "Scripts",
+        "Skins",
+        "Loadout",
+        "Bots"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

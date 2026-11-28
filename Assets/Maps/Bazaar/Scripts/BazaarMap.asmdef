@@ -1,7 +1,9 @@
 {
     "name": "BazaarMap",
     "rootNamespace": "FpsMaps.Bazaar",
-    "references": [],
+    "references": [
+        "Scripts"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

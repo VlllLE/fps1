@@ -7,7 +7,7 @@ using UnityEngine;
 /// Added at runtime by <see cref="BotManager"/> when a scene has a player but no PlayerHealth.
 /// </summary>
 [DisallowMultipleComponent]
-public sealed class PlayerHealth : MonoBehaviour, IHitDamageReceiver, IDamageable
+public sealed class PlayerHealth : MonoBehaviour, IHitDamageReceiver, IDamageable, IBotTarget
 {
     [SerializeField, Min(1f)] private float maxHealth = 100f;
     [Tooltip("Seconds without taking damage before health regenerates.")]
@@ -29,6 +29,17 @@ public sealed class PlayerHealth : MonoBehaviour, IHitDamageReceiver, IDamageabl
     private MovementController movement;
 
     public static PlayerHealth Local { get; private set; }
+
+    /// <summary>Side the player fights on. <see cref="CombatTeam.None"/> outside team modes.</summary>
+    public CombatTeam Team { get; set; }
+
+    /// <summary>When false the player stays dead until a mode revives it (tactical rounds).</summary>
+    public bool AutoRespawn { get; set; } = true;
+
+    /// <summary>When false health never regenerates (tactical rounds).</summary>
+    public bool RegenEnabled { get; set; } = true;
+
+    public Transform TargetTransform => transform;
 
     public float CurrentHealth { get { Initialise(); return currentHealth; } }
     public float MaxHealth => maxHealth;
@@ -108,12 +119,12 @@ public sealed class PlayerHealth : MonoBehaviour, IHitDamageReceiver, IDamageabl
         Initialise();
         if (dead)
         {
-            if (now >= deathTime + respawnDelay)
+            if (AutoRespawn && now >= deathTime + respawnDelay)
                 Respawn();
             return;
         }
 
-        if (currentHealth < maxHealth && now >= lastDamageTime + regenDelay)
+        if (RegenEnabled && currentHealth < maxHealth && now >= lastDamageTime + regenDelay)
         {
             currentHealth = Mathf.Min(maxHealth, currentHealth + regenPerSecond * deltaTime);
             OnHealthChanged?.Invoke(currentHealth, maxHealth);
@@ -125,6 +136,9 @@ public sealed class PlayerHealth : MonoBehaviour, IHitDamageReceiver, IDamageabl
         Vector3 source;
         if (!BotManager.TryGetShooterPosition(damage.SourceId, out source))
             source = damage.Point - damage.Direction.normalized * 10f;
+        CombatTeam shooterTeam;
+        if (BotManager.TryGetShooterTeam(damage.SourceId, out shooterTeam) && !CombatTeams.CanDamage(shooterTeam, Team))
+            return;
         TakeDamage(damage.FinalDamage, source);
     }
 

@@ -5,8 +5,9 @@ attacker and defender yards, long sightlines on one lane only, doors and corners
 Original geometry, generated materials, textures and sky only. The look is clean and sunny (sand, limestone,
 terracotta roofs, whitewashed walls, coloured awnings), different from Shipment (neon), Dome (sci-fi), Triad (dusk).
 
-The bomb / round mode is **not** implemented. The map only carries the markers a future mode needs: plant zones
-and buy zones as trigger volumes with a `BazaarPlantZone` component.
+The map plays the round-based **tactical mode** (see the root README, `Assets/Tactical`): it provides the plant zones
+as trigger volumes with a `BazaarPlantZone` component (an `ITacticalZone`), the `Spawn_A##` / `Spawn_D##` spawns
+and the route waypoints the mode and its bots use. The buy zones only mark the yards (there is no buying).
 
 ![Bazaar overview](../../../docs/screenshots/map-bazaar-overview.jpg)
 
@@ -88,8 +89,8 @@ Re-running it regenerates everything.
 
 - `Scripts/BazaarLayout.cs`, `BazaarLayoutData.cs`: the whole layout as pure data (boxes, openings, stairs, spawns,
   waypoints, areas, routes, zones). The builder and the tests read the same data.
-- `Scripts/BazaarPlantZone.cs`: marker component (zone kind and site) for plant and buy zones. It has no runtime
-  behaviour yet.
+- `Scripts/BazaarPlantZone.cs`: marker component (zone kind and site) for plant and buy zones, implementing
+  `ITacticalZone` so the tactical match finds them.
 - `Shaders/BazaarWorldTiled.shader`: world-space triplanar tiling used by every surface.
 - `Assets/Editor/BazaarMapBuilder.cs`, `BazaarMapAssets.cs`: scene and asset generation.
 - `Tests/Editor`: layout contract tests (axis-aligned geometry, sightlines, openings, stairs, jump and mantle limits,

@@ -268,6 +268,43 @@ public sealed class BotManager : MonoBehaviour
         return bot;
     }
 
+    /// <summary>
+    /// Spawns a bot that fights for <paramref name="team"/> at an exact spot. Team bots never respawn on their own and are
+    /// never teleported by the stuck handler: the mode that owns them revives them.
+    /// </summary>
+    public BotController SpawnTeamBot(CombatTeam team, Vector3 position, float yaw)
+    {
+        if (settings == null)
+            UseOwnedSettings(StartDifficulty);
+
+        spawnCounter++;
+        WeaponConfig weapon = PickWeapon(spawnCounter);
+        Color tint = team == CombatTeam.None ? Tints[spawnCounter % Tints.Length] : TeamTint(team, spawnCounter);
+        Vector3 point = BotNavigation.Snap(position, null);
+        BotController bot = BotController.Create("Bot_" + spawnCounter, point, Quaternion.Euler(0f, yaw, 0f), settings, weapon, tint, rng.Next());
+        bot.Team = team;
+        bot.AutoRespawn = false;
+        bot.Frozen = frozen;
+        bots.Add(bot);
+        return bot;
+    }
+
+    private static Color TeamTint(CombatTeam team, int index)
+    {
+        Color baseColor = team == CombatTeam.Attackers ? new Color(0.78f, 0.38f, 0.12f) : new Color(0.16f, 0.36f, 0.72f);
+        float shade = 0.85f + 0.1f * (index % 3);
+        return new Color(baseColor.r * shade, baseColor.g * shade, baseColor.b * shade);
+    }
+
+    /// <summary>Removes one bot (a tactical bot that left the match); the bot is destroyed.</summary>
+    public void RemoveBot(BotController bot)
+    {
+        if (bot == null)
+            return;
+        bots.Remove(bot);
+        Destroy(bot.gameObject);
+    }
+
     public void ClearBots()
     {
         for (int i = 0; i < bots.Count; i++)
@@ -339,6 +376,20 @@ public sealed class BotManager : MonoBehaviour
         return false;
     }
 
+    /// <summary>Team of whoever fired the shot: a bot's own team, otherwise the local player's.</summary>
+    public static bool TryGetShooterTeam(int sourceId, out CombatTeam team)
+    {
+        if (BotController.TryGetBot(sourceId, out BotController bot))
+        {
+            team = bot.Team;
+            return true;
+        }
+
+        PlayerHealth local = PlayerHealth.Local;
+        team = local != null ? local.Team : CombatTeam.None;
+        return local != null;
+    }
+
     /// <summary>A spawn point away from the player, preferably out of the player's sight; used for spawns and bot respawns.</summary>
     public static Vector3 FindRespawnPosition(BotController bot, Vector3 fallback)
     {
@@ -406,12 +457,23 @@ public sealed class BotManager : MonoBehaviour
 
     private void RebuildBots()
     {
-        int count = bots.Count;
+        var previous = new List<(CombatTeam team, Vector3 position, float yaw)>(bots.Count);
+        for (int i = 0; i < bots.Count; i++)
+        {
+            if (bots[i] != null)
+                previous.Add((bots[i].Team, bots[i].transform.position, bots[i].transform.eulerAngles.y));
+        }
+
         ClearBots();
         if (!IsReady)
             return;
-        for (int i = 0; i < count; i++)
-            SpawnBot();
+        for (int i = 0; i < previous.Count; i++)
+        {
+            if (previous[i].team == CombatTeam.None)
+                SpawnBot();
+            else
+                SpawnTeamBot(previous[i].team, previous[i].position, previous[i].yaw);
+        }
     }
 
     private static BotDifficulty LoadSavedDifficulty()
