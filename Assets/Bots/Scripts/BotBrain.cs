@@ -29,6 +29,12 @@ public struct BotSenses
     /// <summary>The bot reached the position its current state wanted to go to.</summary>
     public bool atDestination;
     public bool hasCoverPoint;
+    /// <summary>The bot has been in the open long enough to duck behind cover and peek again later.</summary>
+    public bool peekDue;
+    /// <summary>Seconds to stay behind cover when ducking out for a peek.</summary>
+    public float peekHideTime;
+    /// <summary>The bot stands at the cover point it is hiding at (the peek hide time only runs from then on).</summary>
+    public bool atCoverPoint;
 }
 
 /// <summary>
@@ -41,6 +47,11 @@ public sealed class BotBrain
     private float investigateWait;
     private float coverCooldownLeft;
     private float lostSightTime;
+    private float peekHide;
+    private float peekHidden;
+
+    /// <summary>Longest a bot may take to reach the cover of a peek, on top of the hide time, before it goes back to fighting.</summary>
+    public const float MaxPeekTravelTime = 5f;
 
     /// <summary>Seconds of accumulated sight lost per second without sight, so a one-frame flicker does not restart the reaction time.</summary>
     private const float SightDecayRate = 2f;
@@ -63,7 +74,13 @@ public sealed class BotBrain
     public bool IsEngaged => State == BotState.Chase || State == BotState.Attack || State == BotState.TakeCover;
 
     /// <summary>True once the reaction time has elapsed while attacking with line of sight.</summary>
-    public bool CanFire => State == BotState.Attack && TimeSeeingTarget >= settings.reactionTime;
+    public bool CanFire => State == BotState.Attack && TimeSeeingTarget >= settings.reactionTime * ReactionScale;
+
+    /// <summary>Multiplier on the reaction time for the current engagement (1 = the settings value).</summary>
+    public float ReactionScale { get; set; } = 1f;
+
+    /// <summary>True while the cover state was entered to peek (a short duck), false for health or reload cover.</summary>
+    public bool CoverIsPeek { get; private set; }
 
     public event Action<BotState, BotState> StateChanged;
 
@@ -157,17 +174,37 @@ public sealed class BotBrain
                 }
                 else if (ShouldTakeCover(senses))
                 {
+                    CoverIsPeek = false;
+                    SetState(BotState.TakeCover);
+                }
+                else if (ShouldPeek(senses))
+                {
+                    CoverIsPeek = true;
+                    peekHide = Mathf.Max(0.1f, senses.peekHideTime);
                     SetState(BotState.TakeCover);
                 }
                 break;
 
             case BotState.TakeCover:
-                bool coverDone = TimeInState >= settings.coverDuration && !senses.isReloading;
+                bool coverDone;
+                if (CoverIsPeek)
+                {
+                    if (senses.atCoverPoint)
+                        peekHidden += dt;
+                    coverDone = (peekHidden >= peekHide || TimeInState >= peekHide + MaxPeekTravelTime) && !senses.isReloading;
+                }
+                else
+                {
+                    coverDone = TimeInState >= settings.coverDuration && !senses.isReloading;
+                }
+
                 if (!senses.hasCoverPoint && TimeInState >= 0.4f)
                     coverDone = true;
                 if (coverDone)
                 {
-                    coverCooldownLeft = settings.coverCooldown;
+                    if (!CoverIsPeek)
+                        coverCooldownLeft = settings.coverCooldown;
+                    CoverIsPeek = false;
                     if (sees)
                         Engage(senses);
                     else
@@ -191,6 +228,8 @@ public sealed class BotBrain
         lostSightTime = 0f;
         coverCooldownLeft = 0f;
         investigateWait = 0f;
+        CoverIsPeek = false;
+        ReactionScale = 1f;
         SetState(BotState.Patrol, true);
     }
 
@@ -209,6 +248,12 @@ public sealed class BotBrain
         if (senses.health01 <= settings.coverHealthFraction)
             return true;
         return senses.needsReload && !senses.isReloading;
+    }
+
+    private bool ShouldPeek(BotSenses senses)
+    {
+        return settings.usePeek && senses.peekDue && senses.hasCoverPoint && senses.seesTarget
+            && TimeInState >= settings.minStateTime;
     }
 
     private void Engage(BotSenses senses)
@@ -234,6 +279,8 @@ public sealed class BotBrain
         TimeInState = 0f;
         if (next != BotState.Investigate)
             investigateWait = 0f;
+        if (next == BotState.TakeCover)
+            peekHidden = 0f;
         if (next == BotState.Dead)
         {
             TimeSeeingTarget = 0f;

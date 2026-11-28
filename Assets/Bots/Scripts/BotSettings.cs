@@ -64,6 +64,12 @@ public class BotSettings : ScriptableObject
     [Tooltip("Multiplier on the weapon's own spread (including bloom).")]
     [Min(0f)] public float weaponSpreadScale = 1f;
 
+    [Tooltip("Reaction time is multiplied by a random 1..(1 + jitter) at the start of every engagement.")]
+    [Range(0f, 1f)] public float reactionJitter = 0.4f;
+    [Tooltip("Extra aim error (degrees) right after the bot is hit; fades over Flinch Time.")]
+    [Min(0f)] public float flinchError = 3f;
+    [Min(0.05f)] public float flinchTime = 0.7f;
+
     [Header("Fire discipline")]
     [Min(1)] public int burstMin = 3;
     [Min(1)] public int burstMax = 6;
@@ -87,6 +93,20 @@ public class BotSettings : ScriptableObject
     [Range(0f, 1f)] public float coverHealthFraction = 0.35f;
     [Min(0f)] public float coverDuration = 2.5f;
     [Min(0f)] public float coverCooldown = 8f;
+
+    [Header("Peeking and positioning")]
+    [Tooltip("While fighting, step out of the enemy's sight after a while and come back (shoot, hide, peek).")]
+    public bool usePeek = true;
+    [Tooltip("Seconds in the open (attacking with line of sight) before the bot wants to duck behind cover.")]
+    [Min(0.2f)] public float peekExposeMin = 2f;
+    [Min(0.2f)] public float peekExposeMax = 3.6f;
+    [Tooltip("Seconds spent behind cover before peeking again.")]
+    [Min(0.1f)] public float peekHideMin = 0.9f;
+    [Min(0.1f)] public float peekHideMax = 1.8f;
+    [Tooltip("When holding a position, stand against a nearby wall instead of in the open.")]
+    public bool preferWalls = true;
+    [Tooltip("0..1: how well the bot plays with its team in tactical modes (flanking routes, rotating to contact, safe defuses).")]
+    [Range(0f, 1f)] public float teamwork = 0.4f;
 
     [Header("Anti-flicker")]
     [Tooltip("Minimum seconds in Chase or Attack before the bot may switch between the two because of range or sight.")]
@@ -135,6 +155,9 @@ public class BotSettings : ScriptableObject
                 burstMin = 2; burstMax = 3; burstPauseMin = 0.8f; burstPauseMax = 1.6f; semiDelay = 0.6f;
                 damageMultiplier = 0.25f;
                 strafe = false; useCover = false;
+                usePeek = false; peekExposeMin = 3f; peekExposeMax = 5f; peekHideMin = 0.6f; peekHideMax = 1.2f;
+                preferWalls = false; teamwork = 0f;
+                reactionJitter = 0.6f; flinchError = 5f; flinchTime = 0.9f;
                 break;
             case BotDifficulty.Hard:
                 maxHealth = 130f;
@@ -146,6 +169,9 @@ public class BotSettings : ScriptableObject
                 burstMin = 4; burstMax = 8; burstPauseMin = 0.25f; burstPauseMax = 0.6f; semiDelay = 0.2f;
                 damageMultiplier = 0.6f;
                 strafe = true; useCover = true;
+                usePeek = true; peekExposeMin = 1.4f; peekExposeMax = 2.8f; peekHideMin = 0.8f; peekHideMax = 1.6f;
+                preferWalls = true; teamwork = 0.7f;
+                reactionJitter = 0.25f; flinchError = 2f; flinchTime = 0.5f;
                 break;
             case BotDifficulty.Veteran:
                 maxHealth = 160f;
@@ -157,6 +183,9 @@ public class BotSettings : ScriptableObject
                 burstMin = 5; burstMax = 10; burstPauseMin = 0.15f; burstPauseMax = 0.4f; semiDelay = 0.12f;
                 damageMultiplier = 0.8f;
                 strafe = true; useCover = true;
+                usePeek = true; peekExposeMin = 1f; peekExposeMax = 2.2f; peekHideMin = 0.7f; peekHideMax = 1.4f;
+                preferWalls = true; teamwork = 1f;
+                reactionJitter = 0.15f; flinchError = 1.2f; flinchTime = 0.4f;
                 break;
             default:
                 maxHealth = 100f;
@@ -168,6 +197,9 @@ public class BotSettings : ScriptableObject
                 burstMin = 3; burstMax = 6; burstPauseMin = 0.35f; burstPauseMax = 0.9f; semiDelay = 0.3f;
                 damageMultiplier = 0.4f;
                 strafe = true; useCover = true;
+                usePeek = true; peekExposeMin = 2f; peekExposeMax = 3.6f; peekHideMin = 0.9f; peekHideMax = 1.8f;
+                preferWalls = true; teamwork = 0.4f;
+                reactionJitter = 0.4f; flinchError = 3f; flinchTime = 0.7f;
                 break;
         }
     }
@@ -184,6 +216,8 @@ public class BotSettings : ScriptableObject
         burstPauseMax = Mathf.Max(burstPauseMin, burstPauseMax);
         strafeIntervalMax = Mathf.Max(strafeIntervalMin, strafeIntervalMax);
         patrolPauseMax = Mathf.Max(patrolPauseMin, patrolPauseMax);
+        peekExposeMax = Mathf.Max(peekExposeMin, peekExposeMax);
+        peekHideMax = Mathf.Max(peekHideMin, peekHideMax);
         preferredRangeMax = Mathf.Max(preferredRangeMin + 1f, preferredRangeMax);
     }
 }

@@ -26,6 +26,20 @@ public sealed class BotAimModel
 
     public bool IsOnTarget => TrackingError <= OnTargetDegrees;
 
+    /// <summary>1 right after the bot was hit, fading to 0 over the flinch time; adds to the aim error.</summary>
+    public float Flinch { get; private set; }
+
+    /// <summary>Called when the bot takes damage: its aim is thrown off for a moment.</summary>
+    public void NotifyHit()
+    {
+        Flinch = 1f;
+    }
+
+    public void ClearFlinch()
+    {
+        Flinch = 0f;
+    }
+
     public void SnapTo(Vector3 direction)
     {
         if (direction.sqrMagnitude > 1e-6f)
@@ -42,6 +56,9 @@ public sealed class BotAimModel
     /// <summary>Rotates the aim line towards <paramref name="desired"/> at the configured turn rate.</summary>
     public void Track(Vector3 desired, float dt)
     {
+        if (Flinch > 0f)
+            Flinch = Mathf.Max(0f, Flinch - Mathf.Max(0f, dt) / Mathf.Max(0.05f, settings.flinchTime));
+
         if (desired.sqrMagnitude < 1e-6f)
             return;
 
@@ -67,6 +84,7 @@ public sealed class BotAimModel
         if (ownSpeed > 0.5f)
             error += settings.aimErrorWhileMoving;
         error += settings.aimErrorPerTargetSpeed * Mathf.Max(0f, targetSpeed);
+        error += settings.flinchError * Flinch;
         return error;
     }
 
