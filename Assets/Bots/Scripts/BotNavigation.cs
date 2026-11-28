@@ -455,4 +455,62 @@ public static class BotNavigation
 
         return found;
     }
+
+    /// <summary>
+    /// Looks for a walkable spot within <paramref name="radius"/> of <paramref name="center"/> that stands close to a wall or
+    /// ledge (within <paramref name="maxEdgeDistance"/>), preferring spots near the centre. Needs the NavMesh; returns false
+    /// in fallback mode or when nothing suitable was sampled.
+    /// </summary>
+    public static bool TryFindWallPoint(
+        Vector3 center,
+        float radius,
+        int samples,
+        float maxEdgeDistance,
+        System.Random rng,
+        Transform ignoreRoot,
+        List<Vector3> scratch,
+        out Vector3 point)
+    {
+        point = center;
+        if (Mode != BotNavMode.NavMesh)
+            return false;
+
+        float best = float.MaxValue;
+        bool found = false;
+        for (int i = 0; i < samples; i++)
+        {
+            if (!TryRandomReachablePoint(center, radius, rng, ignoreRoot, scratch, out Vector3 candidate))
+                continue;
+            if (!NavMesh.FindClosestEdge(candidate, out NavMeshHit edge, NavMesh.AllAreas))
+                continue;
+            if (edge.distance > maxEdgeDistance)
+                continue;
+
+            float score = edge.distance * 2f + Vector3.Distance(candidate, center) * 0.4f;
+            if (score < best)
+            {
+                best = score;
+                point = candidate;
+                found = true;
+            }
+        }
+
+        if (found)
+        {
+            if (NavMesh.FindClosestEdge(point, out NavMeshHit closest, NavMesh.AllAreas) && closest.distance > 0.05f)
+            {
+                Vector3 inward = point - closest.position;
+                inward.y = 0f;
+                const float want = 0.3f;
+                if (inward.sqrMagnitude > 1e-6f && closest.distance > want)
+                {
+                    Vector3 shifted = closest.position + inward.normalized * want;
+                    if (NavMesh.SamplePosition(shifted, out NavMeshHit shiftedHit, 0.6f, NavMesh.AllAreas))
+                        point = shiftedHit.position;
+                }
+            }
+        }
+
+        return found;
+    }
 }

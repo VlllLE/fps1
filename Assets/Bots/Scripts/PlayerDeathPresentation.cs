@@ -22,6 +22,7 @@ public sealed class PlayerDeathPresentation : MonoBehaviour
     private bool restoreMovement;
     private bool restoreLook;
     private bool restoreBridge;
+    private bool bodyEndPending;
     private Vector3 lastSource;
     private float lastDamage;
     private Vector3 slide;
@@ -49,7 +50,7 @@ public sealed class PlayerDeathPresentation : MonoBehaviour
         }
 
         if (presenting)
-            Finish();
+            Finish(true);
     }
 
     private void Update()
@@ -79,6 +80,9 @@ public sealed class PlayerDeathPresentation : MonoBehaviour
     private void HandleRespawned()
     {
         Finish();
+        if (bodyEndPending && body != null)
+            body.EndDeath();
+        bodyEndPending = false;
     }
 
     private void Begin()
@@ -149,7 +153,7 @@ public sealed class PlayerDeathPresentation : MonoBehaviour
         }
     }
 
-    private void Finish()
+    private void Finish(bool deactivating = false)
     {
         if (!presenting)
             return;
@@ -158,7 +162,12 @@ public sealed class PlayerDeathPresentation : MonoBehaviour
         if (deathCamera != null)
             deathCamera.End();
         if (body != null)
-            body.EndDeath();
+        {
+            if (deactivating)
+                bodyEndPending = true;
+            else
+                body.EndDeath();
+        }
 
         if (restoreMovement && movement != null)
             movement.enabled = true;

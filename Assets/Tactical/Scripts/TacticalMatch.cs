@@ -78,6 +78,7 @@ namespace FpsTactical
         public bool PlayerHoldingAction => playerHoldingAction;
         public BotController CarrierBot => carrierBot;
         public ITacticalZone TargetSite => targetSite;
+        public TacticalBotDirector Director => director;
         public Vector3 BombPosition => bombPosition;
         public TacticalBombProp BombProp => bombProp;
         public bool BombDropped => Model != null && Model.Bomb.State == BombState.Dropped;

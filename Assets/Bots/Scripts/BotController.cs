@@ -84,7 +84,26 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     private float objectiveRadius = 1.5f;
     private float objectiveSpeedFactor = 0.9f;
     private float? objectiveLookYaw;
+    private bool objectiveHugWalls;
+    private bool holdResolved;
+    private bool holdValid;
+    private Vector3 holdPoint;
+    private BotPeekTimer peekTimer;
+    private float peekHideRoll = 1f;
+    private const float HoldSearchRadius = 3.5f;
     private const float BotVersusBotDamage = 0.6f;
+
+    /// <summary>How many times the bot ducked behind cover to peek (not counting health or reload cover).</summary>
+    public int Peeks { get; private set; }
+
+    /// <summary>Seconds the bot has been in the open since its last peek (see <see cref="BotPeekTimer"/>).</summary>
+    public float PeekExposure => peekTimer != null ? peekTimer.Exposed : 0f;
+
+    /// <summary>True when the bot found a wall to stand against while holding its objective.</summary>
+    public bool HasHoldPoint => holdValid;
+
+    /// <summary>The wall-hugging spot the bot holds at (valid while <see cref="HasHoldPoint"/>).</summary>
+    public Vector3 HoldPoint => holdPoint;
 
     public static IReadOnlyList<BotController> All => Registry;
 
@@ -126,22 +145,31 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
     /// Sends the bot to <paramref name="position"/> whenever it is not busy with an enemy; on arrival it holds there and
     /// scans around <paramref name="lookYaw"/> if given. Replaces patrolling until <see cref="ClearObjective"/>.
     /// </summary>
-    public void SetObjective(Vector3 position, float radius = 1.5f, float speedFactor = 0.9f, float? lookYaw = null)
+    public void SetObjective(Vector3 position, float radius = 1.5f, float speedFactor = 0.9f, float? lookYaw = null, bool hugWalls = false)
     {
         Vector3 snapped = BotNavigation.IsReady ? BotNavigation.Snap(position, transform) : position;
         if (!hasObjective || PlanarDistance(objective, snapped) > 0.75f)
+        {
             hasPath = false;
+            holdResolved = false;
+            holdValid = false;
+        }
+
         hasObjective = true;
         objective = snapped;
         objectiveRadius = Mathf.Max(ArriveDistance + 0.1f, radius);
         objectiveSpeedFactor = speedFactor;
         objectiveLookYaw = lookYaw;
+        objectiveHugWalls = hugWalls;
     }
 
     public void ClearObjective()
     {
         hasObjective = false;
         objectiveLookYaw = null;
+        objectiveHugWalls = false;
+        holdResolved = false;
+        holdValid = false;
         hasPath = false;
     }
 
@@ -252,6 +280,8 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         stuck.Reset(transform.position);
         fireWatchdog = new BotEngagementWatchdog();
         aim = new BotAimModel(settings);
+        peekTimer = new BotPeekTimer(settings, rng);
+        peekHideRoll = peekTimer.RollHideTime();
         gun = new BotGun(weapon, settings, rng);
         health = settings.maxHealth;
         spawnPoint = transform.position;
@@ -312,7 +342,11 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
 
         gun.Tick(now, dt);
 
+        peekTimer.Tick(dt, brain.State == BotState.Attack && seesCurrentTarget);
         BotSenses senses = GatherSenses();
+        senses.peekDue = peekTimer.Due;
+        senses.peekHideTime = peekHideRoll;
+        senses.atCoverPoint = coverValid && PlanarDistance(transform.position, coverPoint) <= ArriveDistance + 0.3f;
         brain.Tick(dt, senses);
         if (IsDead)
             return;
@@ -513,7 +547,7 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         Vector3 facing = engaged && sees ? Flatten(aim.AimDirection) : lastMoveDirection;
         if (brain.State == BotState.Investigate && senses.atDestination)
             facing = Flatten(Quaternion.Euler(0f, scanYaw, 0f) * Vector3.forward);
-        else if (brain.State == BotState.Patrol && hasObjective && !moved && objectiveLookYaw.HasValue && AtObjective)
+        else if (brain.State == BotState.Patrol && hasObjective && !moved && objectiveLookYaw.HasValue && AtHoldPosition)
         {
             scanTimer -= dt;
             if (scanTimer <= 0f)
@@ -537,11 +571,50 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         UpdateArmPose();
     }
 
+    private bool AtHoldPosition => holdValid
+        ? PlanarDistance(transform.position, holdPoint) <= ArriveDistance + 0.2f
+        : AtObjective;
+
+    private void ResolveHoldPoint()
+    {
+        holdResolved = true;
+        holdValid = false;
+        if (!objectiveHugWalls || !settings.preferWalls || !BotNavigation.IsReady)
+            return;
+
+        if (BotNavigation.TryFindWallPoint(objective, HoldSearchRadius, 10, 1.1f, rng, transform, scratchPath, out Vector3 wall)
+            && PlanarDistance(wall, objective) <= HoldSearchRadius + 0.5f)
+        {
+            holdPoint = wall;
+            holdValid = true;
+        }
+    }
+
     private bool DoObjective(float dt)
     {
+        if (holdValid)
+        {
+            if (AtHoldPosition)
+            {
+                hasPath = false;
+                return false;
+            }
+
+            bool reached = MoveAlongPath(holdPoint, settings.walkSpeed * 1.2f, dt, out bool holdGaveUp);
+            if (holdGaveUp)
+            {
+                hasPath = false;
+                holdValid = false;
+            }
+
+            return !reached && !holdGaveUp;
+        }
+
         if (AtObjective)
         {
             hasPath = false;
+            if (objectiveHugWalls && !holdResolved)
+                ResolveHoldPoint();
             return false;
         }
 
@@ -701,9 +774,10 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         }
 
         coverSearchTimer -= dt;
-        bool wantsCover = settings.useCover
+        bool needsCover = settings.useCover
             && (senses.health01 <= settings.coverHealthFraction || senses.needsReload);
-        if (!wantsCover || brain.State == BotState.TakeCover || coverSearchTimer > 0f)
+        bool wantsPeek = settings.usePeek && peekTimer.Due;
+        if (!(needsCover || wantsPeek) || brain.State == BotState.TakeCover || coverSearchTimer > 0f)
             return;
 
         coverSearchTimer = 1f;
@@ -711,7 +785,8 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         if (target == null)
             return;
 
-        coverValid = BotNavigation.TryFindCover(transform.position, target.AimPoint, 14f, 10, rng,
+        float searchRadius = needsCover ? 14f : 9f;
+        coverValid = BotNavigation.TryFindCover(transform.position, target.AimPoint, searchRadius, 10, rng,
             transform, target.TargetTransform, scratchPath, out coverPoint);
     }
 
@@ -1118,6 +1193,7 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         LastHitWasHeadshot = headshot;
         health = Mathf.Max(0f, health - amount);
         damagedPending = true;
+        aim.NotifyHit();
         Damaged?.Invoke(this, amount);
 
         if (body != null && body.Animator != null)
@@ -1209,6 +1285,11 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         gun.Refill();
         aim.SnapTo(transform.forward);
         aim.ResetTracking();
+        aim.ClearFlinch();
+        peekTimer.Restart();
+        peekHideRoll = peekTimer.RollHideTime();
+        holdResolved = false;
+        holdValid = false;
         waypoints.Clear();
         waypointsBuilt = false;
         waypointIndex = 0;
@@ -1242,6 +1323,16 @@ public sealed class BotController : MonoBehaviour, IHitDamageReceiver, IDamageab
         if (to != BotState.TakeCover)
             coverValid = to == BotState.Attack && coverValid;
         hasPath = false;
+        if (to == BotState.TakeCover && brain.CoverIsPeek)
+            Peeks++;
+        if (from == BotState.TakeCover && peekTimer != null)
+        {
+            peekTimer.Restart();
+            peekHideRoll = peekTimer.RollHideTime();
+        }
+
+        if ((from == BotState.Patrol || from == BotState.Investigate) && (to == BotState.Chase || to == BotState.Attack))
+            brain.ReactionScale = 1f + settings.reactionJitter * (float)rng.NextDouble();
         if (to == BotState.Attack)
             aim.ResetTracking();
         if (to == BotState.Investigate)
