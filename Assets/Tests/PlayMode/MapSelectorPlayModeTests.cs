@@ -70,7 +70,7 @@ public class MapSelectorPlayModeTests
             }
         }
         if (target < 0)
-            Assert.Ignore("Only TestRange is in Build Settings; generate Shipment/Dome/Triad via Tools > Maps.");
+            Assert.Ignore("Only TestRange is in Build Settings; generate Shipment/Dome/Triad/Bazaar via Tools > Maps.");
 
         Time.timeScale = 0f;
         Assert.IsTrue(selector.TryLoadMap(target));

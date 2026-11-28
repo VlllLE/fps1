@@ -17,4 +17,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Triad.unity
     guid: 1afe87db9131b194db965919759bb95b
+  - enabled: 1
+    path: Assets/Scenes/Bazaar.unity
+    guid: 78f9ba89fe240b34cad32813751f3991
   m_configObjects: {}

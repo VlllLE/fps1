@@ -29,6 +29,7 @@ public static class MapCatalog
         new MapEntry("Shipment", "Shipment", "Assets/Scenes/Shipment.unity", KeyCode.F6),
         new MapEntry("Dome", "Dome", "Assets/Scenes/Dome.unity", KeyCode.F7),
         new MapEntry("Triad", "Triad", "Assets/Scenes/Triad.unity", KeyCode.Home),
+        new MapEntry("Bazaar", "Bazaar", "Assets/Scenes/Bazaar.unity", KeyCode.End),
     };
 
     public static int Count => Maps.Length;

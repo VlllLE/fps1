@@ -10,9 +10,9 @@ public class MapCatalogTests
     };
 
     [Test]
-    public void Catalog_ListsTestRangeShipmentDomeTriad_WithDistinctHotkeys()
+    public void Catalog_ListsTestRangeShipmentDomeTriadBazaar_WithDistinctHotkeys()
     {
-        Assert.AreEqual(4, MapCatalog.Count);
+        Assert.AreEqual(5, MapCatalog.Count);
         Assert.AreEqual("TestRange", MapCatalog.Maps[0].SceneName);
         Assert.AreEqual("Shipment", MapCatalog.Maps[1].SceneName);
         Assert.AreEqual("Dome", MapCatalog.Maps[2].SceneName);
@@ -21,6 +21,8 @@ public class MapCatalogTests
         Assert.AreEqual(KeyCode.F7, MapCatalog.Maps[2].HotKey);
         Assert.AreEqual("Triad", MapCatalog.Maps[3].SceneName);
         Assert.AreEqual(KeyCode.Home, MapCatalog.Maps[3].HotKey);
+        Assert.AreEqual("Bazaar", MapCatalog.Maps[4].SceneName);
+        Assert.AreEqual(KeyCode.End, MapCatalog.Maps[4].HotKey);
 
         var keys = new System.Collections.Generic.HashSet<KeyCode>();
         foreach (var map in MapCatalog.Maps)
